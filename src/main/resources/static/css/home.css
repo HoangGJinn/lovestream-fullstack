@@ -1,0 +1,74 @@
+/* src/main/resources/static/css/home.css */
+
+body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #141414; color: #fff; overflow-x: hidden; }
+
+/* NAVBAR TRÊN CÙNG */
+.navbar { position: fixed; top: 0; width: 100%; height: 68px; padding: 0 4%; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; z-index: 100; transition: background-color 0.4s; background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%); }
+.navbar.scrolled { background-color: #141414; }
+
+.nav-left { display: flex; align-items: center; gap: 30px; }
+.logo { color: #e50914; font-size: 28px; font-weight: 900; text-decoration: none; letter-spacing: -1px; }
+.nav-links { display: flex; gap: 20px; list-style: none; padding: 0; margin: 0; }
+.nav-links a { color: #e5e5e5; text-decoration: none; font-size: 14px; transition: color 0.4s; }
+.nav-links a:hover, .nav-links a.active { color: #fff; font-weight: bold; }
+
+.nav-right { display: flex; align-items: center; gap: 20px; }
+.nav-icon { color: #fff; font-size: 20px; cursor: pointer; }
+.user-profile { position: relative; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.user-avatar { width: 32px; height: 32px; border-radius: 4px; }
+
+/* ======================================================= */
+/* ĐÃ SỬA LỖI DROPDOWN TẠI ĐÂY                             */
+/* ======================================================= */
+.dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: rgba(0,0,0,0.9);
+    border: 1px solid #333;
+    padding: 10px 0;
+    min-width: 150px;
+    border-radius: 4px;
+    margin-top: 15px; /* Giữ nguyên margin để menu cách một đoạn đẹp mắt */
+}
+
+/* TẠO CÂY CẦU TÀNG HÌNH ĐỂ GIỮ CHUỘT KHÔNG BỊ RỚT */
+.dropdown::before {
+    content: "";
+    position: absolute;
+    top: -15px; /* Kéo cây cầu lên lấp đầy đúng 15px của margin-top */
+    left: 0;
+    right: 0;
+    height: 15px;
+    background-color: transparent;
+}
+
+.user-profile:hover .dropdown { display: block; }
+.dropdown a { color: #fff; text-decoration: none; font-size: 13px; display: block; padding: 10px 20px; }
+.dropdown a:hover { text-decoration: underline; }
+/* ======================================================= */
+
+/* HERO SECTION */
+.hero { position: relative; height: 90vh; min-height: 600px; display: flex; align-items: center; padding: 0 4%; background-image: url('https://image.tmdb.org/t/p/original/9n2tDcwV2b3dD4B1r7z6Xn1pW4S.jpg'); background-size: cover; background-position: center top; }
+.hero-gradient { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to right, #141414 0%, transparent 70%), linear-gradient(to top, #141414 0%, transparent 40%); }
+.hero-content { position: relative; z-index: 2; max-width: 600px; margin-top: 100px;}
+
+.movie-title { font-size: 64px; font-weight: 900; margin: 0 0 15px 0; text-transform: uppercase; line-height: 1.1; text-shadow: 2px 2px 4px rgba(0,0,0,0.45); }
+.movie-desc { font-size: 1.2vw; line-height: 1.5; color: #fff; margin-bottom: 30px; text-shadow: 2px 2px 4px rgba(0,0,0,0.45); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; font-weight: 500;}
+
+.btn-group { display: flex; gap: 15px; }
+.btn { padding: 10px 24px; font-size: 1.1rem; font-weight: bold; border-radius: 4px; border: none; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
+.btn-play { background-color: #fff; color: #000; }
+.btn-play:hover { background-color: rgba(255,255,255,0.7); }
+.btn-info { background-color: rgba(109, 109, 110, 0.7); color: #fff; }
+.btn-info:hover { background-color: rgba(109, 109, 110, 0.4); }
+
+/* DANH MỤC PHIM (SLIDERS) */
+.categories-container { margin-top: -80px; position: relative; z-index: 3; padding-bottom: 50px; }
+.row-title { font-size: 1.4vw; color: #e5e5e5; margin: 0 4% 10px; font-weight: bold; }
+.row-posters { display: flex; overflow-y: hidden; overflow-x: scroll; padding: 20px 4%; scroll-behavior: smooth; gap: 10px;}
+.row-posters::-webkit-scrollbar { display: none; }
+
+.row-poster { width: 250px; object-fit: contain; border-radius: 4px; transition: transform 0.4s; cursor: pointer; }
+.row-poster:hover { transform: scale(1.08); z-index: 5; }

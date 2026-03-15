@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tài khoản - LoveStream</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/profile.css">
+    <style>
+        .membership-card { border: 1px solid #e5e5e5; border-radius: 8px; background: #fff; margin-bottom: 30px; overflow: hidden; }
+        .membership-badge { background: linear-gradient(90deg, #1e1b4b 0%, #e50914 100%); color: white; padding: 6px 16px; font-size: 13px; font-weight: bold; border-radius: 0 0 8px 0; display: inline-block; margin-bottom: 15px;}
+        .plan-title { font-size: 18px; font-weight: bold; margin: 0 0 5px 20px; }
+        .plan-date { font-size: 14px; color: #666; margin: 0 0 15px 20px; }
+        .payment-info { display: flex; align-items: center; gap: 10px; margin: 0 0 20px 20px; }
+        .payment-info img { width: 20px; border-radius: 4px;}
+        .payment-info span { font-weight: bold; color: #333; font-size: 14px;}
+        .manage-plan-link { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-top: 1px solid #e5e5e5; text-decoration: none; color: #0073e6; font-weight: bold; transition: background 0.2s;}
+        .manage-plan-link:hover { background-color: #f9f9f9; text-decoration: underline;}
+    </style>
+</head>
+<body>
+
+<div style="height: 70px; display: flex; align-items: center; padding: 0 40px; border-bottom: 1px solid #e5e5e5; background: #fff;">
+    <a href="/home" style="color: #e50914; font-size: 28px; font-weight: 900; text-decoration: none; letter-spacing: -1px;">LoveStream</a>
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png" alt="User" style="width: 32px; border-radius: 4px;">
+    </div>
+</div>
+
+<div class="profile-container">
+    <div class="sidebar">
+        <a href="/home" class="logo-link"><i class="fa-solid fa-arrow-left"></i> Quay lại LoveStream</a>
+        <ul class="menu-list">
+            <li><a href="/account" class="menu-item active"><i class="fa-solid fa-house"></i> Tổng quan</a></li>
+            <li><a href="#" class="menu-item"><i class="fa-regular fa-credit-card"></i> Tư cách thành viên</a></li>
+            <li><a href="#" class="menu-item"><i class="fa-solid fa-shield-halved"></i> Bảo mật</a></li>
+            <li><a href="#" class="menu-item"><i class="fa-solid fa-laptop-mobile"></i> Thiết bị</a></li>
+            <li><a href="/profile" class="menu-item"><i class="fa-solid fa-users"></i> Hồ sơ</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <h1 class="page-title">Tài khoản</h1>
+        <p class="page-subtitle">Thông tin tư cách thành viên</p>
+
+        <div class="membership-card">
+            <div class="membership-badge">Thành viên từ tháng 2 năm 2026</div>
+            <h3 class="plan-title">Gói Cao cấp</h3>
+            <p class="plan-date">Ngày thanh toán tiếp theo: 16 tháng 3, 2026</p>
+            <div class="payment-info">
+                <img src="https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png" alt="MoMo">
+                <span>••••••6988</span>
+            </div>
+            <a href="#" class="manage-plan-link">
+                Quản lý tư cách thành viên <i class="fa-solid fa-chevron-right" style="color: #666;"></i>
+            </a>
+        </div>
+
+        <p style="font-size: 14px; color: #666; margin-bottom: 15px;">Liên kết nhanh</p>
+
+        <div class="card-group">
+            <a href="#" class="card-item"><i class="fa-solid fa-box card-icon"></i><div class="card-text-wrapper"><div class="card-title">Thay đổi gói dịch vụ</div></div><i class="fa-solid fa-chevron-right card-arrow"></i></a>
+            <a href="#" class="card-item"><i class="fa-regular fa-credit-card card-icon"></i><div class="card-text-wrapper"><div class="card-title">Quản lý phương thức thanh toán</div></div><i class="fa-solid fa-chevron-right card-arrow"></i></a>
+            <a href="#" class="card-item"><i class="fa-solid fa-laptop-mobile card-icon"></i><div class="card-text-wrapper"><div class="card-title">Quản lý quyền truy cập và thiết bị</div></div><i class="fa-solid fa-chevron-right card-arrow"></i></a>
+            <a href="#" class="card-item"><i class="fa-solid fa-lock card-icon"></i><div class="card-text-wrapper"><div class="card-title">Cập nhật mật khẩu</div></div><i class="fa-solid fa-chevron-right card-arrow"></i></a>
+            <a href="/profile" class="card-item"><i class="fa-solid fa-users-arrows-right-left card-icon"></i><div class="card-text-wrapper"><div class="card-title">Chuyển hồ sơ</div></div><i class="fa-solid fa-chevron-right card-arrow"></i></a>
+            <a href="#" class="card-item"><i class="fa-solid fa-circle-exclamation card-icon"></i><div class="card-text-wrapper"><div class="card-title">Điều chỉnh tính năng kiểm soát của cha mẹ</div></div><i class="fa-solid fa-chevron-right card-arrow"></i></a>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
