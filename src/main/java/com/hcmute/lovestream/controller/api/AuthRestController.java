@@ -102,13 +102,28 @@ public class AuthRestController {
 
     // UC5: Đăng xuất
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletResponse response) {
-        // Xóa Cookie JWT
-        Cookie cookie = new Cookie("JWT_TOKEN", null);
-        cookie.setHttpOnly(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(0); // Set tuổi thọ cookie về 0 để xóa
-        response.addCookie(cookie);
+    public ResponseEntity<?> logout(
+            @CookieValue(name = "REFRESH_TOKEN", required = false) String refreshToken,
+            HttpServletResponse response) {
+
+        // 1. Revoke Refresh Token trong Database (nếu có)
+        if (refreshToken != null && !refreshToken.isBlank()) {
+            authService.logout(refreshToken);
+        }
+
+        // 2. Xóa Cookie JWT_TOKEN
+        Cookie jwtCookie = new Cookie("JWT_TOKEN", null);
+        jwtCookie.setHttpOnly(true);
+        jwtCookie.setPath("/");
+        jwtCookie.setMaxAge(0);
+        response.addCookie(jwtCookie);
+
+        // 3. Xóa Cookie REFRESH_TOKEN
+        Cookie refreshCookie = new Cookie("REFRESH_TOKEN", null);
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setPath("/");
+        refreshCookie.setMaxAge(0);
+        response.addCookie(refreshCookie);
 
         return ResponseEntity.ok(Map.of("message", "Đăng xuất thành công", "redirectUrl", "/"));
     }
@@ -134,15 +149,22 @@ public class AuthRestController {
         }
 
         try {
-            // Gọi xuống Service để đổi token mới
-            String newAccessToken = authService.refreshToken(refreshTokenString);
+            // Gọi xuống Service — trả về cả Access Token mới lẫn Refresh Token mới (token rotation)
+            Map<String, String> tokens = authService.refreshToken(refreshTokenString);
 
             // Ghi đè Access Token mới vào Cookie
-            Cookie accessCookie = new Cookie("JWT_TOKEN", newAccessToken);
+            Cookie accessCookie = new Cookie("JWT_TOKEN", tokens.get("accessToken"));
             accessCookie.setHttpOnly(true);
             accessCookie.setPath("/");
-            accessCookie.setMaxAge(86400); // Tùy chỉnh lại thời gian theo properties (đang tính bằng giây)
+            accessCookie.setMaxAge(86400);
             response.addCookie(accessCookie);
+
+            // Ghi đè Refresh Token mới vào Cookie (token rotation)
+            Cookie refreshCookie = new Cookie("REFRESH_TOKEN", tokens.get("refreshToken"));
+            refreshCookie.setHttpOnly(true);
+            refreshCookie.setPath("/");
+            refreshCookie.setMaxAge(604800);
+            response.addCookie(refreshCookie);
 
             return ResponseEntity.ok(Map.of("message", "Đã gia hạn phiên đăng nhập thành công"));
 

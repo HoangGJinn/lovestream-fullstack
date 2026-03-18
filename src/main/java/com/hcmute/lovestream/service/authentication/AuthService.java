@@ -11,5 +11,6 @@ public interface AuthService {
     void forgotPassword(String email);
     void resetPassword(String token, String newPassword);
     void resendOtp(String email);
-    String refreshToken(String refreshToken);
+    Map<String, String> refreshToken(String refreshToken);
+    void logout(String refreshToken);
 }

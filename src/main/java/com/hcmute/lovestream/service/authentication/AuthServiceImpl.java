@@ -155,6 +155,9 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
+        // Thu hồi tất cả Refresh Token cũ — đảm bảo các thiết bị khác bị đăng xuất sau khi đổi mật khẩu
+        refreshTokenRepository.revokeAllUserTokens(user.getId());
+
         otpService.clearOtp(otp);
     }
 
@@ -174,28 +177,62 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public String refreshToken(String refreshTokenStr) {
+    public Map<String, String> refreshToken(String refreshTokenStr) {
         // 1. Tìm Refresh Token trong Database
         RefreshToken refreshToken = refreshTokenRepository.findByToken(refreshTokenStr)
                 .orElseThrow(() -> new RuntimeException("Refresh Token không hợp lệ hoặc không tồn tại"));
 
         // 2. Kiểm tra cờ Revoked (Bị thu hồi do đăng xuất hoặc đổi mật khẩu)
         if (refreshToken.isRevoked()) {
-            throw new RuntimeException("Refresh Token này đã bị thu hồi. Vui lòng đăng nhập lại.");
+            // Phát hiện Refresh Token Reuse Attack: đã bị revoke mà vẫn được dùng lại
+            // => Thu hồi TOÀN BỘ token của user này để bảo vệ tài khoản
+            refreshTokenRepository.revokeAllUserTokens(refreshToken.getUser().getId());
+            throw new RuntimeException("Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.");
         }
 
         // 3. Kiểm tra Hạn sử dụng
         if (refreshToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            // Tối ưu: Nếu đã hết hạn thì đánh dấu thu hồi luôn cho sạch DB
             refreshToken.setRevoked(true);
             refreshTokenRepository.save(refreshToken);
             throw new RuntimeException("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
         }
 
-        // 4. Mọi thứ hợp lệ -> Lấy thông tin User và cấp "Vé xem phim" (Access Token) mới
+        // 4. Mọi thứ hợp lệ -> Token Rotation: Thu hồi token cũ, cấp token mới
         User user = refreshToken.getUser();
 
-        // Trả về duy nhất một chuỗi Access Token mới (Hạn 15 phút)
-        return jwtUtil.generateToken(user.getEmail(), user.getRole());
+        // 4a. Revoke token cũ
+        refreshToken.setRevoked(true);
+        refreshTokenRepository.save(refreshToken);
+
+        // 4b. Tạo Access Token mới
+        String newAccessToken = jwtUtil.generateToken(user.getEmail(), user.getRole());
+
+        // 4c. Tạo Refresh Token mới và lưu vào DB
+        String newRefreshTokenStr = UUID.randomUUID().toString();
+        LocalDateTime expiresAt = LocalDateTime.now().plusSeconds(refreshExpiration / 1000);
+        RefreshToken newRefreshToken = RefreshToken.builder()
+                .user(user)
+                .token(newRefreshTokenStr)
+                .expiresAt(expiresAt)
+                .revoked(false)
+                .build();
+        refreshTokenRepository.save(newRefreshToken);
+
+        // 4d. Trả về cả hai token
+        Map<String, String> tokens = new HashMap<>();
+        tokens.put("accessToken", newAccessToken);
+        tokens.put("refreshToken", newRefreshTokenStr);
+        return tokens;
+    }
+
+    @Override
+    @Transactional
+    public void logout(String refreshTokenStr) {
+        // Tìm và revoke Refresh Token trong DB
+        // Nếu không tìm thấy token thì cũng không cần throw lỗi (idempotent)
+        refreshTokenRepository.findByToken(refreshTokenStr).ifPresent(token -> {
+            token.setRevoked(true);
+            refreshTokenRepository.save(token);
+        });
     }
 }

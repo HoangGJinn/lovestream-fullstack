@@ -55,7 +55,7 @@ public class JwtUtil {
     public String generateToken(String email, String role) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", role);
-        claims.put("type", "ACCESS");
+        claims.put("type", "ACCESS"); // Đảm bảo Access Token luôn có type để Filter phân biệt được với Refresh Token
         return Jwts.builder()
                 .claims(claims)
                 .subject(email)
