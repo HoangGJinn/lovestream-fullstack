@@ -111,7 +111,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             refreshTokenRepository.save(newRefreshToken);
 
             // 3. Tạo Access Token mới
-            String newAccessToken = jwtUtil.generateToken(rt.getUser().getEmail(), rt.getUser().getRole());
+            String newAccessToken = jwtUtil.generateToken(rt.getUser().getEmail(), rt.getUser().getRole().name());
 
             // 4. Ghi hai cookie mới vào response
             Cookie jwtCookie = new Cookie("JWT_TOKEN", newAccessToken);
@@ -150,4 +150,4 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return null;
     }
 }
-
+

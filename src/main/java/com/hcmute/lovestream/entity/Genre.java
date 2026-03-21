@@ -1,9 +1,7 @@
 package com.hcmute.lovestream.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 
 import java.util.List;
@@ -15,12 +13,14 @@ import java.util.List;
 
 public class Genre {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     private String name;
 
     // Mối quan hệ nhiều-nhiều với VideoContent
     @ManyToMany(mappedBy = "genres")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<VideoContent> videoContents;
 }

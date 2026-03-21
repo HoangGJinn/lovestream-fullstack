@@ -3,6 +3,8 @@ package com.hcmute.lovestream.service.authentication;
 import com.hcmute.lovestream.dto.request.*;
 import com.hcmute.lovestream.entity.RefreshToken;
 import com.hcmute.lovestream.entity.User;
+import com.hcmute.lovestream.entity.enums.Role;
+import com.hcmute.lovestream.entity.enums.UserStatus;
 import com.hcmute.lovestream.repository.RefreshTokenRepository;
 import com.hcmute.lovestream.repository.UserRepository;
 import com.hcmute.lovestream.security.JwtUtil;
@@ -47,7 +49,7 @@ public class AuthServiceImpl implements AuthService {
                 .email(request.getEmail())
                 .phone(request.getPhone())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role("ROLE_USER")
+                .role(Role.USER)
                 .isActive(false)
                 .build();
         userRepository.save(user);
@@ -93,8 +95,16 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Tài khoản chưa được xác minh email");
         }
 
+        if(user.getStatus() == UserStatus.BANNED) {
+            throw new RuntimeException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ hỗ trợ.");
+        }
+
+        if(user.getStatus() == UserStatus.REMOVED) {
+            throw new RuntimeException("Tài khoản của bạn đã bị xóa. Vui lòng sử dụng tài khoản khác.");
+        }
+
 // 1. Tạo Access Token (Vé xem phim - Hạn ngắn)
-        String accessToken = jwtUtil.generateToken(user.getEmail(), user.getRole());
+        String accessToken = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
 
         // 2. Tạo Refresh Token (Thẻ thành viên - Hạn dài)
         String refreshTokenString = java.util.UUID.randomUUID().toString();
@@ -128,8 +138,11 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void forgotPassword(String email) {
-        if (!userRepository.existsByEmail(email)) {
-            throw new RuntimeException("Không tìm thấy email trong hệ thống");
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy email trong hệ thống"));
+
+        if (user.getStatus() == UserStatus.BANNED || user.getStatus() == UserStatus.REMOVED) {
+            throw new RuntimeException("Tài khoản của bạn đã bị khóa hoặc đã bị xóa. Không thể thao tác.");
         }
 
         // Tạo và lưu OTP vào cache
@@ -152,6 +165,10 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
+        if (user.getStatus() == UserStatus.BANNED || user.getStatus() == UserStatus.REMOVED) {
+            throw new RuntimeException("Tài khoản đang bị khóa hoặc đã xóa. Không thể đặt lại mật khẩu.");
+        }
+
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
@@ -165,6 +182,10 @@ public class AuthServiceImpl implements AuthService {
     public void resendOtp(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản"));
+
+        if (user.getStatus() == UserStatus.BANNED || user.getStatus() == UserStatus.REMOVED) {
+            throw new RuntimeException("Tài khoản đang bị khóa hoặc đã xóa.");
+        }
 
         if (user.isActive()) {
             throw new RuntimeException("Tài khoản này đã được xác minh.");
@@ -205,7 +226,7 @@ public class AuthServiceImpl implements AuthService {
         refreshTokenRepository.save(refreshToken);
 
         // 4b. Tạo Access Token mới
-        String newAccessToken = jwtUtil.generateToken(user.getEmail(), user.getRole());
+        String newAccessToken = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
 
         // 4c. Tạo Refresh Token mới và lưu vào DB
         String newRefreshTokenStr = UUID.randomUUID().toString();

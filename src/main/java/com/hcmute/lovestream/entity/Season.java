@@ -1,9 +1,7 @@
 package com.hcmute.lovestream.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.List;
 
@@ -24,5 +22,7 @@ public class Season {
     private TVSeries tvSeries;
 
     @OneToMany(mappedBy = "season", cascade = CascadeType.ALL)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<Episode> episodes;
 }

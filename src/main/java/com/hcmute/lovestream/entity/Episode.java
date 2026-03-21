@@ -1,10 +1,9 @@
 package com.hcmute.lovestream.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -13,8 +12,9 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Episode {
+    // SỬA Ở ĐÂY: Đổi IDENTITY thành UUID
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     private int episodeNumber;
@@ -30,5 +30,13 @@ public class Episode {
 
     // Các tài nguyên Media riêng cho loại tập phim
     @OneToMany(mappedBy = "episode", cascade = CascadeType.ALL)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<MediaAsset> mediaAssets;
+
+    // THÊM MỚI: 1-N với Comment (Một tập phim có nhiều bình luận)
+    @OneToMany(mappedBy = "episode", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<Comment> comments = new ArrayList<>();
 }
