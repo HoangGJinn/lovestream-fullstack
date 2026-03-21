@@ -11,6 +11,7 @@ import java.util.List;
 @AllArgsConstructor
 public class Season {
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     private int seasonNumber;
