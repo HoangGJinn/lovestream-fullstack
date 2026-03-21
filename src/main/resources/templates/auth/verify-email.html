@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xác nhận Email - LoveStream</title>
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #000; background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.8)), url('https://assets.nflxext.com/ffe/siteui/vlv3/ab180a27-b661-44d7-a6d9-940cb32f2f4a/7fb62e44-31fd-4e1c-bba3-1e7412d4d623/VN-en-20231009-popsignuptwoweeks-perspective_alpha_website_large.jpg'); background-size: cover; color: #fff; display: flex; flex-direction: column; min-height: 100vh; }
+        .header { padding: 20px 50px; }
+        .logo { color: #e50914; font-size: 2.5rem; font-weight: 900; text-decoration: none; display: inline-block; letter-spacing: -1px;}
+        .login-wrapper { display: flex; justify-content: center; align-items: center; flex-grow: 1; padding-bottom: 80px;}
+        .login-box { background-color: rgba(0,0,0,0.85); padding: 60px 68px 40px; border-radius: 4px; width: 100%; max-width: 350px; text-align: center;}
+        .login-box h2 { font-size: 32px; font-weight: 600; margin-top: 0; margin-bottom: 15px; }
+        .description { font-size: 15px; color: #b3b3b3; margin-bottom: 30px; line-height: 1.5;}
+        .highlight-email { color: #fff; font-weight: bold; }
+        .form-control { width: 100%; padding: 16px 20px; border: 0; border-radius: 4px; background: #333; color: #fff; margin-bottom: 16px; box-sizing: border-box; font-size: 24px; text-align: center; letter-spacing: 5px;}
+        .form-control:focus { background: #454545; outline: none; }
+        .btn-login { width: 100%; padding: 16px; font-size: 16px; font-weight: bold; background: #e50914; color: #fff; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px; transition: 0.2s ease;}
+        .btn-login:hover { background: #c11119; }
+        .btn-resend { background: transparent; color: #a3a3a3; border: none; font-size: 15px; margin-top: 25px; cursor: pointer; text-decoration: underline;}
+        .btn-resend:hover { color: #fff; }
+        .btn-resend:disabled { color: #555; text-decoration: none; cursor: not-allowed; }
+        .error-message { color: #e87c03; margin-bottom: 15px; font-size: 14px; display: none; padding: 10px; background: #e87c0333; border-radius: 4px;}
+        .success-message { color: #46d369; margin-bottom: 15px; font-size: 14px; display: none; padding: 10px; background: rgba(70, 211, 105, 0.2); border-radius: 4px;}
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <a href="/" class="logo">LoveStream</a>
+</div>
+
+<div class="login-wrapper">
+    <div class="login-box">
+        <h2>Xác nhận Email</h2>
+        <p class="description">
+            Mã xác nhận gồm 6 chữ số đã được gửi tới <br>
+            <span id="displayEmail" class="highlight-email"></span>
+        </p>
+
+        <div id="error-alert" class="error-message"></div>
+        <div id="success-alert" class="success-message"></div>
+
+        <form id="verifyForm">
+            <input type="text" id="token" class="form-control" placeholder="------" required autocomplete="off" maxlength="6">
+            <button type="submit" class="btn-login" id="submitBtn">Xác nhận</button>
+        </form>
+
+        <button type="button" id="resendBtn" class="btn-resend">Gửi lại mã OTP</button>
+    </div>
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const userEmail = sessionStorage.getItem('verifyEmail');
+    const autoSend = sessionStorage.getItem('autoSend');
+
+    if (userEmail) {
+        document.getElementById('displayEmail').innerText = userEmail;
+    } else {
+        // Nếu truy cập thẳng vào trang này không có email, đẩy về trang login
+        window.location.href = '/login';
+    }
+
+    const errorAlert = document.getElementById('error-alert');
+    const successAlert = document.getElementById('success-alert');
+    const submitBtn = document.getElementById('submitBtn');
+    const resendBtn = document.getElementById('resendBtn');
+
+    if (autoSend === 'true') {
+        sessionStorage.removeItem('autoSend'); // XÓA NGAY LẬP TỨC để F5 không bị gửi lại
+
+        setTimeout(() => {
+            resendBtn.click();
+        }, 500);
+    }
+
+    // Logic Submit mã xác nhận
+    document.getElementById('verifyForm').addEventListener('submit', async function(event) {
+        event.preventDefault();
+        const token = document.getElementById('token').value.trim();
+        errorAlert.style.display = 'none'; successAlert.style.display = 'none';
+        submitBtn.disabled = true; submitBtn.innerText = 'Đang xử lý...';
+
+        try {
+            const response = await fetch('/api/v1/auth/verify-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: token })
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                document.getElementById('verifyForm').style.display = 'none';
+                resendBtn.style.display = 'none';
+                document.querySelector('.description').style.display = 'none';
+                successAlert.innerHTML = `Xác nhận thành công! <br><br> <a href="/login?email=${encodeURIComponent(userEmail)}" style="color: #fff; font-weight:bold;">Nhấn vào đây để Đăng nhập</a>`;
+                successAlert.style.display = 'block';
+            } else {
+                errorAlert.innerText = data.error || 'Mã xác nhận không hợp lệ hoặc đã hết hạn.';
+                errorAlert.style.display = 'block';
+            }
+        } catch (error) {
+            errorAlert.innerText = 'Lỗi kết nối đến máy chủ.';
+            errorAlert.style.display = 'block';
+        } finally {
+            submitBtn.disabled = false; submitBtn.innerText = 'Xác nhận';
+        }
+    });
+
+    // Logic Gửi lại mã (có bộ đếm ngược)
+    resendBtn.addEventListener('click', async function() {
+        resendBtn.disabled = true;
+        errorAlert.style.display = 'none';
+        successAlert.style.display = 'none';
+
+        try {
+            const response = await fetch('/api/v1/auth/resend-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: userEmail })
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                successAlert.innerText = 'Mã mới đã được gửi. Vui lòng kiểm tra email.';
+                successAlert.style.display = 'block';
+                startCountdown(60); // Bắt đầu đếm ngược 60 giây
+            } else {
+                errorAlert.innerText = data.error || 'Lỗi gửi mã.';
+                errorAlert.style.display = 'block';
+                resendBtn.disabled = false;
+            }
+        } catch (error) {
+            errorAlert.innerText = 'Lỗi kết nối.';
+            errorAlert.style.display = 'block';
+            resendBtn.disabled = false;
+        }
+    });
+
+    // Hàm đếm ngược thời gian
+    function startCountdown(seconds) {
+        let counter = seconds;
+        resendBtn.innerText = `Gửi lại sau ${counter}s`;
+        const interval = setInterval(() => {
+            counter--;
+            resendBtn.innerText = `Gửi lại sau ${counter}s`;
+            if (counter <= 0) {
+                clearInterval(interval);
+                resendBtn.innerText = 'Gửi lại mã OTP';
+                resendBtn.disabled = false;
+            }
+        }, 1000);
+    }
+</script>
+</body>
+</html>

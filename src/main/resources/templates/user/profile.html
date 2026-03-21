@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hồ sơ - LoveStream</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/profile.css">
+</head>
+<body>
+
+<div style="height: 70px; display: flex; align-items: center; padding: 0 40px; border-bottom: 1px solid #e5e5e5; background: #fff;">
+    <a href="/home" style="color: #e50914; font-size: 28px; font-weight: 900; text-decoration: none; letter-spacing: -1px;">LoveStream</a>
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png" alt="User" style="width: 32px; border-radius: 4px;">
+    </div>
+</div>
+
+<div class="profile-container">
+
+    <div class="sidebar">
+        <a href="/home" class="logo-link"><i class="fa-solid fa-arrow-left"></i> Quay lại LoveStream</a>
+
+        <ul class="menu-list">
+            <li><a href="/account" class="menu-item"><i class="fa-solid fa-house"></i> Tổng quan</a></li>
+            <li><a href="#" class="menu-item"><i class="fa-regular fa-credit-card"></i> Tư cách thành viên</a></li>
+            <li><a href="#" class="menu-item"><i class="fa-solid fa-shield-halved"></i> Bảo mật</a></li>
+            <li><a href="#" class="menu-item"><i class="fa-solid fa-laptop-mobile"></i> Thiết bị</a></li>
+            <li><a href="/profile" class="menu-item active"><i class="fa-solid fa-users"></i> Hồ sơ</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <h1 class="page-title">Hồ sơ</h1>
+        <p class="page-subtitle">Tính năng kiểm soát và cấp phép của cha mẹ</p>
+
+        <h3 class="section-title">Thiết lập hồ sơ</h3>
+
+        <div class="card-group">
+            <a href="/home" class="card-item">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png" class="profile-avatar" alt="Avatar">
+                <div class="profile-name">minhthum608</div>
+                <span class="badge">Hồ sơ của bạn</span>
+                <i class="fa-solid fa-chevron-right card-arrow"></i>
+            </a>
+
+            <a href="/home" class="card-item">
+                <img src="https://i.pinimg.com/originals/fb/8e/8a/fb8e8a96fca2f049334f31208ce3238c.png" class="profile-avatar" alt="Avatar">
+                <div class="profile-name">Bheoo</div>
+                <i class="fa-solid fa-chevron-right card-arrow"></i>
+            </a>
+
+            <a href="/home" class="card-item">
+                <img src="https://i.pinimg.com/736x/2b/90/0d/2b900d5612554cd0b5ea0786eba5f188.jpg" class="profile-avatar" alt="Avatar">
+                <div class="profile-name">Trẻ em</div>
+                <i class="fa-solid fa-chevron-right card-arrow"></i>
+            </a>
+
+            <button class="btn-add-profile">Thêm hồ sơ</button>
+            <div class="footer-text">Tạo tối đa 5 hồ sơ cho những người sống cùng bạn.</div>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>

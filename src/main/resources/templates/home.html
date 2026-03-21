@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoveStream - Trang chủ</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/home.css">
+    <style>
+        /* CSS Tùy chỉnh Menu Dropdown giống Netflix */
+        .dropdown a { display: flex; align-items: center; gap: 15px; padding: 12px 20px; font-size: 14px; }
+        .dropdown a i { font-size: 18px; color: #b3b3b3; width: 20px; text-align: center; }
+        .dropdown a:hover i { color: #fff; }
+        .dropdown-divider { border-top: 1px solid #333; margin: 2px 0; }
+    </style>
+</head>
+<body>
+
+<div class="navbar" id="navbar">
+    <div class="nav-left">
+        <a href="/" class="logo">LoveStream</a>
+        <ul class="nav-links">
+            <li><a href="#" class="active">Trang chủ</a></li>
+            <li><a href="#">Series</a></li>
+            <li><a href="#">Phim</a></li>
+            <li><a href="#">Mới & Phổ biến</a></li>
+            <li><a href="#">Danh sách của tôi</a></li>
+        </ul>
+    </div>
+    <div class="nav-right">
+        <i class="fa-solid fa-magnifying-glass nav-icon"></i>
+        <i class="fa-regular fa-bell nav-icon"></i>
+        <div class="user-profile">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png" alt="User" class="user-avatar">
+            <i class="fa-solid fa-caret-down nav-icon" style="font-size: 14px;"></i>
+
+            <div class="dropdown">
+                <a href="/home" style="font-size: 16px; font-weight: bold;"><i class="fa-solid fa-arrow-left"></i> Quay lại LoveStream</a>
+                <div class="dropdown-divider"></div>
+                <a href="/account"><i class="fa-regular fa-user"></i> Tài khoản</a>
+                <a href="/profile"><i class="fa-solid fa-pencil"></i> Quản lý hồ sơ</a>
+                <a href="#"><i class="fa-regular fa-circle-question"></i> Trung tâm trợ giúp <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 12px; margin-left: auto;"></i></a>
+                <div class="dropdown-divider"></div>
+                <a href="/profile" style="font-weight: bold;">Chuyển đổi hồ sơ <i class="fa-solid fa-chevron-right" style="margin-left: auto; font-size: 14px;"></i></a>
+                <div class="dropdown-divider"></div>
+                <a href="#" onclick="handleLogout()" style="font-weight: bold; justify-content: center;">Đăng xuất</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="hero">
+    <div class="hero-gradient"></div>
+    <div class="hero-content">
+        <h1 class="movie-title">The Witcher</h1>
+        <p class="movie-desc">
+            Geralt xứ Rivia, một thợ săn quái vật đột biến, dấn thân vào hành trình đi tìm định mệnh của mình trong một thế giới hỗn loạn, nơi mà con người đôi khi còn độc ác hơn cả quái thú.
+        </p>
+        <div class="btn-group">
+            <button class="btn btn-play"><i class="fa-solid fa-play"></i> Phát</button>
+            <button class="btn btn-info"><i class="fa-solid fa-circle-info"></i> Thông tin khác</button>
+        </div>
+    </div>
+</div>
+
+<div class="categories-container">
+    <h2 class="row-title">Đang thịnh hành</h2>
+    <div class="row-posters">
+        <img src="https://image.tmdb.org/t/p/w500/1XDDXPXGiI8id7MrUxK36ke7gkX.jpg" class="row-poster" alt="Movie">
+        <img src="https://image.tmdb.org/t/p/w500/vUUqzWa2LcB5YCT9GI0KjE3P2L4.jpg" class="row-poster" alt="Movie">
+        <img src="https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg" class="row-poster" alt="Movie">
+        <img src="https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg" class="row-poster" alt="Movie">
+        <img src="https://image.tmdb.org/t/p/w500/iwsMu0ehRPbtaSxqiaUDQB9qMWT.jpg" class="row-poster" alt="Movie">
+    </div>
+</div>
+
+<script>
+    window.addEventListener('scroll', () => {
+        const navbar = document.getElementById('navbar');
+        if (window.scrollY > 50) navbar.classList.add('scrolled');
+        else navbar.classList.remove('scrolled');
+    });
+
+    async function handleLogout() {
+        if(confirm('Bạn có chắc chắn muốn đăng xuất khỏi LoveStream?')) {
+            try {
+                const res = await fetch('/api/v1/auth/logout', { method: 'POST' });
+                if(res.ok) window.location.href = '/login';
+            } catch(e) { console.error('Lỗi đăng xuất'); }
+        }
+    }
+</script>
+</body>
+</html>
