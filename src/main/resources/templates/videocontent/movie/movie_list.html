@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoveStream - Danh sach phim</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/home.css">
+    <link rel="stylesheet" href="/css/user-menu.css">
+    <style>
+        .movie-list-page {
+            padding-top: 90px;
+            min-height: 100vh;
+        }
+
+        .movie-list-header {
+            padding: 0 4% 16px;
+        }
+
+        .movie-list-title {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 800;
+        }
+
+        .movie-list-subtitle {
+            margin: 6px 0 0;
+            color: #b3b3b3;
+            font-size: 0.95rem;
+        }
+
+        .movie-filter-form {
+            margin-top: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .movie-filter-label {
+            color: #e5e5e5;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .movie-filter-select {
+            background-color: #111;
+            color: #fff;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 8px 12px;
+            min-width: 260px;
+        }
+
+        .movie-filter-btn {
+            background: #e50914;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .movie-filter-btn:hover {
+            background: #f6121d;
+        }
+
+        .movie-list-page .main-content {
+            margin-top: 0;
+            padding-bottom: 40px;
+        }
+
+        .empty-movies {
+            margin: 16px 4% 0;
+            color: #b3b3b3;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="navbar" id="navbar">
+    <div class="nav-left">
+        <a href="/" class="logo">LoveStream</a>
+        <ul class="nav-links">
+            <li><a href="/home">Trang chu</a></li>
+            <li><a href="/series">Series</a></li>
+            <li><a href="/movies" class="active">Phim</a></li>
+            <li><a href="#">Moi & Pho bien</a></li>
+            <li><a href="#">Danh sach cua toi</a></li>
+        </ul>
+    </div>
+    <div class="nav-right">
+        <i class="fa-solid fa-magnifying-glass nav-icon"></i>
+        <a href="/notifications" class="nav-icon" aria-label="Thong bao"><i class="fa-regular fa-bell"></i></a>
+        <div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>
+    </div>
+</div>
+
+<div class="movie-list-page">
+    <header class="movie-list-header">
+        <h1 class="movie-list-title">Danh sách phim</h1>
+        <p class="movie-list-subtitle">Khám phá bộ sưu tập phim theo phong cách trang chủ.</p>
+
+        <form class="movie-filter-form" method="get" action="/movies">
+            <label class="movie-filter-label" for="sort">Sắp xếp theo</label>
+            <select id="sort" name="sort" class="movie-filter-select">
+                <option value="default" th:selected="${selectedSort == 'default'}">Mặc định (Đề xuất cho bạn)</option>
+                <option value="recommended" th:selected="${selectedSort == 'recommended'}">Đề xuất cho bạn (Recommended for You)</option>
+                <option value="popularity" th:selected="${selectedSort == 'popularity'}">Phổ biến (Popularity / Trending)</option>
+                <option value="newest" th:selected="${selectedSort == 'newest'}">Mới nhất (Release Date)</option>
+                <option value="top_rated" th:selected="${selectedSort == 'top_rated'}">Đánh giá cao (Top Rated)</option>
+                <option value="az" th:selected="${selectedSort == 'az'}">A → Z</option>
+                <option value="za" th:selected="${selectedSort == 'za'}">Z → A</option>
+                <option value="duration_asc" th:selected="${selectedSort == 'duration_asc'}">Thời lượng: ngắn → dài</option>
+                <option value="duration_desc" th:selected="${selectedSort == 'duration_desc'}">Thời lượng: dài → ngắn</option>
+            </select>
+            <button class="movie-filter-btn" type="submit">Áp dụng</button>
+        </form>
+    </header>
+
+    <div class="main-content">
+        <div class="categories-container" th:if="${#lists.isEmpty(movieRows)}">
+            <p class="empty-movies">Chưa có phim để hiển thị.</p>
+        </div>
+
+        <div class="categories-container" th:each="row, rowStat : ${movieRows}">
+<!--            <h2 class="row-title" th:text="|Danh sách phim ${rowStat.count}|"></h2>-->
+            <div class="row-posters">
+                <div class="movie-card" th:id="${movie.id}" th:each="movie : ${row}">
+                    <img th:src="${movie.imagePosterUrl}" class="row-poster" th:alt="${movie.title}">
+                    <div class="movie-title-overlay" th:text="${movie.title}"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.addEventListener('scroll', () => {
+        const navbar = document.getElementById('navbar');
+        if (window.scrollY > 50) navbar.classList.add('scrolled');
+        else navbar.classList.remove('scrolled');
+    });
+</script>
+
+</body>
+</html>
