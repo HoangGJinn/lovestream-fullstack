@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gói dịch vụ - LoveStream</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans:wght@400;600;700;800;900&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/user-menu.css">
+    <link rel="stylesheet" href="/css/packages.css">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="plans-navbar">
+    <a href="/home" class="plans-logo">LoveStream</a>
+    <ul class="plans-nav-links">
+        <li><a href="/home">Trang chủ</a></li>
+        <li><a href="/packages" class="active">Gói dịch vụ</a></li>
+    </ul>
+    <div class="plans-nav-right">
+        <!-- User đã đăng nhập -->
+        <div th:if="${currentUser != null}"
+             th:insert="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}">
+        </div>
+        <!-- Khách chưa đăng nhập -->
+        <div th:if="${currentUser == null}" class="plans-guest-actions">
+            <a href="/login" class="btn-nav-login">Đăng nhập</a>
+        </div>
+    </div>
+</nav>
+
+<!-- HERO -->
+<div class="plans-hero">
+    <div class="plans-hero-content">
+        <h1>Chọn gói phù hợp với bạn</h1>
+        <p>Thưởng thức hàng ngàn bộ phim và series không giới hạn. Hủy bất cứ lúc nào.</p>
+        <div class="plans-hero-badges">
+            <span><i class="fa-solid fa-check"></i> Không quảng cáo</span>
+            <span><i class="fa-solid fa-check"></i> Xem mọi thiết bị</span>
+            <span><i class="fa-solid fa-check"></i> Hủy linh hoạt</span>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="plans-container">
+
+    <!-- Không có gói nào -->
+    <div th:if="${#lists.isEmpty(plans)}" class="plans-empty">
+        <i class="fa-solid fa-box-open plans-empty-icon"></i>
+        <p>Hiện tại chưa có gói dịch vụ</p>
+        <span>Vui lòng quay lại sau</span>
+    </div>
+
+    <!-- Grid các gói -->
+    <div th:if="${not #lists.isEmpty(plans)}" class="plans-grid">
+        <div class="plan-card" th:each="plan, iterStat : ${plans}"
+             th:classappend="${iterStat.index == 1} ? ' plan-card--featured' : ''">
+
+            <!-- Badge "Phổ biến" cho gói ở giữa (mặc định) -->
+            <div th:if="${iterStat.index == 1}" class="plan-badge">Phổ biến nhất</div>
+
+            <div class="plan-card__header">
+                <h2 class="plan-card__name" th:text="${plan.name}">Gói Standard</h2>
+                <div class="plan-card__price">
+                    <span class="plan-card__price-amount" th:text="${plan.formattedPrice}">99.000 ₫</span>
+                    <span class="plan-card__price-period">/ <span th:text="${plan.durationLabel}">1 tháng</span></span>
+                </div>
+            </div>
+
+            <ul class="plan-card__features">
+                <li>
+                    <i class="fa-solid fa-display"></i>
+                    <span>Chất lượng video: <strong th:text="${plan.resolution}">1080p</strong></span>
+                </li>
+                <li>
+                    <i class="fa-solid fa-users"></i>
+                    <span>Xem đồng thời:
+                        <strong th:text="${plan.maxScreens + ' thiết bị'}">2 thiết bị</strong>
+                    </span>
+                </li>
+                <li>
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <span>Thời hạn: <strong th:text="${plan.durationLabel}">1 tháng</strong></span>
+                </li>
+                <li th:if="${plan.description != null and !#strings.isEmpty(plan.description)}">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span th:text="${plan.description}">Mô tả gói</span>
+                </li>
+            </ul>
+
+            <a th:href="@{/packages/{id}(id=${plan.id})}" class="plan-card__btn">
+                Xem chi tiết
+            </a>
+        </div>
+    </div>
+</div>
+<!-- FOOTER chú thích -->
+<footer class="plans-footer">
+    <p>Bạn có thể hủy gói bất cứ lúc nào trước khi kỳ gia hạn. Không hoàn tiền sau khi kích hoạt.</p>
+</footer>
+
+<div th:replace="~{plans/banner :: packageCta(${hasActiveSub}, ${isAuthenticated}, false)}"></div>
+
+</body>
+</html>
