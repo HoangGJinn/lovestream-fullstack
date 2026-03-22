@@ -38,6 +38,10 @@ public abstract class VideoContent {
     @Enumerated(EnumType.STRING)
     private ContentStatus status;
 
+    private Double averageRating = 0.0;
+
+    private int totalRatings = 0;
+
     // N-N Relationship với Genre
     @ManyToMany
     @JoinTable(
