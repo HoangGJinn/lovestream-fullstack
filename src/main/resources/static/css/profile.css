@@ -43,3 +43,56 @@ body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, s
 .btn-add-profile { display: block; width: calc(100% - 40px); margin: 20px; padding: 15px; text-align: center; background-color: #e5e5e5; color: #000; font-weight: bold; font-size: 16px; text-decoration: none; border-radius: 4px; border: none; cursor: pointer; transition: 0.2s; }
 .btn-add-profile:hover { background-color: #d8d8d8; }
 .footer-text { text-align: center; font-size: 12px; color: #666; margin-bottom: 20px; }
+
+/* FORM CHINH SUA HO SO */
+.edit-form-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 24px; max-width: 700px; }
+.edit-form { display: flex; flex-direction: column; gap: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 8px; }
+.form-group label { font-size: 14px; font-weight: 600; color: #333; }
+.form-group input,
+.form-group select {
+	border: 1px solid #d0d0d0;
+	border-radius: 6px;
+	padding: 12px;
+	font-size: 14px;
+	outline: none;
+	transition: border-color 0.2s, box-shadow 0.2s;
+}
+.form-group input:focus,
+.form-group select:focus {
+	border-color: #e50914;
+	box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.12);
+}
+.field-error { margin: 0; color: #b42318; font-size: 13px; }
+
+.success-alert {
+	margin-bottom: 16px;
+	padding: 12px;
+	border-radius: 6px;
+	background: #ecfdf3;
+	border: 1px solid #abefc6;
+	color: #067647;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
+.btn-cancel,
+.btn-save {
+	border-radius: 6px;
+	padding: 10px 16px;
+	text-decoration: none;
+	font-weight: 600;
+	border: none;
+	cursor: pointer;
+	font-size: 14px;
+}
+.btn-cancel { background: #f3f4f6; color: #111827; }
+.btn-save { background: #e50914; color: #fff; }
+.btn-save:hover { background: #c90812; }
+
+@media (max-width: 900px) {
+	.profile-container { flex-direction: column; gap: 24px; margin: 24px auto; }
+	.sidebar { width: 100%; }
+	.edit-form-card { max-width: 100%; }
+}
