@@ -23,7 +23,7 @@
     </div>
     <div class="nav-right">
         <i class="fa-solid fa-magnifying-glass nav-icon"></i>
-        <i class="fa-regular fa-bell nav-icon"></i>
+        <a href="/notifications" class="nav-icon" aria-label="Thong bao"><i class="fa-regular fa-bell"></i></a>
         <div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>
     </div>
 </div>

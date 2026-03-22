@@ -52,7 +52,11 @@ public class VideoContentListWebController {
     }
 
     @GetMapping("/series")
-    public String getSeries(Model model) {
+    public String getSeries(Authentication authentication, Model model) {
+        if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getName())) {
+            model.addAttribute("currentUser", userProfileService.getCurrentUserByEmail(authentication.getName()));
+        }
+
         List<TVSeries> series = tvSeriesRepository.findAll();
 
         List<List<TVSeries>> rows = new ArrayList<>();
