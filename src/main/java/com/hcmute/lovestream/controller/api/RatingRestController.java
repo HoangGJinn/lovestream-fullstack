@@ -5,7 +5,6 @@ import com.hcmute.lovestream.service.rating.RatingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,7 +15,7 @@ import java.security.Principal;
 @RestController
 @RequestMapping("/api/v1/ratings")
 @RequiredArgsConstructor
-public class RatingController {
+public class RatingRestController {
     private final RatingService ratingService;
     @PostMapping
     public ResponseEntity<String> rateMovie(
