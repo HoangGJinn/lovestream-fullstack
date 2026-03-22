@@ -11,4 +11,5 @@ public interface VideoContentRepository extends JpaRepository<VideoContent, Stri
 
     List<VideoContent> findByGenres_Name(String genreName);
 
+
 }
