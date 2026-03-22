@@ -22,7 +22,7 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
     // Thu hồi (Revoke) tất cả token đang hợp lệ của một user cụ thể
     @Modifying
     @Query("UPDATE RefreshToken r SET r.revoked = true WHERE r.user.id = :userId AND r.revoked = false")
-    void revokeAllUserTokens(@Param("userId") Long userId);
+    void revokeAllUserTokens(@Param("userId") String userId);
 
     // Dọn dẹp Database: Xóa các token đã hết hạn hoặc đã bị thu hồi (có thể dùng Cron Job để chạy mỗi ngày)
     @Modifying

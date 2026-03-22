@@ -6,6 +6,7 @@
     <title>Tài khoản - LoveStream</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/css/profile.css">
+    <link rel="stylesheet" href="/css/user-menu.css">
     <style>
         .membership-card { border: 1px solid #e5e5e5; border-radius: 8px; background: #fff; margin-bottom: 30px; overflow: hidden; }
         .membership-badge { background: linear-gradient(90deg, #1e1b4b 0%, #e50914 100%); color: white; padding: 6px 16px; font-size: 13px; font-weight: bold; border-radius: 0 0 8px 0; display: inline-block; margin-bottom: 15px;}
@@ -22,9 +23,7 @@
 
 <div style="height: 70px; display: flex; align-items: center; padding: 0 40px; border-bottom: 1px solid #e5e5e5; background: #fff;">
     <a href="/home" style="color: #e50914; font-size: 28px; font-weight: 900; text-decoration: none; letter-spacing: -1px;">LoveStream</a>
-    <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png" alt="User" style="width: 32px; border-radius: 4px;">
-    </div>
+    <div style="margin-left: auto;" th:insert="~{fragments/user-menu :: userMenu(${currentUser}, 'light')}"></div>
 </div>
 
 <div class="profile-container">
@@ -62,7 +61,7 @@
             <a href="#" class="card-item"><i class="fa-solid fa-box card-icon"></i><div class="card-text-wrapper"><div class="card-title">Thay đổi gói dịch vụ</div></div><i class="fa-solid fa-chevron-right card-arrow"></i></a>
             <a href="#" class="card-item"><i class="fa-regular fa-credit-card card-icon"></i><div class="card-text-wrapper"><div class="card-title">Quản lý phương thức thanh toán</div></div><i class="fa-solid fa-chevron-right card-arrow"></i></a>
             <a href="#" class="card-item"><i class="fa-solid fa-laptop-mobile card-icon"></i><div class="card-text-wrapper"><div class="card-title">Quản lý quyền truy cập và thiết bị</div></div><i class="fa-solid fa-chevron-right card-arrow"></i></a>
-            <a href="#" class="card-item"><i class="fa-solid fa-lock card-icon"></i><div class="card-text-wrapper"><div class="card-title">Cập nhật mật khẩu</div></div><i class="fa-solid fa-chevron-right card-arrow"></i></a>
+            <a href="/account/change-password" class="card-item"><i class="fa-solid fa-lock card-icon"></i><div class="card-text-wrapper"><div class="card-title">Cập nhật mật khẩu</div></div><i class="fa-solid fa-chevron-right card-arrow"></i></a>
             <a href="/profile" class="card-item"><i class="fa-solid fa-users-arrows-right-left card-icon"></i><div class="card-text-wrapper"><div class="card-title">Chuyển hồ sơ</div></div><i class="fa-solid fa-chevron-right card-arrow"></i></a>
             <a href="#" class="card-item"><i class="fa-solid fa-circle-exclamation card-icon"></i><div class="card-text-wrapper"><div class="card-title">Điều chỉnh tính năng kiểm soát của cha mẹ</div></div><i class="fa-solid fa-chevron-right card-arrow"></i></a>
         </div>

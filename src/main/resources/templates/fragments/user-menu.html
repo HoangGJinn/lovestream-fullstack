@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<body>
+<div th:fragment="userMenu(currentUser, mode)" class="user-menu" th:classappend="${mode == 'light'} ? ' user-menu--light' : ' user-menu--dark'">
+    <img
+            th:src="${currentUser != null and currentUser.avatar != null and !#strings.isEmpty(currentUser.avatar) ? currentUser.avatar : 'https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png'}"
+            src="https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png"
+            alt="User"
+            class="user-menu__avatar"
+    >
+    <i class="fa-solid fa-caret-down user-menu__caret"></i>
+
+    <div class="user-menu__dropdown">
+        <a href="/home" class="user-menu__link user-menu__link--headline"><i class="fa-solid fa-arrow-left"></i> Quay lại LoveStream</a>
+        <div class="user-menu__divider"></div>
+        <a href="/account" class="user-menu__link"><i class="fa-regular fa-user"></i> Tài khoản</a>
+        <a href="/profile" class="user-menu__link"><i class="fa-solid fa-pencil"></i> Quản lý hồ sơ</a>
+        <a href="#" class="user-menu__link"><i class="fa-regular fa-circle-question"></i> Trung tâm trợ giúp <i class="fa-solid fa-arrow-up-right-from-square user-menu__external"></i></a>
+        <div class="user-menu__divider"></div>
+        <a href="/profile" class="user-menu__link user-menu__link--headline">Chuyển đổi hồ sơ <i class="fa-solid fa-chevron-right user-menu__chevron"></i></a>
+        <div class="user-menu__divider"></div>
+        <a href="#" onclick="handleLogout(); return false;" class="user-menu__link user-menu__link--center user-menu__link--headline">Đăng xuất</a>
+    </div>
+</div>
+
+<script>
+    async function handleLogout() {
+        if (confirm('Bạn có chắc chắn muốn đăng xuất khỏi LoveStream?')) {
+            try {
+                const res = await fetch('/api/v1/auth/logout', { method: 'POST' });
+                if (res.ok) {
+                    window.location.href = '/login';
+                }
+            } catch (e) {
+                console.error('Lỗi đăng xuất');
+            }
+        }
+    }
+</script>
+</body>
+</html>

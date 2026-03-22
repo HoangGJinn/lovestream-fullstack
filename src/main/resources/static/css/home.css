@@ -14,40 +14,6 @@ body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, s
 
 .nav-right { display: flex; align-items: center; gap: 20px; }
 .nav-icon { color: #fff; font-size: 20px; cursor: pointer; }
-.user-profile { position: relative; display: flex; align-items: center; gap: 10px; cursor: pointer; }
-.user-avatar { width: 32px; height: 32px; border-radius: 4px; }
-
-/* ======================================================= */
-/* ĐÃ SỬA LỖI DROPDOWN TẠI ĐÂY                             */
-/* ======================================================= */
-.dropdown {
-    display: none;
-    position: absolute;
-    top: 100%;
-    right: 0;
-    background-color: rgba(0,0,0,0.9);
-    border: 1px solid #333;
-    padding: 10px 0;
-    min-width: 150px;
-    border-radius: 4px;
-    margin-top: 15px; /* Giữ nguyên margin để menu cách một đoạn đẹp mắt */
-}
-
-/* TẠO CÂY CẦU TÀNG HÌNH ĐỂ GIỮ CHUỘT KHÔNG BỊ RỚT */
-.dropdown::before {
-    content: "";
-    position: absolute;
-    top: -15px; /* Kéo cây cầu lên lấp đầy đúng 15px của margin-top */
-    left: 0;
-    right: 0;
-    height: 15px;
-    background-color: transparent;
-}
-
-.user-profile:hover .dropdown { display: block; }
-.dropdown a { color: #fff; text-decoration: none; font-size: 13px; display: block; padding: 10px 20px; }
-.dropdown a:hover { text-decoration: underline; }
-/* ======================================================= */
 
 /* HERO SECTION */
 .hero { position: relative; height: 90vh; min-height: 600px; display: flex; align-items: center; padding: 0 4%; background-image: url('https://image.tmdb.org/t/p/original/9n2tDcwV2b3dD4B1r7z6Xn1pW4S.jpg'); background-size: cover; background-position: center top; }
@@ -64,11 +30,81 @@ body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, s
 .btn-info { background-color: rgba(109, 109, 110, 0.7); color: #fff; }
 .btn-info:hover { background-color: rgba(109, 109, 110, 0.4); }
 
-/* DANH MỤC PHIM (SLIDERS) */
-.categories-container { margin-top: -80px; position: relative; z-index: 3; padding-bottom: 50px; }
-.row-title { font-size: 1.4vw; color: #e5e5e5; margin: 0 4% 10px; font-weight: bold; }
-.row-posters { display: flex; overflow-y: hidden; overflow-x: scroll; padding: 20px 4%; scroll-behavior: smooth; gap: 10px;}
-.row-posters::-webkit-scrollbar { display: none; }
 
-.row-poster { width: 250px; object-fit: contain; border-radius: 4px; transition: transform 0.4s; cursor: pointer; }
-.row-poster:hover { transform: scale(1.08); z-index: 5; }
+/* =========================================
+   DANH MỤC PHIM (CẬP NHẬT HIỆU ỨNG HOVER)
+   ========================================= */
+
+/* Bọc toàn bộ các danh mục phim */
+.main-content {
+    position: relative;
+    z-index: 3;
+    margin-top: -120px; /* Kéo dòng phim đầu tiên lên đè vào ảnh Hero */
+    padding-bottom: 50px;
+}
+
+.categories-container {
+    padding-bottom: 40px;
+}
+
+.row-title {
+    font-size: 1.4vw;
+    color: #e5e5e5;
+    margin: 0 4% 10px;
+    font-weight: bold;
+}
+
+.row-posters {
+    display: flex;
+    overflow-y: visible; /* QUAN TRỌNG: Phải để visible để ảnh phóng to không bị cắt xén */
+    overflow-x: scroll;
+    padding: 20px 4%;
+    scroll-behavior: smooth;
+    gap: 15px;
+}
+.row-posters::-webkit-scrollbar { display: none; } /* Ẩn thanh cuộn ngang */
+
+/* Thẻ bọc ngoài Poster và Tên phim */
+.movie-card {
+    position: relative;
+    flex: 0 0 auto; /* Tránh ảnh bị bóp méo khi cuộn ngang */
+    border-radius: 4px;
+    overflow: hidden; /* Cắt bỏ phần tên phim nằm chờ ở ngoài thẻ */
+    cursor: pointer;
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+.row-poster {
+    width: 250px;
+    height: 375px; /* Ép tỷ lệ ảnh đẹp nhất cho poster phim 2:3 */
+    object-fit: cover; /* Thay vì contain, dùng cover để lấp đầy khung viền */
+    display: block;
+}
+
+/* Lớp phủ chứa Tên phim (Bình thường sẽ bị ẩn xuống dưới) */
+.movie-title-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 30px 10px 15px;
+    background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 60%, transparent 100%);
+    color: #fff;
+    font-size: 15px;
+    font-weight: bold;
+    text-align: center;
+    box-sizing: border-box;
+    transform: translateY(100%); /* Giấu lớp phủ này tuột xuống dưới đáy */
+    transition: transform 0.4s ease; /* Hiệu ứng trượt lên mượt mà */
+}
+
+/* KHI HOVER CHUỘT VÀO THẺ PHIM */
+.movie-card:hover {
+    transform: scale(1.08); /* Phóng to thẻ phim */
+    z-index: 5;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.7); /* Thêm bóng đổ cho phim nổi lên */
+}
+
+.movie-card:hover .movie-title-overlay {
+    transform: translateY(0); /* Trượt tên phim lên lại vị trí ban đầu */
+}

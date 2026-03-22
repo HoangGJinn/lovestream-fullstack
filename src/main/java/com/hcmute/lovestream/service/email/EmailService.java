@@ -47,6 +47,16 @@ public class EmailService {
     }
 
     /**
+     * Gửi email xác nhận đổi mật khẩu + link dự phòng có hạn 1 ngày
+     */
+    @Async
+    public void sendPasswordChangedEmail(String toEmail, String backupLink) {
+        String subject = "Xác nhận thay đổi mật khẩu LoveStream";
+        String htmlContent = buildPasswordChangedTemplate(backupLink);
+        sendHtmlEmail(toEmail, subject, htmlContent);
+    }
+
+    /**
      * Hàm dùng chung để gửi email HTML
      */
     private void sendHtmlEmail(String to, String subject, String htmlBody) {
@@ -78,6 +88,24 @@ public class EmailService {
                 + otp
                 + "</div>"
                 + "<p style=\"color: #737373; font-size: 12px;\">Nếu bạn không yêu cầu mã này, vui lòng bỏ qua email này. Tài khoản của bạn vẫn an toàn.</p>"
+                + "</div>"
+                + "</div>";
+    }
+
+    private String buildPasswordChangedTemplate(String backupLink) {
+        return "<div style=\"font-family: Arial, sans-serif; background-color: #141414; color: #ffffff; padding: 40px 20px; text-align: center;\">"
+                + "<div style=\"max-width: 560px; margin: auto; background-color: #000000; padding: 30px; border-radius: 8px; border: 1px solid #333;\">"
+                + "<h1 style=\"color: #e50914; margin-bottom: 20px; font-weight: 900; letter-spacing: -1px;\">LoveStream</h1>"
+                + "<h2 style=\"color: #ffffff; font-size: 22px; margin-bottom: 10px;\">Mật khẩu của bạn đã được thay đổi</h2>"
+                + "<p style=\"color: #b3b3b3; font-size: 15px; line-height: 1.6; margin-bottom: 24px;\">"
+                + "Nếu đây là bạn thực hiện, không cần thao tác thêm. Nếu bạn cần thay đổi lại mật khẩu nhưng không nhớ mật khẩu cũ, hãy dùng link dự phòng bên dưới (hiệu lực trong 1 ngày)."
+                + "</p>"
+                + "<a href=\"" + backupLink + "\" style=\"display: inline-block; background-color: #e50914; color: #fff; text-decoration: none; padding: 12px 18px; border-radius: 4px; font-weight: bold; margin-bottom: 18px;\">"
+                + "Thay đổi lại mật khẩu"
+                + "</a>"
+                + "<p style=\"color: #8f8f8f; font-size: 12px; line-height: 1.5; word-break: break-all;\">"
+                + "Hoặc mở trực tiếp link này: " + backupLink
+                + "</p>"
                 + "</div>"
                 + "</div>";
     }
