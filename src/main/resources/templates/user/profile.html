@@ -6,14 +6,13 @@
     <title>Hồ sơ - LoveStream</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/css/profile.css">
+    <link rel="stylesheet" href="/css/user-menu.css">
 </head>
 <body>
 
 <div style="height: 70px; display: flex; align-items: center; padding: 0 40px; border-bottom: 1px solid #e5e5e5; background: #fff;">
     <a href="/home" style="color: #e50914; font-size: 28px; font-weight: 900; text-decoration: none; letter-spacing: -1px;">LoveStream</a>
-    <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png" alt="User" style="width: 32px; border-radius: 4px;">
-    </div>
+    <div style="margin-left: auto;" th:insert="~{fragments/user-menu :: userMenu(${currentUser}, 'light')}"></div>
 </div>
 
 <div class="profile-container">
@@ -37,9 +36,14 @@
         <h3 class="section-title">Thiết lập hồ sơ</h3>
 
         <div class="card-group">
-            <a href="/home" class="card-item">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png" class="profile-avatar" alt="Avatar">
-                <div class="profile-name">minhthum608</div>
+            <a href="/profile/edit" class="card-item">
+                <img
+                        th:src="${currentUser.avatar != null and !#strings.isEmpty(currentUser.avatar) ? currentUser.avatar : 'https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png'}"
+                        src="https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png"
+                        class="profile-avatar"
+                        alt="Avatar"
+                >
+                <div class="profile-name" th:text="${currentUser.fullName}">Tên người dùng</div>
                 <span class="badge">Hồ sơ của bạn</span>
                 <i class="fa-solid fa-chevron-right card-arrow"></i>
             </a>

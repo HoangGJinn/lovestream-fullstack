@@ -1,0 +1,89 @@
+.user-menu {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding-bottom: 14px;
+    margin-bottom: -14px;
+}
+
+.user-menu__avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    object-fit: cover;
+}
+
+.user-menu__caret {
+    font-size: 14px;
+}
+
+.user-menu--dark .user-menu__caret {
+    color: #fff;
+}
+
+.user-menu--light .user-menu__caret {
+    color: #111;
+}
+
+.user-menu__dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% - 1px);
+    right: 0;
+    margin-top: 0;
+    min-width: 290px;
+    border-radius: 4px;
+    border: 1px solid #333;
+    background: rgba(0, 0, 0, 0.96);
+    z-index: 999;
+    overflow: hidden;
+}
+
+.user-menu:hover .user-menu__dropdown {
+    display: block;
+}
+
+.user-menu__link {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px 20px;
+    color: #fff;
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.user-menu__link i {
+    width: 20px;
+    text-align: center;
+    font-size: 18px;
+    color: #b3b3b3;
+}
+
+.user-menu__link:hover {
+    text-decoration: underline;
+}
+
+.user-menu__link:hover i {
+    color: #fff;
+}
+
+.user-menu__divider {
+    border-top: 1px solid #333;
+}
+
+.user-menu__link--headline {
+    font-weight: 700;
+}
+
+.user-menu__link--center {
+    justify-content: center;
+}
+
+.user-menu__external,
+.user-menu__chevron {
+    margin-left: auto;
+    font-size: 12px;
+}

@@ -7,7 +7,9 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "video_content")
@@ -38,7 +40,7 @@ public abstract class VideoContent {
     @Enumerated(EnumType.STRING)
     private ContentStatus status;
 
-    // N-N Relationship với Genre
+    // Đổi từ List sang Set
     @ManyToMany
     @JoinTable(
             name = "video_content_genre",
@@ -47,7 +49,7 @@ public abstract class VideoContent {
     )
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private List<Genre> genres;
+    private Set<Genre> genres = new HashSet<>();
 
     // 1-N với ContentCredit
     @OneToMany(mappedBy = "videoContent", cascade = CascadeType.ALL)
@@ -83,6 +85,19 @@ public abstract class VideoContent {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private List<FavoriteList> favoritedByUsers = new ArrayList<>();
+
+    // Hàm này không lưu xuống Database, chỉ dùng để hỗ trợ Thymeleaf lấy ảnh Poster ra giao diện
+    @Transient
+    public String getPosterUrl() {
+        if (this.mediaAssets != null) {
+            for (MediaAsset asset : this.mediaAssets) {
+                if (asset.getAssetType() == com.hcmute.lovestream.entity.enums.AssetType.POSTER) {
+                    return asset.getAssetUrl();
+                }
+            }
+        }
+        return "https://via.placeholder.com/300x450?text=No+Poster"; // Ảnh mặc định nếu phim chưa có poster
+    }
 
     public abstract void getDetails(); // Khai báo method như trong UML
 
