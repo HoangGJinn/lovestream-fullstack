@@ -1,12 +1,3 @@
-/* ============================================================
-   LOVESTREAM — packages.css
-   Gộp từ: plans.css + package-cta.css
-   Phạm vi: Trang gói dịch vụ (List + Detail) + CTA (banner + floating)
-   ============================================================ */
-
-/* ------------------------------
-   RESET / BASE
-   ------------------------------ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
@@ -14,6 +5,113 @@ body {
     color: #e5e5e5;
     font-family: 'Inter', 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
     min-height: 100vh;
+}
+
+
+/* ==============================
+   PACKAGE CTA (HOME HERO)
+   - Must NEVER overlay/cover hero poster
+   - Stay in normal document flow inside .hero-content
+   ============================== */
+.hero .package-cta {
+    margin: 14px 0 16px;
+    max-width: 640px;
+    width: 100%;
+}
+
+.hero .package-banner {
+    max-width: 640px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(229,9,20,.22) 0%, rgba(0,0,0,.55) 55%, rgba(0,0,0,.35) 100%);
+    border: 1px solid rgba(255,255,255,.10);
+    box-shadow: 0 14px 34px rgba(0,0,0,.42);
+    backdrop-filter: blur(10px);
+}
+
+.hero .package-banner__content {
+    min-width: 0;
+}
+
+.hero .package-banner__title {
+    font-weight: 900;
+    font-size: 16px;
+    letter-spacing: .2px;
+    color: #fff;
+    margin-bottom: 4px;
+}
+
+.hero .package-banner__desc {
+    color: rgba(255,255,255,.82);
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.hero .package-banner__actions {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.hero .package-banner__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 999px;
+    text-decoration: none;
+    color: #fff;
+    font-weight: 800;
+    font-size: 14px;
+    background: linear-gradient(90deg, #e50914 0%, #ff3d2e 100%);
+    box-shadow: 0 10px 22px rgba(229,9,20,.28);
+    border: 1px solid rgba(255,255,255,.10);
+    transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+    white-space: nowrap;
+}
+
+.hero .package-banner__btn {
+    margin-left: auto;
+}
+
+.hero .package-banner__btn:hover {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 16px 30px rgba(229,9,20,.34);
+    filter: brightness(1.05);
+}
+
+.hero .package-banner__btn--active {
+    background: linear-gradient(90deg, #1f1f1f 0%, #111 100%);
+    box-shadow: 0 10px 22px rgba(0,0,0,.35);
+    border-color: rgba(255,255,255,.18);
+}
+
+.hero .package-banner__btn--active i { color: #f5c542; }
+
+@media (max-width: 768px) {
+    .hero .package-banner {
+        max-width: 100%;
+        padding: 12px 12px;
+    }
+    .hero .package-banner__title { font-size: 15px; }
+    .hero .package-banner__desc { font-size: 12px; }
+    .hero .package-banner__btn {
+        padding: 9px 12px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero .package-cta { margin: 12px 0 14px; }
+    .hero .package-banner__desc { display: none; }
 }
 
 /* ------------------------------

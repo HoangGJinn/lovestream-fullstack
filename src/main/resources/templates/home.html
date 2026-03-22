@@ -43,7 +43,7 @@
         <p class="movie-desc">
             Geralt xứ Rivia, một thợ săn quái vật đột biến, dấn thân vào hành trình đi tìm định mệnh của mình trong một thế giới hỗn loạn, nơi mà con người đôi khi còn độc ác hơn cả quái thú.
         </p>
-        <div th:replace="~{plans/banner :: packageCta(${hasActiveSub}, ${isAuthenticated}, true)}"></div>
+        <div th:replace="~{plans/banner :: packageCta(${hasActiveSub}, ${isAuthenticated}, false)}"></div>
         <div class="btn-group">
             <button class="btn btn-play"><i class="fa-solid fa-play"></i> Phát</button>
             <button class="btn btn-info"><i class="fa-solid fa-circle-info"></i> Thông tin khác</button>

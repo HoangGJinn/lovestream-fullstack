@@ -2,7 +2,6 @@ package com.hcmute.lovestream.controller.web;
 
 import com.hcmute.lovestream.dto.request.VideoContentSearchRequest;
 import com.hcmute.lovestream.dto.response.VideoContentSearchResponse;
-import com.hcmute.lovestream.entity.Genre;
 import com.hcmute.lovestream.entity.VideoContent;
 import com.hcmute.lovestream.repository.GenreRepository;
 import com.hcmute.lovestream.service.videocontent.VideoContentSearchService;
@@ -17,8 +16,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.Optional;
-import java.util.Comparator;
-import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
@@ -55,13 +52,9 @@ public class VideoContentWebController {
         VideoContentSearchRequest request = toSearchRequest(keyword, genre, year, country, type, season, page, size);
         VideoContentSearchResponse response = videoContentSearchService.searchVideoContents(request);
 
-        List<Genre> genres = genreRepository.findAll().stream()
-                .sorted(Comparator.comparing(g -> g.getName() == null ? "" : g.getName().toLowerCase()))
-                .toList();
-
         model.addAttribute("searchRequest", request);
         model.addAttribute("searchResponse", response);
-        model.addAttribute("genres", genres);
+        model.addAttribute("genres", genreRepository.findAll());
         return "videocontent/search";
     }
 

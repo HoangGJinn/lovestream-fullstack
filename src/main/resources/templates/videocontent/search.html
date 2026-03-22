@@ -44,7 +44,7 @@
 <div class="search-page">
     <div class="search-summary">
         <h1 th:if="${searchRequest.keyword != null and !#strings.isEmpty(searchRequest.keyword)}"
-            th:text="|Kết quả cho: '${searchRequest.keyword}'|">Kết quả cho</h1>
+            th:text="${'Kết quả cho: ' + searchRequest.keyword}">Kết quả cho</h1>
         <h1 th:if="${searchRequest.keyword == null or #strings.isEmpty(searchRequest.keyword)}">Khám phá phim và series</h1>
         <p th:text="${searchResponse.totalResults + ' kết quả được tìm thấy'}">0 kết quả được tìm thấy</p>
         <div class="search-recent" id="recentSearches"></div>
@@ -60,8 +60,8 @@
                 <option th:each="g : ${genres}"
                         th:value="${g.name}"
                         th:text="${g.name}"
-                        th:selected="${searchRequest.genre != null and searchRequest.genre == g.name}">
-                    Action
+                        th:selected="${searchRequest.genre == g.name}">
+                    Genre
                 </option>
             </select>
         </label>
