@@ -6,13 +6,7 @@
     <title>LoveStream - Trang chủ</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/css/home.css">
-    <style>
-        /* CSS Tùy chỉnh Menu Dropdown giống Netflix */
-        .dropdown a { display: flex; align-items: center; gap: 15px; padding: 12px 20px; font-size: 14px; }
-        .dropdown a i { font-size: 18px; color: #b3b3b3; width: 20px; text-align: center; }
-        .dropdown a:hover i { color: #fff; }
-        .dropdown-divider { border-top: 1px solid #333; margin: 2px 0; }
-    </style>
+    <link rel="stylesheet" href="/css/user-menu.css">
 </head>
 <body>
 
@@ -30,22 +24,7 @@
     <div class="nav-right">
         <i class="fa-solid fa-magnifying-glass nav-icon"></i>
         <i class="fa-regular fa-bell nav-icon"></i>
-        <div class="user-profile">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png" alt="User" class="user-avatar">
-            <i class="fa-solid fa-caret-down nav-icon" style="font-size: 14px;"></i>
-
-            <div class="dropdown">
-                <a href="/home" style="font-size: 16px; font-weight: bold;"><i class="fa-solid fa-arrow-left"></i> Quay lại LoveStream</a>
-                <div class="dropdown-divider"></div>
-                <a href="/account"><i class="fa-regular fa-user"></i> Tài khoản</a>
-                <a href="/profile"><i class="fa-solid fa-pencil"></i> Quản lý hồ sơ</a>
-                <a href="#"><i class="fa-regular fa-circle-question"></i> Trung tâm trợ giúp <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 12px; margin-left: auto;"></i></a>
-                <div class="dropdown-divider"></div>
-                <a href="/profile" style="font-weight: bold;">Chuyển đổi hồ sơ <i class="fa-solid fa-chevron-right" style="margin-left: auto; font-size: 14px;"></i></a>
-                <div class="dropdown-divider"></div>
-                <a href="#" onclick="handleLogout()" style="font-weight: bold; justify-content: center;">Đăng xuất</a>
-            </div>
-        </div>
+        <div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>
     </div>
 </div>
 
@@ -63,32 +42,57 @@
     </div>
 </div>
 
-<div class="categories-container">
-    <h2 class="row-title">Đang thịnh hành</h2>
-    <div class="row-posters">
-        <img src="https://image.tmdb.org/t/p/w500/1XDDXPXGiI8id7MrUxK36ke7gkX.jpg" class="row-poster" alt="Movie">
-        <img src="https://image.tmdb.org/t/p/w500/vUUqzWa2LcB5YCT9GI0KjE3P2L4.jpg" class="row-poster" alt="Movie">
-        <img src="https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg" class="row-poster" alt="Movie">
-        <img src="https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg" class="row-poster" alt="Movie">
-        <img src="https://image.tmdb.org/t/p/w500/iwsMu0ehRPbtaSxqiaUDQB9qMWT.jpg" class="row-poster" alt="Movie">
+<div class="main-content">
+
+    <div class="categories-container" th:if="${not #lists.isEmpty(actionMovies)}">
+        <h2 class="row-title">Hành Động Kịch Tính</h2>
+        <div class="row-posters">
+            <div class="movie-card" th:each="movie : ${actionMovies}">
+                <img th:src="${movie.getPosterUrl()}" class="row-poster" th:alt="${movie.title}">
+                <div class="movie-title-overlay" th:text="${movie.title}"></div>
+            </div>
+        </div>
     </div>
+
+    <div class="categories-container" th:if="${not #lists.isEmpty(dramaMovies)}">
+        <h2 class="row-title">Tâm Lý & Tình Cảm</h2>
+        <div class="row-posters">
+            <div class="movie-card" th:each="movie : ${dramaMovies}">
+                <img th:src="${movie.getPosterUrl()}" class="row-poster" th:alt="${movie.title}">
+                <div class="movie-title-overlay" th:text="${movie.title}"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="categories-container" th:if="${not #lists.isEmpty(comedyMovies)}">
+        <h2 class="row-title">Hài Hước Giải Trí</h2>
+        <div class="row-posters">
+            <div class="movie-card" th:each="movie : ${comedyMovies}">
+                <img th:src="${movie.getPosterUrl()}" class="row-poster" th:alt="${movie.title}">
+                <div class="movie-title-overlay" th:text="${movie.title}"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="categories-container" th:if="${not #lists.isEmpty(sciFiMovies)}">
+        <h2 class="row-title">Khoa Học Viễn Tưởng</h2>
+        <div class="row-posters">
+            <div class="movie-card" th:each="movie : ${sciFiMovies}">
+                <img th:src="${movie.getPosterUrl()}" class="row-poster" th:alt="${movie.title}">
+                <div class="movie-title-overlay" th:text="${movie.title}"></div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <script>
+    // Hiệu ứng đổi màu Navbar khi cuộn trang
     window.addEventListener('scroll', () => {
         const navbar = document.getElementById('navbar');
         if (window.scrollY > 50) navbar.classList.add('scrolled');
         else navbar.classList.remove('scrolled');
     });
-
-    async function handleLogout() {
-        if(confirm('Bạn có chắc chắn muốn đăng xuất khỏi LoveStream?')) {
-            try {
-                const res = await fetch('/api/v1/auth/logout', { method: 'POST' });
-                if(res.ok) window.location.href = '/login';
-            } catch(e) { console.error('Lỗi đăng xuất'); }
-        }
-    }
 </script>
 </body>
 </html>
