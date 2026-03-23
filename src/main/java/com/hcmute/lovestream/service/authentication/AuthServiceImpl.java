@@ -132,6 +132,7 @@ public class AuthServiceImpl implements AuthService {
         Map<String, String> tokens = new HashMap<>();
         tokens.put("accessToken", accessToken);
         tokens.put("refreshToken", refreshTokenString);
+        tokens.put("role", user.getRole().name());
 
         return tokens;
     }

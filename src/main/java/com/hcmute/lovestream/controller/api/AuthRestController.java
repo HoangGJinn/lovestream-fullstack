@@ -31,7 +31,7 @@ public class AuthRestController {
 
     // UC2: Xác nhận Email
     @PostMapping("/verify-email")
-    public ResponseEntity<?> verifyEmail(@Valid @RequestBody VerifyEmail request) { // Đã đổi sang dùng DTO
+    public ResponseEntity<?> verifyEmail(@Valid @RequestBody VerifyEmail request) {
         try {
             authService.verifyEmail(request.getToken());
             return ResponseEntity.ok(Map.of("message", "Xác nhận email thành công. Bạn có thể đăng nhập."));
@@ -44,14 +44,13 @@ public class AuthRestController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody Login request, HttpServletResponse response) {
         try {
-            // Lấy Map chứa cả 2 token từ Service
+            // Lấy Map chứa token (và Role) từ Service
             Map<String, String> tokens = authService.login(request);
 
-            // 1. Nhét Access Token vào Cookie (Tên cookie trùng với cấu hình trong JwtUtil)
+            // 1. Nhét Access Token vào Cookie
             Cookie accessCookie = new Cookie("JWT_TOKEN", tokens.get("accessToken"));
             accessCookie.setHttpOnly(true);
             accessCookie.setPath("/");
-            // Ở properties bạn để 86400000ms (1 ngày). Cookie tính bằng giây nên chia cho 1000
             accessCookie.setMaxAge(86400);
             response.addCookie(accessCookie);
 
@@ -59,13 +58,16 @@ public class AuthRestController {
             Cookie refreshCookie = new Cookie("REFRESH_TOKEN", tokens.get("refreshToken"));
             refreshCookie.setHttpOnly(true);
             refreshCookie.setPath("/");
-            // Ở properties bạn để 604800000ms (7 ngày) -> 604800 giây
             refreshCookie.setMaxAge(604800);
             response.addCookie(refreshCookie);
 
+            // 3. KIỂM TRA ROLE VÀ ĐIỀU HƯỚNG URL (Phần đã được sửa)
+            String role = tokens.getOrDefault("role", "USER"); // Lấy role từ Map ra, mặc định là USER nếu không thấy
+            String targetUrl = role.equals("ADMIN") ? "/admin/dashboard" : "/home"; // Nếu là Admin thì đi đường khác
+
             return ResponseEntity.ok(Map.of(
                     "message", "Đăng nhập thành công",
-                    "redirectUrl", "/home"
+                    "redirectUrl", targetUrl // Nhét targetUrl động vào thay vì fix cứng "/home"
             ));
         } catch (Exception e) {
             if ("Tài khoản chưa được xác minh email".equals(e.getMessage())) {
@@ -80,7 +82,7 @@ public class AuthRestController {
 
     // UC4: Quên mật khẩu (Gửi email)
     @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPassword request) { // Đã đổi sang dùng DTO
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPassword request) {
         try {
             authService.forgotPassword(request.getEmail());
             return ResponseEntity.ok(Map.of("message", "Mã xác nhận đã được gửi đến email."));
@@ -106,19 +108,16 @@ public class AuthRestController {
             @CookieValue(name = "REFRESH_TOKEN", required = false) String refreshToken,
             HttpServletResponse response) {
 
-        // 1. Revoke Refresh Token trong Database (nếu có)
         if (refreshToken != null && !refreshToken.isBlank()) {
             authService.logout(refreshToken);
         }
 
-        // 2. Xóa Cookie JWT_TOKEN
         Cookie jwtCookie = new Cookie("JWT_TOKEN", null);
         jwtCookie.setHttpOnly(true);
         jwtCookie.setPath("/");
         jwtCookie.setMaxAge(0);
         response.addCookie(jwtCookie);
 
-        // 3. Xóa Cookie REFRESH_TOKEN
         Cookie refreshCookie = new Cookie("REFRESH_TOKEN", null);
         refreshCookie.setHttpOnly(true);
         refreshCookie.setPath("/");
@@ -143,23 +142,19 @@ public class AuthRestController {
             @CookieValue(name = "REFRESH_TOKEN", required = false) String refreshTokenString,
             HttpServletResponse response) {
 
-        // Kiểm tra xem Cookie có tồn tại Refresh Token không
         if (refreshTokenString == null || refreshTokenString.isEmpty()) {
             return ResponseEntity.status(401).body(Map.of("error", "Không tìm thấy Refresh Token. Vui lòng đăng nhập lại."));
         }
 
         try {
-            // Gọi xuống Service — trả về cả Access Token mới lẫn Refresh Token mới (token rotation)
             Map<String, String> tokens = authService.refreshToken(refreshTokenString);
 
-            // Ghi đè Access Token mới vào Cookie
             Cookie accessCookie = new Cookie("JWT_TOKEN", tokens.get("accessToken"));
             accessCookie.setHttpOnly(true);
             accessCookie.setPath("/");
             accessCookie.setMaxAge(86400);
             response.addCookie(accessCookie);
 
-            // Ghi đè Refresh Token mới vào Cookie (token rotation)
             Cookie refreshCookie = new Cookie("REFRESH_TOKEN", tokens.get("refreshToken"));
             refreshCookie.setHttpOnly(true);
             refreshCookie.setPath("/");
@@ -169,7 +164,6 @@ public class AuthRestController {
             return ResponseEntity.ok(Map.of("message", "Đã gia hạn phiên đăng nhập thành công"));
 
         } catch (Exception e) {
-            // Nếu Refresh Token lỗi, hết hạn hoặc bị thu hồi -> Báo lỗi 401 để Client đá về trang Login
             return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
         }
     }
