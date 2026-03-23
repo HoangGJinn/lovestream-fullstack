@@ -41,6 +41,8 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/plans", "/plans/**", "/packages", "/packages/**").permitAll()
                     // Tìm kiếm nội dung: cho phép khách truy cập
                     .requestMatchers("/videocontents", "/videocontents/**").permitAll()
+                    // Trang phim chi tiet/danh sach: cho phép khách truy cập
+                    .requestMatchers("/movies", "/movies/**").permitAll()
 
                         // CÁC TRANG CÒN LẠI BẮT BUỘC PHẢI ĐĂNG NHẬP
                         .anyRequest().authenticated()

@@ -128,10 +128,10 @@
         <div class="categories-container" th:each="row, rowStat : ${movieRows}">
 <!--            <h2 class="row-title" th:text="|Danh sách phim ${rowStat.count}|"></h2>-->
             <div class="row-posters">
-                <div class="movie-card" th:id="${movie.id}" th:each="movie : ${row}">
+                <a class="movie-card" th:id="${movie.id}" th:each="movie : ${row}" th:href="@{/movies/{id}(id=${movie.id})}">
                     <img th:src="${movie.imagePosterUrl}" class="row-poster" th:alt="${movie.title}">
                     <div class="movie-title-overlay" th:text="${movie.title}"></div>
-                </div>
+                </a>
             </div>
         </div>
     </div>

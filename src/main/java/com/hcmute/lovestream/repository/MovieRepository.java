@@ -5,10 +5,13 @@ import com.hcmute.lovestream.entity.enums.ContentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 import java.util.List;
 
 @Repository
 public interface MovieRepository extends JpaRepository<Movie, String> {
+	Optional<Movie> findByIdAndStatus(String id, ContentStatus status);
 
     // 1. Danh sách tất cả phim lẻ (Sắp xếp A-Z)
     List<Movie> findAllByOrderByTitleAsc();
