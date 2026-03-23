@@ -29,6 +29,12 @@ body { margin: 0; padding: 0; font-family: 'Inter', 'Noto Sans', 'Helvetica Neue
     border: none;
     background: transparent;
     padding: 0;
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
 }
 
 .nav-search-input {
