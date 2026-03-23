@@ -33,10 +33,13 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Cho phép các trang đăng nhập/đăng ký/css/hình ảnh không cần đăng nhập
-                    .requestMatchers("/api/v1/auth/**", "/login", "/register", "/forgot-password", "/verify-email", "/css/**", "/js/**", "/images/**").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/account/change-password/backup").permitAll()
-                    .requestMatchers(HttpMethod.POST, "/api/v1/password/backup-change").permitAll()
+                        // ĐÃ SỬA: Thêm "/error" vào cuối danh sách này để Spring Boot có thể báo lỗi Validation
+                        .requestMatchers("/api/v1/auth/**", "/login", "/register", "/forgot-password", "/verify-email", "/css/**", "/js/**", "/images/**", "/error").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/account/change-password/backup").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/password/backup-change").permitAll()
+
+                        // ĐÃ SỬA: Bảo vệ đường dẫn của Admin (Chỉ ADMIN mới được vào)
+                        .requestMatchers("/admin/**", "/api/v1/admin/**").hasAnyAuthority("ROLE_ADMIN", "ADMIN")
 
                         // CÁC TRANG CÒN LẠI BẮT BUỘC PHẢI ĐĂNG NHẬP
                         .anyRequest().authenticated()

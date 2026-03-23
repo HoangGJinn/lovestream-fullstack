@@ -142,8 +142,9 @@
         <a href="/admin/users">Quản lý Người dùng</a>
         <a href="/admin/plans">Quản lý Gói dịch vụ</a>
         <a href="/admin/vouchers">Quản lý Voucher</a>
-        <a href="#" onclick="document.getElementById('logoutForm').submit()" style="margin-top: 50px; color: var(--netflix-red);">Đăng xuất</a>
-        <form id="logoutForm" action="/api/v1/auth/logout" method="POST" style="display: none;"></form>
+        <a href="/admin/vouchers">Quản lý Giao dịch</a>
+
+        <a href="#" onclick="handleAdminLogout(event)" style="margin-top: 50px; color: var(--netflix-red);">Đăng xuất</a>
     </div>
 </div>
 
@@ -231,7 +232,7 @@
                 backgroundColor: 'rgba(229, 9, 20, 0.1)',
                 borderWidth: 3,
                 fill: true,
-                tension: 0.4 // Làm cong đường nối
+                tension: 0.4
             }]
         },
         options: {
@@ -259,9 +260,28 @@
             plugins: {
                 legend: { position: 'right', labels: { color: '#b3b3b3' } }
             },
-            cutout: '70%' // Độ rỗng ở giữa
+            cutout: '70%'
         }
     });
+
+    // ĐÃ THÊM CHỖ NÀY: Hàm JavaScript xử lý Đăng xuất
+    function handleAdminLogout(event) {
+        event.preventDefault(); // Ngăn link tự nhảy
+
+        fetch('/api/v1/auth/logout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Nhận JSON xong thì búng về trang login
+            window.location.href = data.redirectUrl ? data.redirectUrl : '/login';
+        })
+        .catch(error => {
+            console.error('Lỗi khi đăng xuất:', error);
+            window.location.href = '/login'; // Lỗi mạng cũng đá ra ngoài
+        });
+    }
 </script>
 </body>
 </html>

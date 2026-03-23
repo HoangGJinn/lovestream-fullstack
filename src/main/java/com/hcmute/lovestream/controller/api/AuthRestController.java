@@ -44,30 +44,26 @@ public class AuthRestController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody Login request, HttpServletResponse response) {
         try {
-            // Lấy Map chứa token (và Role) từ Service
             Map<String, String> tokens = authService.login(request);
 
-            // 1. Nhét Access Token vào Cookie
             Cookie accessCookie = new Cookie("JWT_TOKEN", tokens.get("accessToken"));
             accessCookie.setHttpOnly(true);
             accessCookie.setPath("/");
             accessCookie.setMaxAge(86400);
             response.addCookie(accessCookie);
 
-            // 2. Nhét Refresh Token vào Cookie
             Cookie refreshCookie = new Cookie("REFRESH_TOKEN", tokens.get("refreshToken"));
             refreshCookie.setHttpOnly(true);
             refreshCookie.setPath("/");
             refreshCookie.setMaxAge(604800);
             response.addCookie(refreshCookie);
 
-            // 3. KIỂM TRA ROLE VÀ ĐIỀU HƯỚNG URL (Phần đã được sửa)
-            String role = tokens.getOrDefault("role", "USER"); // Lấy role từ Map ra, mặc định là USER nếu không thấy
-            String targetUrl = role.equals("ADMIN") ? "/admin/dashboard" : "/home"; // Nếu là Admin thì đi đường khác
+            String role = tokens.getOrDefault("role", "USER");
+            String targetUrl = role.equals("ADMIN") ? "/admin/dashboard" : "/home";
 
             return ResponseEntity.ok(Map.of(
                     "message", "Đăng nhập thành công",
-                    "redirectUrl", targetUrl // Nhét targetUrl động vào thay vì fix cứng "/home"
+                    "redirectUrl", targetUrl
             ));
         } catch (Exception e) {
             if ("Tài khoản chưa được xác minh email".equals(e.getMessage())) {
@@ -102,7 +98,7 @@ public class AuthRestController {
         }
     }
 
-    // UC5: Đăng xuất
+    // UC5: Đăng xuất (ĐÃ SỬA CHỖ NÀY)
     @PostMapping("/logout")
     public ResponseEntity<?> logout(
             @CookieValue(name = "REFRESH_TOKEN", required = false) String refreshToken,
@@ -112,19 +108,22 @@ public class AuthRestController {
             authService.logout(refreshToken);
         }
 
-        Cookie jwtCookie = new Cookie("JWT_TOKEN", null);
+        // Đổi null thành "" để trình duyệt hiểu lệnh xóa
+        Cookie jwtCookie = new Cookie("JWT_TOKEN", "");
         jwtCookie.setHttpOnly(true);
         jwtCookie.setPath("/");
         jwtCookie.setMaxAge(0);
         response.addCookie(jwtCookie);
 
-        Cookie refreshCookie = new Cookie("REFRESH_TOKEN", null);
+        // Đổi null thành "" để trình duyệt hiểu lệnh xóa
+        Cookie refreshCookie = new Cookie("REFRESH_TOKEN", "");
         refreshCookie.setHttpOnly(true);
         refreshCookie.setPath("/");
         refreshCookie.setMaxAge(0);
         response.addCookie(refreshCookie);
 
-        return ResponseEntity.ok(Map.of("message", "Đăng xuất thành công", "redirectUrl", "/"));
+        // Đổi redirectUrl thành /login cho an toàn
+        return ResponseEntity.ok(Map.of("message", "Đăng xuất thành công", "redirectUrl", "/login"));
     }
 
     @PostMapping("/resend-otp")
