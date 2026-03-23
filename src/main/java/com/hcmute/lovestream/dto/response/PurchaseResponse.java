@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 public class PurchaseResponse {
     private String message;
     private String planName;
+    private String paymentUrl;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
 }

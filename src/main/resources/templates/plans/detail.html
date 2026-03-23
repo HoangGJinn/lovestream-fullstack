@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${plan != null} ? ${plan.name + ' - LoveStream'} : 'Gói dịch vụ - LoveStream'">
+    <title th:text="${plan != null ? plan.name + ' - LoveStream' : 'Gói dịch vụ - LoveStream'}">
         Chi tiết gói - LoveStream
     </title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans:wght@400;600;700;800;900&display=swap">
@@ -99,18 +99,18 @@
 
         <!-- === NÚT MUA === -->
 
-        <!-- Đã có gói active -->
-        <div th:if="${hasActiveSub}" class="plan-detail-active-notice">
+        <!-- Đang xem đúng gói hiện tại -->
+        <div th:if="${currentPlanId != null and currentPlanId == plan.id}" class="plan-detail-active-notice">
             <i class="fa-solid fa-circle-check"></i>
-            Bạn đang có gói dịch vụ đang hoạt động
+            Đây là gói hiện tại của bạn
         </div>
 
-        <!-- Chưa có gói: đã đăng nhập -->
-        <button th:if="${currentUser != null and !hasActiveSub}"
+        <!-- Đã đăng nhập và có thể đổi sang gói khác -->
+        <button th:if="${currentUser != null and (currentPlanId == null or currentPlanId != plan.id)}"
                 class="btn-purchase"
                 th:data-plan-id="${plan.id}"
                 onclick="handlePurchase(this)">
-            <i class="fa-solid fa-bolt"></i> Mua ngay — <span th:text="${plan.formattedPrice}">0 ₫</span>
+            <i class="fa-solid fa-bolt"></i> Chuyển sang gói này — <span th:text="${plan.formattedPrice}">0 ₫</span>
         </button>
 
         <!-- Chưa đăng nhập -->
@@ -154,6 +154,17 @@
             const data = await res.json();
 
             if (res.ok) {
+                if (data.paymentUrl) {
+                    resultEl.className = 'purchase-result purchase-result--success';
+                    resultEl.innerHTML = `
+                        <i class="fa-solid fa-circle-check"></i>
+                        <strong>${data.message}</strong><br>
+                        <span>Vui lòng chờ... bạn đang được chuyển sang VNPay</span>
+                    `;
+                    window.location.href = data.paymentUrl;
+                    return;
+                }
+
                 resultEl.className = 'purchase-result purchase-result--success';
                 resultEl.innerHTML = `
                     <i class="fa-solid fa-circle-check"></i>

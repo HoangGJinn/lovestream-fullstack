@@ -3,6 +3,7 @@ package com.hcmute.lovestream.controller.web;
 import com.hcmute.lovestream.service.plan.ServicePlanService;
 import com.hcmute.lovestream.service.user.UserProfileService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -19,7 +20,9 @@ public class GlobalModelAttributes {
 
     @ModelAttribute
     public void addGlobalAttributes(Authentication authentication, Model model) {
-        boolean isAuthenticated = authentication != null && authentication.isAuthenticated();
+        boolean isAuthenticated = authentication != null
+            && authentication.isAuthenticated()
+            && !(authentication instanceof AnonymousAuthenticationToken);
         model.addAttribute("isAuthenticated", isAuthenticated);
 
         if (isAuthenticated) {

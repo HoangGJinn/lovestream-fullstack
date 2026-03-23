@@ -37,6 +37,12 @@ public class SecurityConfig {
                     .requestMatchers("/api/v1/auth/**", "/login", "/register", "/forgot-password", "/verify-email", "/css/**", "/js/**", "/images/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/account/change-password/backup").permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/v1/password/backup-change").permitAll()
+                    // Trang gói dịch vụ: khách chưa đăng nhập vẫn xem được
+                    .requestMatchers(HttpMethod.GET, "/plans", "/plans/**", "/packages", "/packages/**").permitAll()
+                    // VNPay callback thường không có JWT
+                    .requestMatchers(HttpMethod.GET, "/v1/api/vnpay/payment-callback").permitAll()
+                    // Tìm kiếm nội dung: cho phép khách truy cập
+                    .requestMatchers("/videocontents", "/videocontents/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/video/**").permitAll()
 
                         // CÁC TRANG CÒN LẠI BẮT BUỘC PHẢI ĐĂNG NHẬP

@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -59,6 +60,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     }
                 }
 
+            } catch (UsernameNotFoundException e) {
+                // Token trỏ tới user không còn tồn tại trong DB
+                logger.warn("Không tìm thấy user từ JWT subject, yêu cầu đăng nhập lại: " + e.getMessage());
+                clearAuthCookies(response);
+
             } catch (ExpiredJwtException e) {
                 // Access Token hết hạn → thử auto-refresh bằng REFRESH_TOKEN cookie
                 logger.debug("Access Token hết hạn, đang thử auto-refresh...");
@@ -67,6 +73,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             } catch (JwtException e) {
                 // Token bị giả mạo, sai chữ ký, hoặc malformed — bỏ qua
                 logger.warn("JWT token không hợp lệ: " + e.getMessage());
+                clearAuthCookies(response);
+            } catch (Exception e) {
+                // Bắt các lỗi parse/validate khác để tránh fail âm thầm
+                logger.warn("Lỗi xác thực JWT không mong muốn: " + e.getMessage());
+                clearAuthCookies(response);
             }
         }
 
@@ -84,14 +95,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String refreshTokenValue = extractRefreshTokenCookie(request);
         if (refreshTokenValue == null) {
             logger.debug("Không tìm thấy REFRESH_TOKEN cookie, yêu cầu đăng nhập lại.");
+            clearAuthCookies(response);
             return;
         }
 
         // Tìm trong database
         refreshTokenRepository.findByToken(refreshTokenValue).ifPresentOrElse(rt -> {
+            // Bảo vệ: refresh token phải thuộc cùng user với access token đã hết hạn
+            if (email != null && !email.equalsIgnoreCase(rt.getUser().getEmail())) {
+                logger.warn("REFRESH_TOKEN không khớp với subject trong access token.");
+                clearAuthCookies(response);
+                return;
+            }
+
             // Kiểm tra chưa bị revoke và chưa hết hạn
             if (rt.isRevoked() || rt.getExpiresAt().isBefore(LocalDateTime.now())) {
                 logger.debug("REFRESH_TOKEN không hợp lệ hoặc đã hết hạn, yêu cầu đăng nhập lại.");
+                clearAuthCookies(response);
                 return;
             }
 
@@ -136,7 +156,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             logger.debug("Auto-refresh thành công cho user: " + rt.getUser().getEmail());
 
-        }, () -> logger.debug("Không tìm thấy REFRESH_TOKEN trong database."));
+        }, () -> {
+            logger.debug("Không tìm thấy REFRESH_TOKEN trong database.");
+            clearAuthCookies(response);
+        });
     }
 
     /** Trích xuất giá trị của REFRESH_TOKEN cookie từ request */
@@ -148,6 +171,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
         return null;
+    }
+
+    private void clearAuthCookies(HttpServletResponse response) {
+        Cookie jwtCookie = new Cookie("JWT_TOKEN", null);
+        jwtCookie.setHttpOnly(true);
+        jwtCookie.setPath("/");
+        jwtCookie.setMaxAge(0);
+        response.addCookie(jwtCookie);
+
+        Cookie refreshCookie = new Cookie("REFRESH_TOKEN", null);
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setPath("/");
+        refreshCookie.setMaxAge(0);
+        response.addCookie(refreshCookie);
     }
 }
 
