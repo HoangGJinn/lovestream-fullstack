@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamFlix Player - Chi tiết Điều khiển</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary-color: #e50914;
+            --bg-color: #000;
+            --control-bg: rgba(0, 0, 0, 0.7);
+            --text-color: #ffffff;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            font-family: 'Roboto', sans-serif;
+            color: var(--text-color);
+            overflow: hidden;
+        }
+
+        /* Container cho toàn bộ trình phát */
+        .video-player {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer; /* Cho phép click để play/pause */
+        }
+
+        /* Thẻ video (ẩn điều khiển mặc định) */
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none; /* Tránh tương tác trực tiếp, để JS xử lý click container */
+        }
+
+        /* Overlay chính chứa toàn bộ điều khiển */
+        .controls-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 150px; /* Tăng độ cao để thanh tiến trình nằm trên */
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, transparent 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 20px 40px;
+            box-sizing: border-box;
+            opacity: 0; /* Ẩn đi mặc định */
+            transition: opacity 0.3s;
+            z-index: 10;
+        }
+
+        /* Hiển thị overlay khi hover */
+        .video-player:hover .controls-overlay {
+            opacity: 1;
+        }
+
+        /* 1. Thanh tiến trình (ProgressBar) nằm riêng biệt phía trên */
+        .progress-bar-container {
+            width: 100%;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.3);
+            margin-bottom: 20px;
+            border-radius: 5px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .progress-bar-container:hover {
+            height: 8px; /* Phóng to khi hover để dễ thao tác */
+            bottom: -2px;
+        }
+
+        .current-progress {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background: var(--primary-color);
+            border-radius: 5px;
+            width: 0%;
+        }
+
+        /* Thời gian */
+        .time-display {
+            position: absolute;
+            top: -20px; /* Nằm trên thanh tiến trình */
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-size: 0.9rem;
+            color: #ddd;
+        }
+
+        /* 2. Thanh nút điều khiển chính */
+        .controls-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        /* Nhóm các nút (bên trái/bên phải) */
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+
+        /* Nút chung */
+        .control-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+            opacity: 0.8;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+
+        .control-btn:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        /* Nút Play/Pause lớn hơn */
+        #playPauseBtn {
+            font-size: 2.5rem;
+        }
+
+        /* Thanh âm lượng */
+        .volume-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #volumeSlider {
+            width: 100px;
+            cursor: pointer;
+        }
+
+        .speed-control {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .speed-menu {
+            position: absolute;
+            bottom: 52px;
+            right: 0;
+            background: rgba(20, 20, 20, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            min-width: 130px;
+            padding: 8px;
+            display: none;
+            flex-direction: column;
+            gap: 6px;
+            z-index: 20;
+        }
+
+        .speed-control.open .speed-menu {
+            display: flex;
+        }
+
+        .speed-option {
+            border: none;
+            border-radius: 6px;
+            padding: 6px 10px;
+            text-align: left;
+            cursor: pointer;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.08);
+            font-size: 0.95rem;
+        }
+
+        .speed-option:hover,
+        .speed-option.active {
+            background: var(--primary-color);
+        }
+
+        .speed-label {
+            font-size: 0.85rem;
+            min-width: 36px;
+            opacity: 0.9;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="video-player" id="player">
+    <video id="video"></video>
+
+    <div class="controls-overlay" id="controlsOverlay">
+
+        <div class="progress-bar-container" id="progressBarContainer">
+            <div class="time-display">
+                <span id="currentTime">00:00</span>
+                <span id="duration">--:--</span>
+            </div>
+            <div class="current-progress" id="currentProgress"></div>
+        </div>
+
+        <div class="controls-row">
+
+            <div class="control-group central-controls">
+                <button class="control-btn" id="rewindBtn"><i class="fas fa-undo-alt"></i></button>
+                <button class="control-btn" id="playPauseBtn"><i class="fas fa-play"></i></button>
+                <button class="control-btn" id="forwardBtn"><i class="fas fa-redo-alt"></i></button>
+                <div class="volume-container">
+                    <button class="control-btn" id="muteBtn"><i class="fas fa-volume-up"></i></button>
+                    <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="1">
+                </div>
+            </div>
+
+            <div class="control-group right-controls">
+                <button class="control-btn" id="nextBtn"><i class="fas fa-step-forward"></i></button>
+                <button class="control-btn" id="pipBtn"><i class="fas fa-external-link-alt"></i></button>
+                <div class="speed-control" id="speedControl">
+                    <button class="control-btn" id="settingsBtn" title="Tốc độ phát">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <span class="speed-label" id="speedLabel">1x</span>
+                    <div class="speed-menu" id="speedMenu">
+                        <button class="speed-option" data-speed="0.5">0.5x</button>
+                        <button class="speed-option" data-speed="0.75">0.75x</button>
+                        <button class="speed-option active" data-speed="1">1x (Mặc định)</button>
+                        <button class="speed-option" data-speed="1.25">1.25x</button>
+                        <button class="speed-option" data-speed="1.5">1.5x</button>
+                        <button class="speed-option" data-speed="2">2x</button>
+                    </div>
+                </div>
+                <button class="control-btn" id="fullscreenBtn"><i class="fas fa-expand"></i></button>
+            </div>
+        </div>
+
+    </div>
+</div>
+<div> Đây là phần bình luận </div>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script>
+    const video = document.getElementById('video');
+    const player = document.getElementById('player');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const rewindBtn = document.getElementById('rewindBtn');
+    const forwardBtn = document.getElementById('forwardBtn');
+    const muteBtn = document.getElementById('muteBtn');
+    const volumeSlider = document.getElementById('volumeSlider');
+    const progressBarContainer = document.getElementById('progressBarContainer');
+    const currentProgress = document.getElementById('currentProgress');
+    const currentTimeDisplay = document.getElementById('currentTime');
+    const durationDisplay = document.getElementById('duration');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const settingsBtn = document.getElementById('settingsBtn');
+    const speedControl = document.getElementById('speedControl');
+    const speedLabel = document.getElementById('speedLabel');
+    const speedOptions = document.querySelectorAll('.speed-option');
+
+    // --- Logic điều khiển cơ bản ---
+
+    // Play/Pause
+    function togglePlay() {
+        if (video.paused) {
+            video.play();
+            playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+        } else {
+            video.pause();
+            playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+        }
+    }
+
+    player.addEventListener('click', (e) => {
+        // Chỉ click vào container chính mới play/pause, tránh click nút điều khiển
+        if(e.target === player || e.target === video) togglePlay();
+    });
+    playPauseBtn.addEventListener('click', togglePlay);
+
+    // Tua lùi/Tới 10s
+    rewindBtn.addEventListener('click', () => { video.currentTime -= 10; });
+    forwardBtn.addEventListener('click', () => { video.currentTime += 10; });
+
+    // Âm lượng
+    volumeSlider.addEventListener('input', (e) => {
+        video.volume = e.target.value;
+        video.muted = false; // Tắt mute nếu đang dùng slider
+        muteBtn.innerHTML = video.volume > 0 ? '<i class="fas fa-volume-up"></i>' : '<i class="fas fa-volume-mute"></i>';
+    });
+
+    muteBtn.addEventListener('click', () => {
+        video.muted = !video.muted;
+        if(video.muted) {
+            muteBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+            volumeSlider.value = 0;
+        } else {
+            muteBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+            volumeSlider.value = video.volume;
+        }
+    });
+
+    // Toàn màn hình
+    fullscreenBtn.addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+            player.requestFullscreen();
+            fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+        } else {
+            document.exitFullscreen();
+            fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+        }
+    });
+
+    // Tốc độ phát
+    function setPlaybackSpeed(speed) {
+        video.playbackRate = speed;
+        speedLabel.textContent = speed + 'x';
+        speedOptions.forEach((option) => {
+            option.classList.toggle('active', Number(option.dataset.speed) === speed);
+        });
+    }
+
+    settingsBtn.addEventListener('click', () => {
+        speedControl.classList.toggle('open');
+    });
+
+    speedOptions.forEach((option) => {
+        option.addEventListener('click', () => {
+            const speed = Number(option.dataset.speed);
+            setPlaybackSpeed(speed);
+            speedControl.classList.remove('open');
+        });
+    });
+
+    document.addEventListener('click', (event) => {
+        if (!speedControl.contains(event.target)) {
+            speedControl.classList.remove('open');
+        }
+    });
+
+    setPlaybackSpeed(1);
+
+    // --- Logic Thanh Tiến Trình và Thời Gian ---
+
+    // Format thời gian từ giây sang MM:SS
+    function formatTime(seconds) {
+        let minutes = Math.floor(seconds / 60);
+        seconds = Math.floor(seconds % 60);
+        minutes = minutes < 10 ? '0' + minutes : minutes;
+        seconds = seconds < 10 ? '0' + seconds : seconds;
+        return `${minutes}:${seconds}`;
+    }
+
+    // Cập nhật khi meta data được tải (để biết thời lượng tổng)
+    video.addEventListener('loadedmetadata', () => {
+        durationDisplay.textContent = formatTime(video.duration);
+    });
+
+    // Cập nhật thanh tiến trình theo thời gian thực
+    video.addEventListener('timeupdate', () => {
+        const percentage = (video.currentTime / video.duration) * 100;
+        currentProgress.style.width = percentage + '%';
+        currentTimeDisplay.textContent = formatTime(video.currentTime);
+    });
+
+    // Tua khi click vào thanh tiến trình
+    progressBarContainer.addEventListener('click', (e) => {
+        const rect = progressBarContainer.getBoundingClientRect();
+        const clickPos = (e.clientX - rect.left) / rect.width;
+        video.currentTime = clickPos * video.duration;
+    });
+
+
+    // --- Logic Tải Video (giữ nguyên) ---
+    async function loadVideo() {
+        try {
+            // Thay đổi API endpoint của bạn ở đây
+            const res = await fetch('/api/video/watch/967f613a-ee23-4e0a-af45-865f36550e3c');
+            const videoSrc = await res.text();
+
+            if (Hls.isSupported()) {
+                const hls = new Hls();
+                hls.loadSource(videoSrc);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    // Tự động play (chú ý: trình duyệt có thể block nếu chưa có tương tác người dùng)
+                });
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = videoSrc;
+            }
+        } catch (error) {
+            console.error("Lỗi tải video hoặc API không phản hồi:", error);
+            // Demo url nếu API lỗi (thay bằng url .m3u8 thật của bạn)
+            // video.src = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+        }
+    }
+
+    loadVideo();
+</script>
+</body>
+</html>

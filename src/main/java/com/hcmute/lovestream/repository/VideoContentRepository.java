@@ -1,5 +1,6 @@
 package com.hcmute.lovestream.repository;
 
+import com.hcmute.lovestream.entity.MediaAsset;
 import com.hcmute.lovestream.entity.VideoContent;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
