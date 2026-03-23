@@ -1,6 +1,7 @@
 package com.hcmute.lovestream.controller.web;
 
 import com.hcmute.lovestream.entity.VideoContent;
+import com.hcmute.lovestream.entity.enums.ContentStatus;
 import com.hcmute.lovestream.repository.VideoContentRepository;
 import com.hcmute.lovestream.service.user.UserProfileService;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,14 @@ public class HomeWebController {
         // 4. Viễn tưởng / Kỳ ảo (Science-Fiction hoặc Fantasy)
         List<VideoContent> sciFiMovies = videoContentRepository.findByGenres_Name("Science-Fiction");
         model.addAttribute("sciFiMovies", sciFiMovies);
+
+        if (authentication != null && authentication.isAuthenticated()) {
+            try {
+                model.addAttribute("currentUser",
+                        userProfileService.getCurrentUserByEmail(authentication.getName()));
+            } catch (RuntimeException ignored) {
+            }
+        }
 
         return "home";
     }

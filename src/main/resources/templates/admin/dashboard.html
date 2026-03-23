@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - LoveStream</title>
+    <!-- Shared Admin Theme -->
+    <link rel="stylesheet" th:href="@{/css/admin/admin-theme.css}">
+    <!-- Module Specific -->
+    <link rel="stylesheet" th:href="@{/css/admin/dashboard.css}">
+    <!-- Dùng FontAwesome nếu có để trang trí icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+<div class="admin-container">
+    <header class="admin-header">
+        <h1>Admin Dashboard</h1>
+        <div class="user-info">
+            Xin chào, <strong sec:authentication="name">User</strong>
+            <br>
+            <small>Quyền hạn: <span sec:authentication="principal.authorities">Role</span></small>
+        </div>
+    </header>
+
+    <div class="dashboard-grid">
+        
+        <!-- MODULE QUẢN LÝ CONTENT MANAGER: Chỉ ADMIN mới thấy -->
+        <div class="admin-card" sec:authorize="hasAuthority('ROLE_ADMIN')">
+            <div class="card-icon icon-users">
+                <i class="fa-solid fa-users-gear"></i>
+            </div>
+            <h2>Quản lý Content Manager</h2>
+            <p>Thêm mới, chỉnh sửa, và phân quyền quản trị nội dung cho các tài khoản Content Manager.</p>
+            <a th:href="@{/admin/users/content-managers}" class="btn btn-primary mt-auto">Vào quản lý</a>
+        </div>
+
+        <!-- MODULE QUẢN LÝ PHIM LẺ: ADMIN và CONTENT_MANAGER cùng thấy -->
+        <div class="admin-card">
+            <div class="card-icon icon-movies">
+                <i class="fa-solid fa-film"></i>
+            </div>
+            <h2>Quản lý phim lẻ</h2>
+            <p>Upload video, thêm thông tin metadata phim, sửa các phim lẻ trên hệ thống.</p>
+            <a th:href="@{/admin/movies}" class="btn btn-primary mt-auto">Vào quản lý phim</a>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>
