@@ -31,7 +31,7 @@
         <a href="/home" class="logo-link"><i class="fa-solid fa-arrow-left"></i> Quay lại LoveStream</a>
         <ul class="menu-list">
             <li><a href="/account" class="menu-item active"><i class="fa-solid fa-house"></i> Tổng quan</a></li>
-            <li><a href="#" class="menu-item"><i class="fa-regular fa-credit-card"></i> Tư cách thành viên</a></li>
+            <li><a href="/account/membership" class="menu-item"><i class="fa-regular fa-credit-card"></i> Tư cách thành viên</a></li>
             <li><a href="#" class="menu-item"><i class="fa-solid fa-shield-halved"></i> Bảo mật</a></li>
             <li><a href="#" class="menu-item"><i class="fa-solid fa-laptop-mobile"></i> Thiết bị</a></li>
             <li><a href="/profile" class="menu-item"><i class="fa-solid fa-users"></i> Hồ sơ</a></li>
@@ -43,14 +43,25 @@
         <p class="page-subtitle">Thông tin tư cách thành viên</p>
 
         <div class="membership-card">
-            <div class="membership-badge">Thành viên từ tháng 2 năm 2026</div>
-            <h3 class="plan-title">Gói Cao cấp</h3>
-            <p class="plan-date">Ngày thanh toán tiếp theo: 16 tháng 3, 2026</p>
+            <div class="membership-badge"
+                 th:text="${activeSubscription != null ? 'Thành viên từ ' + #temporals.format(activeSubscription.startDate, 'MM/yyyy') : 'Chưa mua gói'}">
+                Thành viên
+            </div>
+
+            <h3 class="plan-title"
+                th:text="${activeSubscription != null ? activeSubscription.plan.name : 'Chọn gói để bắt đầu'}">
+                Gói
+            </h3>
+
+            <p class="plan-date"
+               th:text="${activeSubscription != null ? 'Ngày thanh toán tiếp theo: ' + #temporals.format(activeSubscription.endDate, 'dd/MM/yyyy') : 'Kích hoạt gói bằng thanh toán VNPay'}">
+                Ngày thanh toán tiếp theo
+            </p>
             <div class="payment-info">
                 <img src="https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png" alt="MoMo">
                 <span>••••••6988</span>
             </div>
-            <a href="#" class="manage-plan-link">
+            <a href="/account/membership" class="manage-plan-link">
                 Quản lý tư cách thành viên <i class="fa-solid fa-chevron-right" style="color: #666;"></i>
             </a>
         </div>
@@ -58,7 +69,7 @@
         <p style="font-size: 14px; color: #666; margin-bottom: 15px;">Liên kết nhanh</p>
 
         <div class="card-group">
-            <a href="#" class="card-item"><i class="fa-solid fa-box card-icon"></i><div class="card-text-wrapper"><div class="card-title">Thay đổi gói dịch vụ</div></div><i class="fa-solid fa-chevron-right card-arrow"></i></a>
+            <a href="/account/membership" class="card-item"><i class="fa-solid fa-box card-icon"></i><div class="card-text-wrapper"><div class="card-title">Thay đổi gói dịch vụ</div></div><i class="fa-solid fa-chevron-right card-arrow"></i></a>
             <a href="#" class="card-item"><i class="fa-regular fa-credit-card card-icon"></i><div class="card-text-wrapper"><div class="card-title">Quản lý phương thức thanh toán</div></div><i class="fa-solid fa-chevron-right card-arrow"></i></a>
             <a href="#" class="card-item"><i class="fa-solid fa-laptop-mobile card-icon"></i><div class="card-text-wrapper"><div class="card-title">Quản lý quyền truy cập và thiết bị</div></div><i class="fa-solid fa-chevron-right card-arrow"></i></a>
             <a href="/account/change-password" class="card-item"><i class="fa-solid fa-lock card-icon"></i><div class="card-text-wrapper"><div class="card-title">Cập nhật mật khẩu</div></div><i class="fa-solid fa-chevron-right card-arrow"></i></a>

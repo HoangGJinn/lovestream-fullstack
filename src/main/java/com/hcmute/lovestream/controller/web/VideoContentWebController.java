@@ -4,7 +4,7 @@ import com.hcmute.lovestream.dto.request.VideoContentSearchRequest;
 import com.hcmute.lovestream.dto.response.VideoContentSearchResponse;
 import com.hcmute.lovestream.entity.VideoContent;
 import com.hcmute.lovestream.repository.GenreRepository;
-import com.hcmute.lovestream.service.videocontent.VideoContentSearchService;
+import com.hcmute.lovestream.service.videoContent.VideoContentSearchService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

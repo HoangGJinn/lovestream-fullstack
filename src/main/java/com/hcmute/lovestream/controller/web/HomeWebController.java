@@ -4,6 +4,7 @@ import com.hcmute.lovestream.entity.VideoContent;
 import com.hcmute.lovestream.repository.VideoContentRepository;
 import com.hcmute.lovestream.service.user.UserProfileService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -34,7 +35,9 @@ public class HomeWebController {
         List<VideoContent> sciFiMovies = videoContentRepository.findByGenres_Name("Science-Fiction");
         model.addAttribute("sciFiMovies", sciFiMovies);
 
-        if (authentication != null && authentication.isAuthenticated()) {
+        if (authentication != null
+            && authentication.isAuthenticated()
+            && !(authentication instanceof AnonymousAuthenticationToken)) {
             try {
                 model.addAttribute("currentUser",
                         userProfileService.getCurrentUserByEmail(authentication.getName()));

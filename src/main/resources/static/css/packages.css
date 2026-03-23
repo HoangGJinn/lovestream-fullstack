@@ -311,6 +311,10 @@ body {
     letter-spacing: .5px;
 }
 
+.plan-badge--current {
+    background: #16a34a;
+}
+
 .plan-card__header { text-align: center; }
 
 .plan-card__name {
@@ -375,6 +379,13 @@ body {
     font-weight: 700;
     font-size: 15px;
     transition: background .2s, color .2s;
+}
+
+.plan-card__btn--current {
+    border-color: #16a34a;
+    color: #16a34a;
+    cursor: default;
+    pointer-events: none;
 }
 
 .plan-card__btn:hover,

@@ -1,6 +1,7 @@
 package com.hcmute.lovestream.controller.web;
 
 import org.springframework.security.core.Authentication;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,7 +12,7 @@ public class AuthWebController {
     // Kiểm tra xem user đã đăng nhập chưa
     private boolean isAuthenticated() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal());
+        return auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken);
     }
 
     // Trả về trang giao diện đăng nhập
@@ -41,4 +42,4 @@ public class AuthWebController {
         if (isAuthenticated()) return "redirect:/home";
         return "auth/verify-email";
     }
-}
+}
