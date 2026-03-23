@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết phim - LoveStream</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans:wght@400;500;600;700;800;900&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/videocontents.css">
+</head>
+<body>
+<main class="vc-detail-page">
+    <a class="vc-back-link" href="/videocontents"><i class="fa-solid fa-arrow-left"></i> Quay lại tìm kiếm</a>
+
+    <div class="vc-detail-error" th:if="${errorMessage != null}">
+        <h2 th:text="${errorMessage}">Nội dung không tồn tại</h2>
+    </div>
+
+    <article class="vc-detail-card" th:if="${video != null}">
+        <img th:src="${video.posterUrl}" th:alt="${video.title}">
+        <div class="vc-detail-content">
+            <h1 th:text="${video.title}">Tên phim</h1>
+            <p class="vc-meta">
+                <span th:text="${video.releaseYear}">2026</span>
+                <span> - </span>
+                <span th:text="${video.country != null ? video.country : 'Đang cập nhật quốc gia'}">Đang cập nhật quốc gia</span>
+            </p>
+            <p class="vc-desc" th:text="${video.description}">Mô tả phim</p>
+            <div class="vc-tags">
+                <span th:each="g : ${video.genres}" th:text="${g.name}">Drama</span>
+            </div>
+            <a class="vc-buy-btn" href="/packages"><i class="fa-solid fa-gem"></i> Xem gói dịch vụ</a>
+        </div>
+    </article>
+</main>
+</body>
+</html>
+

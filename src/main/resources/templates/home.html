@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LoveStream - Trang chủ</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans:wght@400;600;700;800;900&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/css/home.css">
     <link rel="stylesheet" href="/css/user-menu.css">
+    <link rel="stylesheet" href="/css/packages.css">
 </head>
 <body>
 
@@ -19,9 +21,17 @@
             <li><a href="/movies">Phim</a></li>
             <li><a href="#">Mới & Phổ biến</a></li>
             <li><a href="#">Danh sách của tôi</a></li>
+            <li><a href="/packages">Gói dịch vụ</a></li>
         </ul>
     </div>
     <div class="nav-right">
+        <form id="homeSearchForm" class="nav-search" th:action="@{/videocontents/search}" method="get">
+            <button id="homeSearchToggle" class="nav-icon nav-search-toggle" type="button" aria-label="Tìm kiếm">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+            <input id="homeSearchInput" class="nav-search-input" name="keyword" type="text" placeholder="Tìm phim, series..." autocomplete="off">
+        </form>
+        <i class="fa-regular fa-bell nav-icon"></i>
         <i class="fa-solid fa-magnifying-glass nav-icon"></i>
         <a href="/notifications" class="nav-icon" aria-label="Thong bao"><i class="fa-regular fa-bell"></i></a>
         <div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>
@@ -35,6 +45,7 @@
         <p class="movie-desc">
             Geralt xứ Rivia, một thợ săn quái vật đột biến, dấn thân vào hành trình đi tìm định mệnh của mình trong một thế giới hỗn loạn, nơi mà con người đôi khi còn độc ác hơn cả quái thú.
         </p>
+        <div th:replace="~{plans/banner :: packageCta(${hasActiveSub}, ${isAuthenticated}, false)}"></div>
         <div class="btn-group">
             <button class="btn btn-play"><i class="fa-solid fa-play"></i> Phát</button>
             <button class="btn btn-info"><i class="fa-solid fa-circle-info"></i> Thông tin khác</button>
@@ -86,6 +97,8 @@
 
 </div>
 
+<!-- Floating button already included in packageCta -->
+
 <script>
     // Hiệu ứng đổi màu Navbar khi cuộn trang
     window.addEventListener('scroll', () => {
@@ -93,6 +106,50 @@
         if (window.scrollY > 50) navbar.classList.add('scrolled');
         else navbar.classList.remove('scrolled');
     });
+
+    (function () {
+        const form = document.getElementById('homeSearchForm');
+        const toggle = document.getElementById('homeSearchToggle');
+        const input = document.getElementById('homeSearchInput');
+
+        toggle.addEventListener('click', function () {
+            if (!form.classList.contains('is-open')) {
+                form.classList.add('is-open');
+                input.focus();
+                return;
+            }
+
+            if (input.value.trim().length > 0) {
+                form.submit();
+            } else {
+                input.focus();
+            }
+        });
+
+        input.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                form.submit();
+                return;
+            }
+
+            if (event.key === 'Escape') {
+                form.classList.remove('is-open');
+                input.value = '';
+                toggle.focus();
+            }
+        });
+
+        form.addEventListener('submit', function () {
+            form.classList.add('is-open');
+        });
+
+        document.addEventListener('click', function (event) {
+            if (!form.contains(event.target)) {
+                form.classList.remove('is-open');
+            }
+        });
+    })();
 </script>
 </body>
 </html>
