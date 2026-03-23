@@ -17,6 +17,7 @@ import java.util.Map;
 public class AuthRestController {
 
     private final AuthService authService;
+    private final com.hcmute.lovestream.repository.UserRepository userRepository;
 
     // UC1: Đăng ký
     @PostMapping("/register")
@@ -31,7 +32,7 @@ public class AuthRestController {
 
     // UC2: Xác nhận Email
     @PostMapping("/verify-email")
-    public ResponseEntity<?> verifyEmail(@Valid @RequestBody VerifyEmail request) { // Đã đổi sang dùng DTO
+    public ResponseEntity<?> verifyEmail(@Valid @RequestBody VerifyEmail request) {
         try {
             authService.verifyEmail(request.getToken());
             return ResponseEntity.ok(Map.of("message", "Xác nhận email thành công. Bạn có thể đăng nhập."));
@@ -47,11 +48,10 @@ public class AuthRestController {
             // Lấy Map chứa cả 2 token từ Service
             Map<String, String> tokens = authService.login(request);
 
-            // 1. Nhét Access Token vào Cookie (Tên cookie trùng với cấu hình trong JwtUtil)
+            // 1. Nhét Access Token vào Cookie
             Cookie accessCookie = new Cookie("JWT_TOKEN", tokens.get("accessToken"));
             accessCookie.setHttpOnly(true);
             accessCookie.setPath("/");
-            // Ở properties bạn để 86400000ms (1 ngày). Cookie tính bằng giây nên chia cho 1000
             accessCookie.setMaxAge(86400);
             response.addCookie(accessCookie);
 
@@ -59,13 +59,22 @@ public class AuthRestController {
             Cookie refreshCookie = new Cookie("REFRESH_TOKEN", tokens.get("refreshToken"));
             refreshCookie.setHttpOnly(true);
             refreshCookie.setPath("/");
-            // Ở properties bạn để 604800000ms (7 ngày) -> 604800 giây
             refreshCookie.setMaxAge(604800);
             response.addCookie(refreshCookie);
 
+            // KTRA ROLE ĐỂ ĐIỀU HƯỚNG
+            String redirectUrl = "/home";
+            var userOpt = userRepository.findByEmail(request.getEmail());
+            if (userOpt.isPresent()) {
+                String role = userOpt.get().getRole().name();
+                if ("ADMIN".equals(role) || "CONTENT_MANAGER".equals(role)) {
+                    redirectUrl = "/admin/dashboard";
+                }
+            }
+
             return ResponseEntity.ok(Map.of(
                     "message", "Đăng nhập thành công",
-                    "redirectUrl", "/home"
+                    "redirectUrl", redirectUrl
             ));
         } catch (Exception e) {
             if ("Tài khoản chưa được xác minh email".equals(e.getMessage())) {

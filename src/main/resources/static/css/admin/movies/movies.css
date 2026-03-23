@@ -1,0 +1,22 @@
+/* ============================================================
+   Admin Movies Module — movies.css
+   ============================================================ */
+
+/* --- Poster Thumbnail -------------------------------------- */
+.poster-thumb { width: 44px; height: 62px; object-fit: cover; border-radius: 5px; background: #e2e8f0; display: block; }
+.poster-thumb--placeholder { width: 44px; height: 62px; background: #e2e8f0; border-radius: 5px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: .65rem; }
+
+
+/* --- Genre Checkbox Grid ----------------------------------- */
+.genre-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: .5rem;
+}
+.genre-checkbox { display: flex; align-items: center; gap: .5rem; font-size: .875rem; }
+.genre-checkbox input { width: 16px; height: 16px; accent-color: var(--ls-red); }
+
+/* --- Upload Section ---------------------------------------- */
+.upload-section {
+    width: 100%;
+}
