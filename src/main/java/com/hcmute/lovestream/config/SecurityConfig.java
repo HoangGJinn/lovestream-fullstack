@@ -33,12 +33,21 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // ĐÃ SỬA: Thêm "/error" vào cuối danh sách này để Spring Boot có thể báo lỗi Validation
+                        // 1. GIỮ LẠI TỪ NHÁNH CỦA BẠN (Đã có /error)
                         .requestMatchers("/api/v1/auth/**", "/login", "/register", "/forgot-password", "/verify-email", "/css/**", "/js/**", "/images/**", "/error").permitAll()
                         .requestMatchers(HttpMethod.GET, "/account/change-password/backup").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/password/backup-change").permitAll()
 
-                        // ĐÃ SỬA: Bảo vệ đường dẫn của Admin (Chỉ ADMIN mới được vào)
+                        // 2. LẤY TỪ NHÁNH DEV: Cho phép các trang public
+                        // Trang gói dịch vụ: khách chưa đăng nhập vẫn xem được
+                        .requestMatchers(HttpMethod.GET, "/plans", "/plans/**", "/packages", "/packages/**").permitAll()
+                        // VNPay callback thường không có JWT
+                        .requestMatchers(HttpMethod.GET, "/v1/api/vnpay/payment-callback").permitAll()
+                        // Tìm kiếm nội dung: cho phép khách truy cập
+                        .requestMatchers("/videocontents", "/videocontents/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/video/**").permitAll()
+
+                        // 3. GIỮ LẠI TỪ NHÁNH CỦA BẠN: Phân quyền Admin
                         .requestMatchers("/admin/**", "/api/v1/admin/**").hasAnyAuthority("ROLE_ADMIN", "ADMIN")
 
                         // CÁC TRANG CÒN LẠI BẮT BUỘC PHẢI ĐĂNG NHẬP
@@ -46,13 +55,13 @@ public class SecurityConfig {
                 )
                 // Xử lý khi bị chặn (Chưa đăng nhập)
                 .exceptionHandling(exc -> exc.authenticationEntryPoint((request, response, authException) -> {
-                    // Nếu gọi API -> Báo lỗi 401
-                    if (request.getRequestURI().startsWith("/api/")) {
-                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Vui lòng đăng nhập");
-                    } else {
-                        // Nếu là người dùng vào trang Web -> Đá về trang Đăng nhập
-                        response.sendRedirect("/login");
-                    }
+                    //
+//                    if (request.getRequestURI().startsWith("/api/")) {
+//                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Vui lòng đăng nhập");
+//                    } else {
+//                        // Nếu là người dùng vào trang Web -> Đá về trang Đăng nhập
+//                        response.sendRedirect("/login");
+//                    }
                 }))
                 // Chèn chốt kiểm tra JWT vào trước chốt kiểm tra mặc định của Spring
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

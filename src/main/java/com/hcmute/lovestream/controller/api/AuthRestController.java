@@ -1,6 +1,7 @@
 package com.hcmute.lovestream.controller.api;
 
 import com.hcmute.lovestream.dto.request.*;
+import com.hcmute.lovestream.repository.UserRepository;
 import com.hcmute.lovestream.service.authentication.AuthService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
@@ -17,6 +18,7 @@ import java.util.Map;
 public class AuthRestController {
 
     private final AuthService authService;
+    private final UserRepository userRepository; // Đã dọn lại import cho gọn
 
     // UC1: Đăng ký
     @PostMapping("/register")
@@ -46,24 +48,42 @@ public class AuthRestController {
         try {
             Map<String, String> tokens = authService.login(request);
 
+            // 1. Nhét Access Token vào Cookie
             Cookie accessCookie = new Cookie("JWT_TOKEN", tokens.get("accessToken"));
             accessCookie.setHttpOnly(true);
             accessCookie.setPath("/");
             accessCookie.setMaxAge(86400);
             response.addCookie(accessCookie);
 
+            // 2. Nhét Refresh Token vào Cookie
             Cookie refreshCookie = new Cookie("REFRESH_TOKEN", tokens.get("refreshToken"));
             refreshCookie.setHttpOnly(true);
             refreshCookie.setPath("/");
             refreshCookie.setMaxAge(604800);
             response.addCookie(refreshCookie);
 
-            String role = tokens.getOrDefault("role", "USER");
-            String targetUrl = role.equals("ADMIN") ? "/admin/dashboard" : "/home";
+            // KẾT HỢP LOGIC KIỂM TRA ROLE ĐỂ ĐIỀU HƯỚNG
+            String redirectUrl = "/home";
+
+            // Lấy role từ token map (Cách tối ưu)
+            String role = tokens.get("role");
+
+            // Nếu map không có, fallback sang gọi Database (Cách an toàn của nhánh dev)
+            if (role == null || role.isBlank()) {
+                var userOpt = userRepository.findByEmail(request.getEmail());
+                if (userOpt.isPresent()) {
+                    role = userOpt.get().getRole().name();
+                }
+            }
+
+            // Nếu là Admin hoặc Content Manager thì cho vào Dashboard
+            if ("ADMIN".equals(role) || "CONTENT_MANAGER".equals(role)) {
+                redirectUrl = "/admin/dashboard";
+            }
 
             return ResponseEntity.ok(Map.of(
                     "message", "Đăng nhập thành công",
-                    "redirectUrl", targetUrl
+                    "redirectUrl", redirectUrl
             ));
         } catch (Exception e) {
             if ("Tài khoản chưa được xác minh email".equals(e.getMessage())) {
@@ -98,7 +118,7 @@ public class AuthRestController {
         }
     }
 
-    // UC5: Đăng xuất (ĐÃ SỬA CHỖ NÀY)
+    // UC5: Đăng xuất
     @PostMapping("/logout")
     public ResponseEntity<?> logout(
             @CookieValue(name = "REFRESH_TOKEN", required = false) String refreshToken,
@@ -115,14 +135,12 @@ public class AuthRestController {
         jwtCookie.setMaxAge(0);
         response.addCookie(jwtCookie);
 
-        // Đổi null thành "" để trình duyệt hiểu lệnh xóa
         Cookie refreshCookie = new Cookie("REFRESH_TOKEN", "");
         refreshCookie.setHttpOnly(true);
         refreshCookie.setPath("/");
         refreshCookie.setMaxAge(0);
         response.addCookie(refreshCookie);
 
-        // Đổi redirectUrl thành /login cho an toàn
         return ResponseEntity.ok(Map.of("message", "Đăng xuất thành công", "redirectUrl", "/login"));
     }
 

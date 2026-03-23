@@ -3,7 +3,11 @@ package com.hcmute.lovestream.controller.web;
 import com.hcmute.lovestream.dto.request.UpdateProfileRequest;
 import com.hcmute.lovestream.entity.User;
 import com.hcmute.lovestream.entity.enums.Gender;
+import com.hcmute.lovestream.entity.Subscription;
+import com.hcmute.lovestream.entity.enums.SubscriptionStatus;
 import com.hcmute.lovestream.service.user.UserProfileService;
+import com.hcmute.lovestream.service.plan.ServicePlanService;
+import com.hcmute.lovestream.repository.SubscriptionRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -20,6 +24,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class UserWebController {
 
     private final UserProfileService userProfileService;
+    private final ServicePlanService servicePlanService;
+    private final SubscriptionRepository subscriptionRepository;
 
     @GetMapping("/profile")
     public String profilePage(Authentication authentication, Model model) {
@@ -77,6 +83,26 @@ public class UserWebController {
     public String accountOverviewPage(Authentication authentication, Model model) {
         User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
         model.addAttribute("currentUser", currentUser);
+        model.addAttribute("plans", servicePlanService.getAllActivePlans());
+        Subscription activeSubscription = subscriptionRepository
+                .findTopByUserAndStatusOrderByEndDateDesc(currentUser, SubscriptionStatus.ACTIVE)
+                .orElse(null);
+        model.addAttribute("activeSubscription", activeSubscription);
         return "user/account"; // Trỏ tới file templates/user/account.html
+    }
+
+    @GetMapping("/account/membership")
+    public String membershipPage(Authentication authentication, Model model) {
+        User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
+        model.addAttribute("currentUser", currentUser);
+
+        Subscription activeSubscription = subscriptionRepository
+                .findTopByUserAndStatusOrderByEndDateDesc(currentUser, SubscriptionStatus.ACTIVE)
+                .orElse(null);
+        model.addAttribute("activeSubscription", activeSubscription);
+        model.addAttribute("plans", servicePlanService.getAllActivePlans());
+        model.addAttribute("currentPlanId", activeSubscription != null ? activeSubscription.getPlan().getId() : null);
+
+        return "user/membership";
     }
 }

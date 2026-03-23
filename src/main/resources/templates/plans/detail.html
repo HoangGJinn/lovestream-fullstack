@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${plan != null ? plan.name + ' - LoveStream' : 'Gói dịch vụ - LoveStream'}">
+        Chi tiết gói - LoveStream
+    </title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans:wght@400;600;700;800;900&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/user-menu.css">
+    <link rel="stylesheet" href="/css/packages.css">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="plans-navbar">
+    <a href="/home" class="plans-logo">LoveStream</a>
+    <ul class="plans-nav-links">
+        <li><a href="/home">Trang chủ</a></li>
+        <li><a href="/packages" class="active">Gói dịch vụ</a></li>
+    </ul>
+    <div class="plans-nav-right">
+        <div th:if="${currentUser != null}"
+             th:insert="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}">
+        </div>
+        <div th:if="${currentUser == null}" class="plans-guest-actions">
+            <a href="/login" class="btn-nav-login">Đăng nhập</a>
+        </div>
+    </div>
+</nav>
+
+<!-- Breadcrumb -->
+<div class="plans-breadcrumb">
+    <a href="/packages"><i class="fa-solid fa-arrow-left"></i> Quay lại danh sách gói</a>
+</div>
+
+<!-- LỖI: Gói không tồn tại -->
+<div th:if="${errorMessage != null}" class="plans-error-container">
+    <i class="fa-solid fa-circle-exclamation plans-error-icon"></i>
+    <h2 th:text="${errorMessage}">Gói không tồn tại</h2>
+    <a href="/packages" class="btn-back-plans">Xem tất cả gói</a>
+</div>
+
+<!-- CHI TIẾT GÓI -->
+<div th:if="${plan != null}" class="plan-detail-container">
+
+    <!-- Card highlight -->
+    <div class="plan-detail-card">
+        <div class="plan-detail-badge">
+            <i class="fa-solid fa-crown"></i> Gói dịch vụ cao cấp
+        </div>
+
+        <h1 class="plan-detail-name" th:text="${plan.name}">Gói Premium</h1>
+
+        <div class="plan-detail-price-block">
+            <span class="plan-detail-price" th:text="${plan.formattedPrice}">199.000 ₫</span>
+            <span class="plan-detail-period">/ <span th:text="${plan.durationLabel}">1 tháng</span></span>
+        </div>
+
+        <p th:if="${plan.description != null and !#strings.isEmpty(plan.description)}"
+           class="plan-detail-desc"
+           th:text="${plan.description}">
+            Mô tả gói dịch vụ
+        </p>
+
+        <!-- Thông tin chi tiết dạng grid -->
+        <div class="plan-detail-specs">
+            <div class="plan-spec-item">
+                <div class="plan-spec-icon"><i class="fa-solid fa-display"></i></div>
+                <div class="plan-spec-label">Chất lượng video</div>
+                <div class="plan-spec-value" th:text="${plan.resolution}">1080p</div>
+            </div>
+            <div class="plan-spec-item">
+                <div class="plan-spec-icon"><i class="fa-solid fa-users"></i></div>
+                <div class="plan-spec-label">Thiết bị đồng thời</div>
+                <div class="plan-spec-value" th:text="${plan.maxScreens + ' thiết bị'}">2 thiết bị</div>
+            </div>
+            <div class="plan-spec-item">
+                <div class="plan-spec-icon"><i class="fa-solid fa-calendar-check"></i></div>
+                <div class="plan-spec-label">Thời hạn sử dụng</div>
+                <div class="plan-spec-value" th:text="${plan.durationLabel}">1 tháng</div>
+            </div>
+            <div class="plan-spec-item">
+                <div class="plan-spec-icon"><i class="fa-solid fa-infinity"></i></div>
+                <div class="plan-spec-label">Nội dung xem</div>
+                <div class="plan-spec-value">Không giới hạn</div>
+            </div>
+        </div>
+
+        <!-- Danh sách quyền lợi -->
+        <ul class="plan-detail-benefits">
+            <li><i class="fa-solid fa-check"></i> Xem phim, series không giới hạn</li>
+            <li><i class="fa-solid fa-check"></i> Không quảng cáo</li>
+            <li><i class="fa-solid fa-check"></i> Tải về xem offline</li>
+            <li><i class="fa-solid fa-check"></i> Hỗ trợ 24/7</li>
+            <li><i class="fa-solid fa-check"></i> Hủy bất cứ lúc nào</li>
+        </ul>
+
+        <!-- === NÚT MUA === -->
+
+        <!-- Đang xem đúng gói hiện tại -->
+        <div th:if="${currentPlanId != null and currentPlanId == plan.id}" class="plan-detail-active-notice">
+            <i class="fa-solid fa-circle-check"></i>
+            Đây là gói hiện tại của bạn
+        </div>
+
+        <!-- Đã đăng nhập và có thể đổi sang gói khác -->
+        <button th:if="${currentUser != null and (currentPlanId == null or currentPlanId != plan.id)}"
+                class="btn-purchase"
+                th:data-plan-id="${plan.id}"
+                onclick="handlePurchase(this)">
+            <i class="fa-solid fa-bolt"></i> Chuyển sang gói này — <span th:text="${plan.formattedPrice}">0 ₫</span>
+        </button>
+
+        <!-- Chưa đăng nhập -->
+        <a th:if="${currentUser == null}"
+           th:href="@{/login}"
+           class="btn-purchase btn-purchase--guest">
+            <i class="fa-solid fa-right-to-bracket"></i> Đăng nhập để mua gói
+        </a>
+
+        <!-- Thông báo kết quả -->
+        <div id="purchase-result" class="purchase-result" style="display:none;"></div>
+    </div>
+
+    <!-- Bảo đảm -->
+    <div class="plan-detail-guarantee">
+        <div class="guarantee-item">
+            <i class="fa-solid fa-shield-halved"></i>
+            <span>Thanh toán an toàn</span>
+        </div>
+        <div class="guarantee-item">
+            <i class="fa-solid fa-rotate-left"></i>
+            <span>Hủy linh hoạt</span>
+        </div>
+        <div class="guarantee-item">
+            <i class="fa-solid fa-headset"></i>
+            <span>Hỗ trợ 24/7</span>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    async function handlePurchase(btn) {
+        const planId = btn.dataset.planId;
+        const resultEl = document.getElementById('purchase-result');
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
+
+        try {
+            const res = await fetch(`/api/v1/plans/${planId}/purchase`, { method: 'POST' });
+            const data = await res.json();
+
+            if (res.ok) {
+                if (data.paymentUrl) {
+                    resultEl.className = 'purchase-result purchase-result--success';
+                    resultEl.innerHTML = `
+                        <i class="fa-solid fa-circle-check"></i>
+                        <strong>${data.message}</strong><br>
+                        <span>Vui lòng chờ... bạn đang được chuyển sang VNPay</span>
+                    `;
+                    window.location.href = data.paymentUrl;
+                    return;
+                }
+
+                resultEl.className = 'purchase-result purchase-result--success';
+                resultEl.innerHTML = `
+                    <i class="fa-solid fa-circle-check"></i>
+                    <strong>${data.message}</strong><br>
+                    <span>Hiệu lực đến: ${formatDate(data.endDate)}</span>
+                `;
+                btn.style.display = 'none';
+            } else {
+                resultEl.className = 'purchase-result purchase-result--error';
+                resultEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ${data}`;
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Thử lại';
+            }
+        } catch (e) {
+            resultEl.className = 'purchase-result purchase-result--error';
+            resultEl.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Lỗi kết nối, vui lòng thử lại.';
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Thử lại';
+        }
+        resultEl.style.display = 'flex';
+    }
+
+    function formatDate(dateArray) {
+        if (!dateArray) return '';
+        // Spring trả về LocalDateTime dạng array [year, month, day, hour, min, sec]
+        if (Array.isArray(dateArray)) {
+            const [y, m, d] = dateArray;
+            return `${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')}/${y}`;
+        }
+        const d = new Date(dateArray);
+        return d.toLocaleDateString('vi-VN');
+    }
+</script>
+
+<div th:replace="~{plans/banner :: packageCta(${hasActiveSub}, ${isAuthenticated}, false)}"></div>
+
+</body>
+</html>
