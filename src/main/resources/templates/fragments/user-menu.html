@@ -21,21 +21,7 @@
         <div class="user-menu__divider"></div>
         <a href="#" onclick="handleLogout(); return false;" class="user-menu__link user-menu__link--center user-menu__link--headline">Đăng xuất</a>
     </div>
+    <script th:src="@{/js/auth.js}"></script>
 </div>
-
-<script>
-    async function handleLogout() {
-        if (confirm('Bạn có chắc chắn muốn đăng xuất khỏi LoveStream?')) {
-            try {
-                const res = await fetch('/api/v1/auth/logout', { method: 'POST' });
-                if (res.ok) {
-                    window.location.href = '/login';
-                }
-            } catch (e) {
-                console.error('Lỗi đăng xuất');
-            }
-        }
-    }
-</script>
 </body>
 </html>

@@ -45,4 +45,24 @@ public class CommentRestController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    // TÍNH NĂNG 4: PHẢN HỒI BÌNH LUẬN
+    @PostMapping("/{parentCommentId}/replies")
+    public ResponseEntity<?> replyComment(
+            Principal principal,
+            @PathVariable String parentCommentId,
+            @Valid @RequestBody CommentRequest request) {
+        try {
+            // [EXCEPTION FLOW 1A]: Spring Security tự chặn nếu chưa đăng nhập (không có Token / principal)
+
+            // [EXCEPTION FLOW 4A]: Chặn bình luận rỗng đã được @Valid và thư viện validation lo tự động
+
+            commentService.replyComment(principal.getName(), parentCommentId, request);
+            return ResponseEntity.ok("Đã gửi phản hồi thành công");
+        } catch (RuntimeException e) {
+            // Dùng cho Exception Flow 4B và 5A (Ném thông báo lỗi chữ màu đỏ lên cho Frontend hiển thị)
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
 }

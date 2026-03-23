@@ -73,4 +73,43 @@ public class CommentService {
         commentRepository.delete(comment);
     }
 
+    // KỊCH BẢN: PHẢN HỒI BÌNH LUẬN (REPLY)
+    @Transactional
+    public void replyComment(String email, String parentCommentId, CommentRequest request) {
+
+        // [EXCEPTION FLOW 4B]: Kiểm tra từ cấm
+        if (badWordFilter.containsBadWord(request.getContent())) {
+            throw new RuntimeException("Nội dung chứa từ ngữ không phù hợp, vui lòng chỉnh sửa lại");
+        }
+
+        // [PRE-CONDITION]: Tìm User và kiểm tra quyền
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
+
+        if (user.getStatus() == UserStatus.BANNED) {
+            throw new RuntimeException("Tài khoản của bạn đã bị khóa tính năng bình luận");
+        }
+
+        // [EXCEPTION FLOW 5A]: Kiểm tra xem bình luận gốc có còn tồn tại không
+        // Nếu thằng cha bị xóa rồi thì ném lỗi văng ra màn hình ngay
+        Comment parentComment = commentRepository.findById(parentCommentId)
+                .orElseThrow(() -> new RuntimeException("Bình luận này không còn tồn tại"));
+
+        // [MAIN FLOW 5]: Sang vòng tạo bình luận mới và lưu Database
+        Comment reply = new Comment();
+        reply.setContent(request.getContent());
+        reply.setUser(user);
+
+        // Đây là dòng mấu chốt: Trỏ bình luận này làm CON của bình luận gốc
+        reply.setParentComment(parentComment);
+
+        // (Tùy chọn) Kế thừa luôn thông tin bộ Phim / Tập phim từ bình luận gốc
+        // Để biết cái reply này nằm trong bộ phim nào
+        reply.setVideo(parentComment.getVideo());
+        reply.setEpisode(parentComment.getEpisode());
+
+        commentRepository.save(reply);
+    }
+
+
 }
