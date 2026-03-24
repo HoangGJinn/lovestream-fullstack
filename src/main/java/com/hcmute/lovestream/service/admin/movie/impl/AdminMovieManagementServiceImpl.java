@@ -14,7 +14,7 @@ import com.hcmute.lovestream.service.storage.MediaStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable; // Đã thêm import
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,23 +33,19 @@ public class AdminMovieManagementServiceImpl implements AdminMovieManagementServ
     private final MediaAssetRepository mediaAssetRepository;
     private final MediaStorageService mediaStorageService;
 
-    // -- 1. Queries (Đã gộp chung và tích hợp Phân trang) --
+    // -- 1. Queries (Giữ code gộp hàm của BẠN) --
     @Override
     @Transactional(readOnly = true)
     public Page<Movie> getMovies(String keyword, ContentStatus status, Pageable pageable) {
-        // Nếu có cả từ khóa và trạng thái
         if (keyword != null && !keyword.isBlank() && status != null) {
             return movieRepository.findByTitleContainingIgnoreCaseAndStatus(keyword.trim(), status, pageable);
         }
-        // Nếu chỉ có trạng thái
         if (status != null) {
             return movieRepository.findByStatus(status, pageable);
         }
-        // Nếu chỉ có từ khóa
         if (keyword != null && !keyword.isBlank()) {
             return movieRepository.findByTitleContainingIgnoreCase(keyword.trim(), pageable);
         }
-        // Lấy tất cả (Mặc định)
         return movieRepository.findAll(pageable);
     }
 
@@ -66,10 +62,7 @@ public class AdminMovieManagementServiceImpl implements AdminMovieManagementServ
     public Movie createMovie(MovieUpsertRequest request) {
         Movie movie = new Movie();
         mapRequestToMovie(request, movie);
-
-        // Đảm bảo không ghi đè ID (ID sẽ do Spring Data/JPA tự sinh UUID)
         movie.setId(null);
-
         log.info("Creating new Movie: {}", request.getTitle());
         return movieRepository.save(movie);
     }
@@ -78,19 +71,16 @@ public class AdminMovieManagementServiceImpl implements AdminMovieManagementServ
     @Transactional
     public Movie updateMovie(String id, MovieUpsertRequest request) {
         Movie targetMovie = getMovieById(id);
-
         mapRequestToMovie(request, targetMovie);
-
         log.info("Updating Movie ID: {}", id);
         return movieRepository.save(targetMovie);
     }
 
-    // -- 3. Status Management (Đã gộp thành 1 hàm toggle) --
+    // -- 3. Status Management --
     @Override
     @Transactional
     public void toggleMovieStatus(String id) {
         Movie movie = getMovieById(id);
-
         if (movie.getStatus() == ContentStatus.ACTIVE) {
             movie.setStatus(ContentStatus.HIDDEN);
             log.info("Hidden Movie ID: {}", id);
@@ -98,21 +88,37 @@ public class AdminMovieManagementServiceImpl implements AdminMovieManagementServ
             movie.setStatus(ContentStatus.ACTIVE);
             log.info("Restored Movie ID: {}", id);
         }
-        // Nhờ @Transactional, DB sẽ tự động update
     }
 
     // -- 4. Media Asset Management --
     @Override
     @Transactional
+    public MediaAsset addAssetFromUrl(String movieId, AssetType assetType, String assetUrl) {
+        if (assetUrl == null || assetUrl.isBlank()) {
+            throw new IllegalArgumentException("URL không hợp lệ. Đường dẫn không được để trống!");
+        }
+        if (!assetUrl.contains("res.cloudinary.com")) {
+            throw new IllegalArgumentException("URL không hợp lệ. Chỉ chấp nhận link public từ nền tảng Cloudinary.");
+        }
+        return addAsset(movieId, assetType, assetUrl);
+    }
+
+    // Giữ code ghi đè tài nguyên xuất sắc của DEV
+    @Override
+    @Transactional
     public MediaAsset addAsset(String movieId, AssetType assetType, String assetUrl) {
         Movie movie = getMovieById(movieId);
 
-        MediaAsset asset = new MediaAsset();
+        MediaAsset asset = movie.getMediaAssets().stream()
+                .filter(a -> a.getAssetType() == assetType)
+                .findFirst()
+                .orElse(new MediaAsset());
+
         asset.setAssetType(assetType);
         asset.setAssetUrl(assetUrl);
-        asset.setVideoContent(movie); // Kế thừa từ VideoContent
+        asset.setVideoContent(movie);
 
-        log.info("Adding {} to Movie ID: {}", assetType, movieId);
+        log.info("Saving {} to Movie ID: {}", assetType, movieId);
         return mediaAssetRepository.save(asset);
     }
 
@@ -120,14 +126,12 @@ public class AdminMovieManagementServiceImpl implements AdminMovieManagementServ
     @Transactional
     public void removeAsset(String movieId, String assetId) {
         getMovieById(movieId);
-
         MediaAsset asset = mediaAssetRepository.findById(assetId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy Asset với ID: " + assetId));
 
         if (asset.getVideoContent() == null || !asset.getVideoContent().getId().equals(movieId)) {
             throw new RuntimeException("Tài nguyên không thuộc về bộ phim này!");
         }
-
         log.info("Removing Asset {} from Movie ID: {}", assetId, movieId);
         mediaAssetRepository.delete(asset);
     }
@@ -138,11 +142,7 @@ public class AdminMovieManagementServiceImpl implements AdminMovieManagementServ
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("File upload không được để trống!");
         }
-
-        // 1. Upload lên Cloudinary → lấy URL
         String publicUrl = mediaStorageService.upload(file, assetType);
-
-        // 2. Tạo MediaAsset và gắn vào Movie
         return addAsset(movieId, assetType, publicUrl);
     }
 
@@ -168,7 +168,6 @@ public class AdminMovieManagementServiceImpl implements AdminMovieManagementServ
             if (selectedGenres.isEmpty() || selectedGenres.size() != genreIds.size()) {
                 throw new RuntimeException("Có ít nhất một thể loại không tồn tại trong hệ thống. Vui lòng tải lại trang!");
             }
-
             target.setGenres(new HashSet<>(selectedGenres));
         } else {
             target.setGenres(new HashSet<>());

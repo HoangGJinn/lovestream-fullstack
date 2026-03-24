@@ -13,7 +13,7 @@ import java.io.IOException;
 
 public interface AdminMovieManagementService {
 
-    // -- 1. Queries (Đã gộp chung và tích hợp Phân trang) --
+    // -- 1. Queries (Giữ code gộp chung của BẠN) --
     // Hàm này cân hết: Lấy tất cả, Lấy theo từ khóa, Lấy theo trạng thái
     Page<Movie> getMovies(String keyword, ContentStatus status, Pageable pageable);
 
@@ -28,6 +28,7 @@ public interface AdminMovieManagementService {
 
     // -- 4. Media Asset Management (URL-based) --
     MediaAsset addAsset(String movieId, AssetType assetType, String assetUrl);
+    MediaAsset addAssetFromUrl(String movieId, AssetType assetType, String assetUrl);
     void removeAsset(String movieId, String assetId);
 
     // -- 5. Upload Media Asset (Lưu file vật lý/Cloud + addAsset) --

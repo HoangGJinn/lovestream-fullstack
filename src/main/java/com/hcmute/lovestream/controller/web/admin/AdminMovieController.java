@@ -54,30 +54,33 @@ public class AdminMovieController {
         return ContentStatus.values();
     }
 
+    // ĐÃ SỬA LỖI Ở ĐÂY: Thay BACKGROUND và MOVIE_VIDEO bằng FULL_VIDEO
     @ModelAttribute("allAssetTypes")
     public AssetType[] populateAssetTypes() {
-        return new AssetType[]{AssetType.POSTER, AssetType.BACKGROUND, AssetType.TRAILER, AssetType.MOVIE_VIDEO};
+        return new AssetType[]{AssetType.POSTER, AssetType.TRAILER, AssetType.FULL_VIDEO};
     }
 
     // --- ROUTES Thực Thi ---
 
-    // 1. Mở trang Danh Sách (ĐÃ SỬA: Tích hợp phân trang và API mới)
+    // 1. Mở trang Danh Sách
     @GetMapping
     public String listMovies(
             @RequestParam(required = false) ContentStatus status,
             @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "0") int page, // Bổ sung tham số trang
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
             Model model) {
 
-        // Khởi tạo phân trang (20 phim / 1 trang)
-        Pageable pageable = PageRequest.of(page, 20);
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        Pageable pageable = PageRequest.of(safePage, safeSize);
 
-        // Gọi hàm getMovies từ Service
         Page<Movie> moviePage = movieManagementService.getMovies(keyword, status, pageable);
 
-        // Truyền dữ liệu xuống UI
         model.addAttribute("movies", moviePage.getContent());
-        model.addAttribute("currentPage", page);
+        model.addAttribute("moviePage", moviePage);
+        model.addAttribute("currentPage", safePage);
+        model.addAttribute("pageSize", safeSize);
         model.addAttribute("totalPages", moviePage.getTotalPages());
         model.addAttribute("currentStatus", status);
         model.addAttribute("currentKeyword", keyword);
@@ -170,7 +173,7 @@ public class AdminMovieController {
         }
     }
 
-    // 6. Action: Ẩn phim nhanh (ĐÃ SỬA: Dùng toggleMovieStatus)
+    // 6. Action: Ẩn phim nhanh
     @PostMapping("/{id}/hide")
     public String hideMovie(@PathVariable String id, RedirectAttributes redirectAttributes) {
         try {
@@ -183,7 +186,7 @@ public class AdminMovieController {
         return "redirect:/admin/movies";
     }
 
-    // 7. Action: Khôi phục phim nhanh (ĐÃ SỬA: Dùng toggleMovieStatus)
+    // 7. Action: Khôi phục phim nhanh
     @PostMapping("/{id}/restore")
     public String restoreMovie(@PathVariable String id, RedirectAttributes redirectAttributes) {
         try {
@@ -214,6 +217,28 @@ public class AdminMovieController {
             log.error("Upload thất bại: ", e);
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Upload thất bại: " + e.getMessage());
+        }
+        return "redirect:/admin/movies/" + id + "/edit";
+    }
+
+    // 9. Thêm Media Asset bằng URL Cloudinary
+    @PostMapping("/{id}/assets/url")
+    public String addMovieAssetFromUrl(
+            @PathVariable String id,
+            @RequestParam("assetType") AssetType assetType,
+            @RequestParam("assetUrl") String assetUrl,
+            RedirectAttributes redirectAttributes) {
+        try {
+            movieManagementService.addAssetFromUrl(id, assetType, assetUrl);
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Thêm tài nguyên " + assetType.name() + " bằng URL thành công!");
+        } catch (IllegalArgumentException e) {
+            log.warn("Thêm tài nguyên URL thất bại - dữ liệu không hợp lệ: ", e);
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        } catch (Exception e) {
+            log.error("Thêm tài nguyên URL thất bại: ", e);
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Thêm thất bại: " + e.getMessage());
         }
         return "redirect:/admin/movies/" + id + "/edit";
     }

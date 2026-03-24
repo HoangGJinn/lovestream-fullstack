@@ -30,14 +30,14 @@ public class UserWebController {
     @GetMapping("/profile")
     public String profilePage(Authentication authentication, Model model) {
         User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
-        model.addAttribute("currentUser", currentUser);
+
         return "user/profile";
     }
 
     @GetMapping("/profile/edit")
     public String editProfilePage(Authentication authentication, Model model) {
         User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
-        model.addAttribute("currentUser", currentUser);
+
         model.addAttribute("genderOptions", Gender.values());
 
         if (!model.containsAttribute("profileForm")) {
@@ -61,7 +61,7 @@ public class UserWebController {
             RedirectAttributes redirectAttributes
     ) {
         User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
-        model.addAttribute("currentUser", currentUser);
+
         model.addAttribute("genderOptions", Gender.values());
 
         if (bindingResult.hasErrors()) {
@@ -82,7 +82,7 @@ public class UserWebController {
     @GetMapping("/account")
     public String accountOverviewPage(Authentication authentication, Model model) {
         User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
-        model.addAttribute("currentUser", currentUser);
+
         model.addAttribute("plans", servicePlanService.getAllActivePlans());
         Subscription activeSubscription = subscriptionRepository
                 .findTopByUserAndStatusOrderByEndDateDesc(currentUser, SubscriptionStatus.ACTIVE)
@@ -94,7 +94,7 @@ public class UserWebController {
     @GetMapping("/account/membership")
     public String membershipPage(Authentication authentication, Model model) {
         User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
-        model.addAttribute("currentUser", currentUser);
+
 
         Subscription activeSubscription = subscriptionRepository
                 .findTopByUserAndStatusOrderByEndDateDesc(currentUser, SubscriptionStatus.ACTIVE)

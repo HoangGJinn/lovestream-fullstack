@@ -11,6 +11,7 @@ import com.hcmute.lovestream.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,11 +34,15 @@ public class MovieService {
     FavoriteListRepository favoriteListRepository;
     UserRepository userRepository;
 
+    @Transactional(readOnly = true)
     public List<MovieResponse> getAllMovies() {
         return getMoviesForListing("default", null);
     }
 
+    @Transactional(readOnly = true)
     public List<MovieResponse> getMoviesForListing(String sortKey, String userEmail) {
+        // 1. Lấy toàn bộ danh sách Movie (Dữ liệu Rating đã có sẵn trong bảng
+        // video_content)
         List<Movie> movies = new ArrayList<>(movieRepository.findAll());
 
         if (movies.isEmpty()) {
@@ -120,6 +125,7 @@ public class MovieService {
                 .mapToInt(name -> genreAffinity.getOrDefault(name, 0))
                 .sum();
 
+        // Lấy điểm user đã chấm cho phim này (nếu có)
         int personalScore = personalScores.getOrDefault(movie.getId(), 0);
         double avgRating = averageRatings.getOrDefault(movie.getId(), 0.0);
         double popularity = popularityScore(movie.getId(), ratingCounts, favoriteCounts);

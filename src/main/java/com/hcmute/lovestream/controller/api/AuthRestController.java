@@ -76,8 +76,13 @@ public class AuthRestController {
                 }
             }
 
+            // Chuẩn hóa role về dạng authority chuẩn có chứa ROLE_
+            if (role != null && !role.startsWith("ROLE_")) {
+                role = "ROLE_" + role;
+            }
+
             // Nếu là Admin hoặc Content Manager thì cho vào Dashboard
-            if ("ADMIN".equals(role) || "CONTENT_MANAGER".equals(role)) {
+            if ("ROLE_ADMIN".equals(role) || "ROLE_CONTENT_MANAGER".equals(role)) {
                 redirectUrl = "/admin/dashboard";
             }
 

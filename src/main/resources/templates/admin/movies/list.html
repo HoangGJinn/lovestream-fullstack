@@ -8,12 +8,13 @@
 </head>
 <body>
 
-<div class="admin-container">
+<div th:replace="~{admin/fragments/sidebar :: sidebar(activeMenu='movies')}"></div>
+
+<div class="admin-content">
     <header class="admin-header">
-        <h1>🎬 Quản lý Phim Lẻ</h1>
+        <h1>Quản lý Phim Lẻ</h1>
         <div class="header-actions">
-            <a th:href="@{/admin/movies/new}" class="btn btn-primary">+ Tạo phim mới</a>
-            <a th:href="@{/admin/dashboard}" class="btn btn-secondary">← Dashboard</a>
+            <a th:href="@{/admin/movies/new}" class="btn btn-primary">Tạo phim mới</a>
         </div>
     </header>
 
@@ -97,14 +98,14 @@
 
                         <!-- Actions -->
                         <td class="actions">
-                            <a th:href="@{/admin/movies/{id}/edit(id=${movie.id})}" class="btn btn-secondary btn-sm">✏️ Sửa</a>
+                            <a th:href="@{/admin/movies/{id}/edit(id=${movie.id})}" class="btn btn-secondary btn-sm">Sửa</a>
 
                             <!-- Hide -->
                             <form th:if="${movie.status == T(com.hcmute.lovestream.entity.enums.ContentStatus).ACTIVE}"
                                   th:action="@{/admin/movies/{id}/hide(id=${movie.id})}" method="post"
                                   style="display:inline;"
                                   onsubmit="return confirm('Bạn có chắc muốn ẩn bộ phim này?')">
-                                <button class="btn btn-warning btn-sm" type="submit">🙈 Ẩn</button>
+                                <button class="btn btn-warning btn-sm" type="submit">Ẩn</button>
                             </form>
 
                             <!-- Restore -->
@@ -112,16 +113,32 @@
                                   th:action="@{/admin/movies/{id}/restore(id=${movie.id})}" method="post"
                                   style="display:inline;"
                                   onsubmit="return confirm('Khôi phục bộ phim này?')">
-                                <button class="btn btn-success btn-sm" type="submit">♻️ Khôi phục</button>
+                                <button class="btn btn-success btn-sm" type="submit">Khôi phục</button>
                             </form>
                         </td>
                     </tr>
                 </tbody>
             </table>
+
+            <div class="pagination-bar" th:if="${moviePage != null and moviePage.totalPages > 1}">
+                <a class="btn btn-secondary btn-sm"
+                   th:if="${!moviePage.first}"
+                   th:href="@{/admin/movies(status=${currentStatus},keyword=${currentKeyword},page=${currentPage - 1},size=${pageSize})}">
+                    ← Trang trước
+                </a>
+                <span>
+                    Trang <strong th:text="${currentPage + 1}">1</strong> /
+                    <strong th:text="${moviePage.totalPages}">1</strong>
+                    (<span th:text="${moviePage.totalElements}">0</span> phim)
+                </span>
+                <a class="btn btn-secondary btn-sm"
+                   th:if="${!moviePage.last}"
+                   th:href="@{/admin/movies(status=${currentStatus},keyword=${currentKeyword},page=${currentPage + 1},size=${pageSize})}">
+                    Trang sau →
+                </a>
+            </div>
         </div>
 
     </div><!-- /.admin-content -->
-</div><!-- /.admin-container -->
-
 </body>
 </html>

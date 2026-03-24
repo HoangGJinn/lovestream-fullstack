@@ -27,19 +27,19 @@ public class HomeWebController {
         }
 
         // 1. Phim Hành động (Tên tiếng Anh chuẩn từ TVmaze là "Action")
-        List<VideoContent> actionMovies = videoContentRepository.findByGenres_Name("Action");
+        List<VideoContent> actionMovies = videoContentRepository.findByGenres_Name("Action").stream().filter(v -> v.getStatus() == ContentStatus.ACTIVE).toList();
         model.addAttribute("actionMovies", actionMovies);
 
         // 2. Phim Tâm lý / Tình cảm (Drama)
-        List<VideoContent> dramaMovies = videoContentRepository.findByGenres_Name("Drama");
+        List<VideoContent> dramaMovies = videoContentRepository.findByGenres_Name("Drama").stream().filter(v -> v.getStatus() == ContentStatus.ACTIVE).toList();
         model.addAttribute("dramaMovies", dramaMovies);
 
         // 3. Phim Hài hước (Comedy)
-        List<VideoContent> comedyMovies = videoContentRepository.findByGenres_Name("Comedy");
+        List<VideoContent> comedyMovies = videoContentRepository.findByGenres_Name("Comedy").stream().filter(v -> v.getStatus() == ContentStatus.ACTIVE).toList();
         model.addAttribute("comedyMovies", comedyMovies);
 
         // 4. Viễn tưởng / Kỳ ảo (Science-Fiction hoặc Fantasy)
-        List<VideoContent> sciFiMovies = videoContentRepository.findByGenres_Name("Science-Fiction");
+        List<VideoContent> sciFiMovies = videoContentRepository.findByGenres_Name("Science-Fiction").stream().filter(v -> v.getStatus() == ContentStatus.ACTIVE).toList();
         model.addAttribute("sciFiMovies", sciFiMovies);
 
         if (authentication != null
