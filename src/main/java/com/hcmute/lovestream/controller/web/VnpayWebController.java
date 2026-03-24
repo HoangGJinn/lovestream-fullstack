@@ -19,12 +19,20 @@ public class VnpayWebController {
     // Endpoint callback mà VNPay gọi về theo cấu hình `vnp.return.url`
     @GetMapping("/v1/api/vnpay/payment-callback")
     public String paymentCallback(HttpServletRequest request, Model model) {
+        String responseCode = request.getParameter("vnp_ResponseCode");
         String paymentId = vnpayService.handlePaymentCallback(request);
         boolean success = paymentId != null;
+        boolean canceled = "24".equals(responseCode);
+
+        String resultType = success ? "SUCCESS" : (canceled ? "CANCEL" : "FAILED");
+        String message = success
+                ? "Thanh toán thành công!"
+                : (canceled ? "Bạn đã hủy giao dịch." : "Thanh toán không thành công. Vui lòng thử lại.");
 
         model.addAttribute("success", success);
+        model.addAttribute("resultType", resultType);
         model.addAttribute("paymentId", paymentId);
-        model.addAttribute("message", success ? "Thanh toán thành công!" : "Thanh toán thất bại!");
+        model.addAttribute("message", message);
 
         if (success) {
             paymentRepository.findById(paymentId).ifPresent(payment -> addPaymentToModel(model, payment));
