@@ -18,17 +18,12 @@ public class AdminWebController {
         return "admin/admin-dashboard";
     }
 
-    // Tiện tay tạo sẵn các endpoint cho các Use Case khác luôn
+    // Quản lý Voucher
     @GetMapping("/vouchers")
     public String voucherManagePage(Model model) {
         model.addAttribute("pageTitle", "Quản lý Voucher");
         return "admin/admin-vouchers";
     }
 
-    @GetMapping("/users")
-    public String userManagePage(Model model) {
-        model.addAttribute("pageTitle", "Quản lý Người dùng");
-        return "admin/admin-users";
-    }
-
+    // ĐÃ XÓA HÀM @GetMapping("/users") Ở ĐÂY VÌ ĐÃ CÓ ADMIN_USER_CONTROLLER LO
 }

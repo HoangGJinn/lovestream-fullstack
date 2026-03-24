@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">Quản lý Người dùng</title>
+    <style>
+        :root {
+            --netflix-red: #E50914;
+            --netflix-black: #141414;
+            --netflix-dark-grey: #2f2f2f;
+            --netflix-light-grey: #b3b3b3;
+            --text-white: #ffffff;
+            --success-green: #46d369;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: var(--netflix-black);
+            color: var(--text-white);
+            display: flex;
+        }
+
+        /* Sidebar */
+        .admin-sidebar {
+            width: 250px;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.9);
+            padding: 20px 0;
+            position: fixed;
+            border-right: 1px solid var(--netflix-dark-grey);
+        }
+
+        .admin-logo {
+            color: var(--netflix-red);
+            font-size: 28px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 40px;
+            letter-spacing: 2px;
+        }
+
+        .admin-menu a {
+            display: block;
+            padding: 15px 25px;
+            color: var(--netflix-light-grey);
+            text-decoration: none;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .admin-menu a:hover, .admin-menu a.active {
+            color: var(--text-white);
+            background-color: var(--netflix-dark-grey);
+            border-left: 4px solid var(--netflix-red);
+        }
+
+        /* Main Content */
+        .admin-content {
+            margin-left: 250px;
+            padding: 30px;
+            width: calc(100% - 250px);
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        /* Toolbar */
+        .toolbar { display: flex; justify-content: space-between; margin-bottom: 20px; }
+        .search-bar { padding: 10px 15px; width: 350px; border-radius: 4px; border: 1px solid var(--netflix-dark-grey); background-color: #000; color: white; }
+        .btn-primary { background-color: var(--netflix-red); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-primary:hover { background-color: #f40612; }
+
+        /* Table */
+        .table-container { background-color: var(--netflix-dark-grey); padding: 20px; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #404040; }
+        th { color: var(--netflix-light-grey); font-weight: normal; }
+
+        .status-active { color: var(--success-green); background-color: rgba(70, 211, 105, 0.1); padding: 5px 10px; border-radius: 4px; font-size: 13px; }
+        .status-blocked { color: #ff4d4d; background-color: rgba(255, 77, 77, 0.1); padding: 5px 10px; border-radius: 4px; font-size: 13px; }
+
+        .role-badge { background-color: #4287f5; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .role-admin { background-color: var(--netflix-red); }
+        .role-content { background-color: #f5a442; }
+
+        .btn-action { background: none; border: 1px solid var(--netflix-light-grey); color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; margin-right: 5px;}
+        .btn-action.block { border-color: #ff4d4d; color: #ff4d4d; }
+        .btn-action.block:hover { background-color: rgba(255, 77, 77, 0.1); }
+
+        /* Modal Tạo tài khoản CM */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background-color: var(--netflix-dark-grey); padding: 30px; border-radius: 8px; width: 400px; position: relative; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header h3 { margin: 0; }
+        .close-btn { color: var(--netflix-light-grey); font-size: 24px; cursor: pointer; border: none; background: none; padding: 0; }
+        .close-btn:hover { color: white; }
+
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: var(--netflix-light-grey); font-size: 14px;}
+        .form-group input { width: 100%; padding: 10px; box-sizing: border-box; background: #000; border: 1px solid #404040; color: white; border-radius: 4px; }
+        .form-group input:focus { outline: 1px solid var(--netflix-red); border-color: var(--netflix-red); }
+
+        .error-message { color: #E50914; font-size: 13px; margin-bottom: 15px; display: none; background: rgba(229, 9, 20, 0.1); padding: 8px; border-radius: 4px;}
+
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .btn-secondary { background: transparent; color: white; border: 1px solid #b3b3b3; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+        .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body>
+
+<div class="admin-sidebar">
+    <div class="admin-logo">NETFLIX ADMIN</div>
+    <div class="admin-menu">
+        <a href="/admin/dashboard">Dashboard</a>
+        <a href="/admin/users" class="active">Quản lý Người dùng</a>
+        <a href="/admin/plans">Quản lý Gói dịch vụ</a>
+        <a href="/admin/vouchers">Quản lý Voucher</a>
+        <a href="#" onclick="handleAdminLogout(event)" style="margin-top: 50px; color: var(--netflix-red);">Đăng xuất</a>
+    </div>
+</div>
+
+<div class="admin-content">
+    <div class="admin-header">
+        <h2>Danh sách Người dùng</h2>
+        <div>Xin chào, <b>Admin</b></div>
+    </div>
+
+    <div class="toolbar">
+        <input type="text" class="search-bar" placeholder="Tìm kiếm theo Email (Nhấn Enter)..." id="searchInput" onkeypress="handleSearch(event)">
+        <button class="btn-primary" onclick="openCmModal()">+ Tạo tài khoản CM</button>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Email</th>
+                <th>Vai trò</th>
+                <th>Gói dịch vụ</th>
+                <th>Trạng thái</th>
+                <th>Hành động</th>
+            </tr>
+            </thead>
+            <tbody id="userTableBody">
+            <tr><td colspan="6" style="text-align:center;">Đang tải dữ liệu...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal-overlay" id="createCmModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Tạo tài khoản CM</h3>
+            <button class="close-btn" onclick="closeCmModal()">&times;</button>
+        </div>
+
+        <div class="error-message" id="cmErrorMsg">Không được bỏ trống</div>
+
+        <div class="form-group">
+            <label>Họ và tên</label>
+            <input type="text" id="cmFullName" placeholder="Nhập họ và tên">
+        </div>
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="cmEmail" placeholder="Nhập địa chỉ email">
+        </div>
+        <div class="form-group">
+            <label>Số điện thoại</label>
+            <input type="text" id="cmPhone" placeholder="Nhập số điện thoại">
+        </div>
+        <div class="form-group">
+            <label>Mật khẩu</label>
+            <input type="password" id="cmPassword" placeholder="Nhập mật khẩu">
+        </div>
+        <div class="form-group">
+            <label>Xác nhận lại mật khẩu</label>
+            <input type="password" id="cmConfirmPassword" placeholder="Nhập lại mật khẩu">
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="closeCmModal()">Hủy</button>
+            <button class="btn-primary" onclick="submitCreateCm()">Tạo</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => loadUsers());
+
+    function loadUsers(searchKeyword = '') {
+        let url = '/api/v1/admin/users';
+        if(searchKeyword) url += `?search=${searchKeyword}`;
+
+        fetch(url)
+            .then(res => res.json())
+            .then(data => renderTable(data))
+            .catch(err => console.error("Lỗi tải dữ liệu", err));
+    }
+
+    function renderTable(users) {
+        const tbody = document.getElementById('userTableBody');
+        tbody.innerHTML = '';
+
+        if(users.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Không tìm thấy người dùng nào.</td></tr>';
+            return;
+        }
+
+        users.forEach(u => {
+            const isActive = u.status === 'ACTIVE';
+            const statusSpan = isActive
+                ? `<span class="status-active">Hoạt động</span>`
+                : `<span class="status-blocked">Đã khóa</span>`;
+
+            let roleClass = 'role-badge';
+            if (u.role === 'ADMIN') roleClass += ' role-admin';
+            else if (u.role === 'CONTENT_MANAGER') roleClass += ' role-content';
+
+            const actionBtn = isActive
+                ? `<button class="btn-action block" onclick="toggleStatus('${u.id}')">Khóa tài khoản</button>`
+                : `<button class="btn-action" onclick="toggleStatus('${u.id}')">Mở khóa</button>`;
+
+            const isSelf = u.role === 'ADMIN';
+            const renderAction = isSelf ? `<span style="color:var(--netflix-light-grey); font-size:12px;">(Bạn)</span>` : actionBtn;
+
+            tbody.innerHTML += `
+                <tr>
+                    <td style="color: var(--netflix-light-grey); font-size: 13px;">${u.id}</td>
+                    <td><strong>${u.email}</strong></td>
+                    <td><span class="${roleClass}">${u.role}</span></td>
+                    <td>${u.plan}</td>
+                    <td>${statusSpan}</td>
+                    <td>${renderAction}</td>
+                </tr>
+            `;
+        });
+    }
+
+    function handleSearch(event) {
+        if (event.key === 'Enter') {
+            const keyword = document.getElementById('searchInput').value;
+            loadUsers(keyword);
+        }
+    }
+
+    function toggleStatus(id) {
+        if(confirm(`Xác nhận thay đổi trạng thái của người dùng này?`)) {
+            fetch(`/api/v1/admin/users/${id}/toggle-status`, { method: 'PUT' })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message);
+                loadUsers();
+            });
+        }
+    }
+
+    function openCmModal() {
+        document.getElementById('createCmModal').style.display = 'flex';
+        document.getElementById('cmErrorMsg').style.display = 'none';
+    }
+
+    function closeCmModal() {
+        document.getElementById('createCmModal').style.display = 'none';
+        document.getElementById('cmFullName').value = '';
+        document.getElementById('cmEmail').value = '';
+        document.getElementById('cmPhone').value = '';
+        document.getElementById('cmPassword').value = '';
+        document.getElementById('cmConfirmPassword').value = '';
+        document.getElementById('cmErrorMsg').style.display = 'none';
+    }
+
+    // ĐÃ CẬP NHẬT LOGIC GỌI API THẬT
+    function submitCreateCm() {
+        const fullName = document.getElementById('cmFullName').value.trim();
+        const email = document.getElementById('cmEmail').value.trim();
+        const phone = document.getElementById('cmPhone').value.trim();
+        const password = document.getElementById('cmPassword').value;
+        const confirmPassword = document.getElementById('cmConfirmPassword').value;
+        const errorMsg = document.getElementById('cmErrorMsg');
+
+        if (!fullName || !email || !phone || !password || !confirmPassword) {
+            errorMsg.innerText = 'Không được bỏ trống các trường thông tin';
+            errorMsg.style.display = 'block';
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            errorMsg.innerText = 'Mật khẩu xác nhận không khớp';
+            errorMsg.style.display = 'block';
+            return;
+        }
+
+        const payload = {
+            fullName: fullName,
+            email: email,
+            phone: phone,
+            password: password
+        };
+
+        fetch('/api/v1/admin/users/content-manager', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                errorMsg.innerText = data.error;
+                errorMsg.style.display = 'block';
+            } else {
+                alert(' ' + data.message);
+                closeCmModal();
+                loadUsers();
+            }
+        })
+        .catch(err => {
+            console.error('Lỗi mạng:', err);
+            errorMsg.innerText = " Đã xảy ra lỗi kết nối!";
+            errorMsg.style.display = 'block';
+        });
+    }
+
+    function handleAdminLogout(event) {
+        event.preventDefault();
+        fetch('/api/v1/auth/logout', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => window.location.href = data.redirectUrl ? data.redirectUrl : '/login')
+        .catch(() => window.location.href = '/login');
+    }
+</script>
+</body>
+</html>
