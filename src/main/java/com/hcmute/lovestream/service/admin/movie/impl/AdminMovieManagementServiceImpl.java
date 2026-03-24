@@ -123,15 +123,29 @@ public class AdminMovieManagementServiceImpl implements AdminMovieManagementServ
 
     @Override
     @Transactional
+    public MediaAsset addAssetFromUrl(String movieId, AssetType assetType, String assetUrl) {
+        if (assetUrl == null || assetUrl.isBlank()) {
+            throw new IllegalArgumentException("URL không hợp lệ. Đường dẫn không được để trống!");
+        }
+        if (!assetUrl.contains("res.cloudinary.com")) {
+            throw new IllegalArgumentException("URL không hợp lệ. Chỉ chấp nhận link public từ nền tảng Cloudinary.");
+        }
+        return addAsset(movieId, assetType, assetUrl);
+    }
+
+    @Override
+    @Transactional
     public MediaAsset addAsset(String movieId, AssetType assetType, String assetUrl) {
         Movie movie = getMovieById(movieId);
         
-        MediaAsset asset = new MediaAsset();
+        MediaAsset asset = mediaAssetRepository.findByVideoContent_IdAndAssetType(movieId, assetType)
+                .orElse(new MediaAsset());
+                
         asset.setAssetType(assetType);
         asset.setAssetUrl(assetUrl);
         asset.setVideoContent(movie);
         
-        log.info("Adding {} to Movie ID: {}", assetType, movieId);
+        log.info("Saving {} to Movie ID: {}", assetType, movieId);
         return mediaAssetRepository.save(asset);
     }
 

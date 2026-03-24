@@ -200,6 +200,39 @@ public class AdminMovieManagementServiceTest {
         assertThat(result.getAssetType()).isEqualTo(AssetType.POSTER);
         assertThat(result.getAssetUrl()).isEqualTo("http://image.jpg");
         assertThat(result.getVideoContent()).isEqualTo(movie); // Validate the relationship is established
+
+        verify(mediaAssetRepository, times(1)).findByVideoContent_IdAndAssetType("movie-1", AssetType.POSTER);
+    }
+
+    @Test
+    void whenAddAsset_AlreadyExists_ReplacesExisting() {
+        Movie movie = createMockMovie();
+        when(movieRepository.findById("movie-1")).thenReturn(Optional.of(movie));
+
+        MediaAsset existingAsset = new MediaAsset();
+        existingAsset.setId("existing-asset-id");
+        existingAsset.setAssetType(AssetType.FULL_VIDEO);
+        existingAsset.setAssetUrl("http://old-video.mp4");
+
+        when(mediaAssetRepository.findByVideoContent_IdAndAssetType("movie-1", AssetType.FULL_VIDEO))
+                .thenReturn(Optional.of(existingAsset));
+                
+        when(mediaAssetRepository.save(any(MediaAsset.class))).thenAnswer(i -> i.getArgument(0));
+
+        MediaAsset result = adminMovieManagementService.addAsset("movie-1", AssetType.FULL_VIDEO, "http://new-video.mp4");
+
+        assertThat(result.getId()).isEqualTo("existing-asset-id");
+        assertThat(result.getAssetUrl()).isEqualTo("http://new-video.mp4");
+    }
+
+    @Test
+    void whenAddAssetFromUrl_InvalidUrl_ThrowsException() {
+        assertThatThrownBy(() -> adminMovieManagementService.addAssetFromUrl("movie-1", AssetType.FULL_VIDEO, ""))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        assertThatThrownBy(() -> adminMovieManagementService.addAssetFromUrl("movie-1", AssetType.FULL_VIDEO, "http://youtube.com/video"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("res.cloudinary.com");
     }
 
     @Test

@@ -1,7 +1,9 @@
 package com.hcmute.lovestream.e2e;
 
+import com.hcmute.lovestream.entity.Genre;
 import com.hcmute.lovestream.entity.Movie;
 import com.hcmute.lovestream.entity.enums.ContentStatus;
+import com.hcmute.lovestream.repository.GenreRepository;
 import com.hcmute.lovestream.repository.MovieRepository;
 import com.hcmute.lovestream.repository.VideoContentRepository;
 import com.hcmute.lovestream.service.storage.MediaStorageService;
@@ -51,7 +53,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "spring.security.oauth2.client.registration.google.scope=email,profile",
         // JWT config
         "jwt.secret=test-secret-key-at-least-256-bits-long-for-hs256-hmac-sha-padding-ok",
-        "jwt.expiration=86400000"
+        "jwt.expiration=86400000",
+        // VNPay Mock Properties
+        "vnp.pay.url=dummy",
+        "vnp.return.url=dummy",
+        "vnp.tmn.code=dummy",
+        "vnp.secret.key=dummy",
+        "vnp.version=dummy",
+        "vnp.command=dummy",
+        "vnp.order.type=dummy"
 })
 public class MovieLifecycleE2ETest {
 
@@ -68,9 +78,19 @@ public class MovieLifecycleE2ETest {
     @MockitoBean
     private MediaStorageService mediaStorageService;
 
+    @Autowired
+    private GenreRepository genreRepository;
+
+    private Genre testGenre;
+
     @BeforeEach
     void setUp() {
         movieRepository.deleteAll();
+        genreRepository.deleteAll();
+        
+        testGenre = new Genre();
+        testGenre.setName("Action");
+        testGenre = genreRepository.save(testGenre);
     }
 
     // ─── A. Movie CRUD ────────────────────────────────────────────────────────
@@ -88,9 +108,10 @@ public class MovieLifecycleE2ETest {
                         .param("durationMinutes", "120")
                         .param("ageRating", "PG_13")
                         .param("quality", "HD")
-                        .param("status", "ACTIVE"))
+                        .param("status", "ACTIVE")
+                        .param("genreIds", testGenre.getId()))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/admin/movies"));
+                .andExpect(redirectedUrlPattern("/admin/movies/*/edit"));
 
         List<Movie> movies = movieRepository.findAll();
         assertThat(movies).hasSize(1);
@@ -119,9 +140,10 @@ public class MovieLifecycleE2ETest {
                         .param("durationMinutes", "110")
                         .param("ageRating", "PG")
                         .param("quality", "FHD")
-                        .param("status", "ACTIVE"))
+                        .param("status", "ACTIVE")
+                        .param("genreIds", testGenre.getId()))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/admin/movies"));
+                .andExpect(redirectedUrl("/admin/movies/" + movieId + "/edit"));
 
         // Assert: reload from DB
         Movie updated = movieRepository.findById(movieId).orElseThrow();

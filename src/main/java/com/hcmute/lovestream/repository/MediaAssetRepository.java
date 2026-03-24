@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface MediaAssetRepository extends JpaRepository<MediaAsset, String> {
     List<MediaAsset> findByVideoContent_Id(String videoContentId);
+    java.util.Optional<MediaAsset> findByVideoContent_IdAndAssetType(String videoContentId, com.hcmute.lovestream.entity.enums.AssetType assetType);
 }

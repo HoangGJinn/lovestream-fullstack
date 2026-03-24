@@ -6,13 +6,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class AdminDashboardController {
 
-//    @GetMapping("/admin")
-//    public String index() {
-//        return "redirect:/admin/dashboard";
-//    }
-//
-//    @GetMapping("/admin/dashboard")
-//    public String adminDashboardPlaceholder() {
-//        return "admin/dashboard";
-//    }
+    @GetMapping("/admin")
+    public String index() {
+        return "redirect:/admin/dashboard";
+    }
+
+    @GetMapping("/admin/dashboard")
+    public String adminDashboardPlaceholder() {
+        return "admin/dashboard";
+    }
 }

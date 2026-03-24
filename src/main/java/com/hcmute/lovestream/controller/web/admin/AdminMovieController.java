@@ -188,7 +188,7 @@ public class AdminMovieController {
     @ModelAttribute("allAssetTypes")
     public AssetType[] populateAssetTypes() {
         // Only offer asset types relevant to a Movie (exclude EPISODE_VIDEO)
-        return new AssetType[]{AssetType.POSTER, AssetType.BACKGROUND, AssetType.TRAILER, AssetType.MOVIE_VIDEO};
+        return new AssetType[]{AssetType.POSTER, AssetType.TRAILER, AssetType.FULL_VIDEO};
     }
 
     // 7. Action: Khôi phục phim nhanh
@@ -222,6 +222,28 @@ public class AdminMovieController {
             log.error("Upload thất bại: ", e);
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Upload thất bại: " + e.getMessage());
+        }
+        return "redirect:/admin/movies/" + id + "/edit";
+    }
+
+    // 9. Thêm Media Asset bằng URL Cloudinary
+    @PostMapping("/{id}/assets/url")
+    public String addMovieAssetFromUrl(
+            @PathVariable String id,
+            @RequestParam("assetType") AssetType assetType,
+            @RequestParam("assetUrl") String assetUrl,
+            RedirectAttributes redirectAttributes) {
+        try {
+            movieManagementService.addAssetFromUrl(id, assetType, assetUrl);
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Thêm tài nguyên " + assetType.name() + " bằng URL thành công!");
+        } catch (IllegalArgumentException e) {
+            log.warn("Thêm tài nguyên URL thất bại - dữ liệu không hợp lệ: ", e);
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        } catch (Exception e) {
+            log.error("Thêm tài nguyên URL thất bại: ", e);
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Thêm thất bại: " + e.getMessage());
         }
         return "redirect:/admin/movies/" + id + "/edit";
     }

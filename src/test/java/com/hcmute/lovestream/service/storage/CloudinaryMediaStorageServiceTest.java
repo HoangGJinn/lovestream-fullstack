@@ -87,6 +87,23 @@ public class CloudinaryMediaStorageServiceTest {
         verify(uploader, times(1)).upload(any(byte[].class), anyMap());
     }
 
+    // --- Test 2b: Upload video (FULL_VIDEO) uses video resource_type ---
+    @Test
+    void whenUploadFullVideo_thenReturnSecureUrl() throws IOException {
+        MockMultipartFile mockFile = new MockMultipartFile(
+                "file", "full_movie.mp4", "video/mp4", "fake-video-bytes".getBytes()
+        );
+
+        String expectedUrl = "https://res.cloudinary.com/test/video/upload/full_movie.mp4";
+        when(uploader.upload(any(byte[].class), anyMap()))
+                .thenReturn(Map.of("secure_url", expectedUrl));
+
+        String result = cloudinaryMediaStorageService.upload(mockFile, AssetType.FULL_VIDEO);
+
+        assertThat(result).isEqualTo(expectedUrl);
+        verify(uploader, times(1)).upload(any(byte[].class), anyMap());
+    }
+
     // --- Test 3: Empty file throws IllegalArgumentException ---
     @Test
     void whenUploadEmptyFile_thenThrowIllegalArgumentException() {

@@ -54,7 +54,7 @@ public class VideoContentListWebController {
     public String getSeries(Authentication authentication, Model model) {
 
 
-        List<TVSeries> series = tvSeriesRepository.findAll();
+        List<TVSeries> series = tvSeriesRepository.findAllByStatus(com.hcmute.lovestream.entity.enums.ContentStatus.ACTIVE);
 
         List<List<TVSeries>> rows = new ArrayList<>();
         int size = 6;
