@@ -5,6 +5,7 @@ import com.hcmute.lovestream.dto.response.ServicePlanResponse;
 import com.hcmute.lovestream.dto.request.Vnpay;
 import com.hcmute.lovestream.entity.Payment;
 import com.hcmute.lovestream.entity.ServicePlan;
+import com.hcmute.lovestream.entity.Subscription;
 import com.hcmute.lovestream.entity.User;
 import com.hcmute.lovestream.entity.enums.PaymentGateway;
 import com.hcmute.lovestream.entity.enums.SubscriptionStatus;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 
 @Service
@@ -93,6 +95,81 @@ public class ServicePlanServiceImpl implements ServicePlanService {
         return PurchaseResponse.builder()
                 .message("Đang chuyển tới VNPay để thanh toán...")
                 .planName(plan.getName())
+                .startDate(null)
+                .endDate(null)
+                .paymentUrl(paymentUrl)
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ServicePlanResponse> getAvailableUpgradePlans(String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+
+        Subscription activeSubscription = subscriptionRepository
+                .findTopByUserAndStatusOrderByEndDateDesc(user, SubscriptionStatus.ACTIVE)
+                .orElseThrow(() -> new RuntimeException("Bạn chưa có gói dịch vụ đang hoạt động để nâng cấp."));
+
+        return servicePlanRepository.findByIsActiveTrueOrderByPriceAsc()
+                .stream()
+                .filter(plan -> plan.getPrice().compareTo(activeSubscription.getPlan().getPrice()) > 0)
+                .sorted(Comparator.comparing(ServicePlan::getPrice))
+                .map(ServicePlanResponse::new)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public PurchaseResponse upgradePlan(String userEmail, String targetPlanId, HttpServletRequest request) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+
+        Subscription activeSubscription = subscriptionRepository
+                .findTopByUserAndStatusOrderByEndDateDesc(user, SubscriptionStatus.ACTIVE)
+                .orElseThrow(() -> new RuntimeException("Bạn chưa có gói dịch vụ đang hoạt động để nâng cấp."));
+
+        ServicePlan currentPlan = activeSubscription.getPlan();
+        ServicePlan targetPlan = servicePlanRepository.findByIdAndIsActiveTrue(targetPlanId)
+                .orElseThrow(() -> new RuntimeException("Gói dịch vụ không tồn tại hoặc đã bị ẩn"));
+
+        int comparePrice = targetPlan.getPrice().compareTo(currentPlan.getPrice());
+        if (comparePrice == 0) {
+            throw new RuntimeException("Bạn đang sử dụng gói này.");
+        }
+        if (comparePrice < 0) {
+            throw new RuntimeException("Hiện tại hệ thống chưa hỗ trợ hạ cấp gói dịch vụ trong thời gian còn hiệu lực. Trong trường hợp hạ cấp, chúng tôi sẽ không hoàn lại phần phí chênh lệch. Vui lòng tiếp tục sử dụng gói hiện tại đến khi hết hạn.");
+        }
+
+        String orderCode = VnpayUtil.getRandomNumber(10);
+        Payment payment = Payment.builder()
+                .user(user)
+                .servicePlan(targetPlan)
+                .amount(targetPlan.getPrice().subtract(currentPlan.getPrice()))
+                .paymentGateway(PaymentGateway.VNPAY)
+                .status(TransactionStatus.PENDING)
+                .transactionCode(orderCode)
+                .build();
+        paymentRepository.save(payment);
+
+        Vnpay paymentRequest = Vnpay.builder()
+                .amount(payment.getAmount().stripTrailingZeros().toPlainString())
+                .orderInfo("Nang cap goi: " + currentPlan.getName() + " -> " + targetPlan.getName())
+                .orderId(orderCode)
+                .build();
+
+        String paymentUrl;
+        try {
+            paymentUrl = vnpayService.createPaymentWithOrderCode(paymentRequest, orderCode, request);
+        } catch (Exception e) {
+            String detail = (e.getMessage() == null || e.getMessage().isBlank())
+                    ? "Lỗi không xác định"
+                    : e.getMessage();
+            throw new RuntimeException("Không thể tạo link thanh toán VNPay: " + detail, e);
+        }
+
+        return PurchaseResponse.builder()
+                .message("Đang chuyển tới VNPay để thanh toán phần chênh lệch...")
+                .planName(targetPlan.getName())
                 .startDate(null)
                 .endDate(null)
                 .paymentUrl(paymentUrl)

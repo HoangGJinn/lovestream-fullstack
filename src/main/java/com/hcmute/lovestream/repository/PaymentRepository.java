@@ -12,4 +12,5 @@ import java.util.Optional;
 public interface PaymentRepository extends JpaRepository<Payment, String> {
     List<Payment> findByUserOrderByCreatedAtDesc(User user);
     Optional<Payment> findByTransactionCode(String transactionCode);
+    boolean existsByTransactionCode(String transactionCode);
 }
