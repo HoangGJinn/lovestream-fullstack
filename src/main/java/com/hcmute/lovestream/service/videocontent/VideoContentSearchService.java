@@ -1,4 +1,4 @@
-package com.hcmute.lovestream.service.videocontent;
+package com.hcmute.lovestream.service.videoContent;
 
 import com.hcmute.lovestream.dto.request.VideoContentSearchRequest;
 import com.hcmute.lovestream.dto.response.VideoContentSearchResponse;
