@@ -1,7 +1,7 @@
 package com.hcmute.lovestream.controller.api;
 
-import com.hcmute.lovestream.dto.response.MovieDetail;
-import com.hcmute.lovestream.service.videoContent.MovieDetailService;
+import com.hcmute.lovestream.dto.response.VideoContentDetail;
+import com.hcmute.lovestream.service.videoContent.VideoContentDetailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class MovieController {
 
-    private final MovieDetailService movieDetailService;
+    private final VideoContentDetailService movieDetailService;
 
     @GetMapping("/{movieId}")
     public ResponseEntity<?> getMovieDetail(@PathVariable String movieId, Authentication authentication) {
@@ -25,7 +25,7 @@ public class MovieController {
                 userEmail = authentication.getName();
             }
 
-            MovieDetail dto = movieDetailService.getMovieDetail(movieId, userEmail);
+            VideoContentDetail dto = movieDetailService.getMovieDetail(movieId, userEmail);
             return ResponseEntity.ok(dto);
 
         } catch (IllegalArgumentException ex) {
