@@ -22,7 +22,7 @@ public class AssetTypeConverter implements AttributeConverter<AssetType, String>
         }
         return switch (dbData) {
             case "MOVIE_VIDEO" -> AssetType.FULL_VIDEO;
-            case "BACKGROUND" -> AssetType.POSTER;
+            case "BACKGROUND" -> null;
             default -> {
                 try {
                     yield AssetType.valueOf(dbData);
