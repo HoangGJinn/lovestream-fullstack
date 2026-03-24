@@ -1,6 +1,6 @@
 package com.hcmute.lovestream.service.videoContent;
 
-import com.hcmute.lovestream.dto.response.MovieDetail;
+import com.hcmute.lovestream.dto.response.VideoContentDetail;
 import com.hcmute.lovestream.entity.ContentCredit;
 import com.hcmute.lovestream.entity.MediaAsset;
 import com.hcmute.lovestream.entity.Movie;
@@ -24,7 +24,7 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE, makeFinal = true)
-public class MovieDetailService {
+public class VideoContentDetailService {
 
     MovieRepository movieRepository;
     RatingRepository ratingRepository;
@@ -32,7 +32,7 @@ public class MovieDetailService {
     SubscriptionRepository subscriptionRepository;
 
     @Transactional(readOnly = true)
-    public MovieDetail getMovieDetail(String movieId, String userEmail) {
+    public VideoContentDetail getMovieDetail(String movieId, String userEmail) {
         Movie movie = movieRepository.findByIdAndStatus(movieId, ContentStatus.ACTIVE)
                 .orElseThrow(() -> new IllegalArgumentException("Phim không tồn tại hoặc đã bị gỡ khỏi hệ thống."));
 
@@ -57,7 +57,7 @@ public class MovieDetailService {
 
         WatchDecision decision = decideWatch(userEmail);
 
-        return MovieDetail.builder()
+        return VideoContentDetail.builder()
                 .id(movie.getId())
                 .title(movie.getTitle())
                 .description(movie.getDescription())
