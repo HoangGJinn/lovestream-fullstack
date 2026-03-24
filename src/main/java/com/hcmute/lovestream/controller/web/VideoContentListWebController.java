@@ -34,7 +34,6 @@ public class VideoContentListWebController {
         String userEmail = null;
         if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getName())) {
             userEmail = authentication.getName();
-            model.addAttribute("currentUser", userProfileService.getCurrentUserByEmail(userEmail));
         }
 
         List<MovieResponse> movies = movieService.getMoviesForListing(sort, userEmail);
@@ -53,9 +52,7 @@ public class VideoContentListWebController {
 
     @GetMapping("/series")
     public String getSeries(Authentication authentication, Model model) {
-        if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getName())) {
-            model.addAttribute("currentUser", userProfileService.getCurrentUserByEmail(authentication.getName()));
-        }
+
 
         List<TVSeries> series = tvSeriesRepository.findAll();
 

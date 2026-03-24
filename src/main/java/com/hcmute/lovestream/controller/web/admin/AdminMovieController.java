@@ -12,6 +12,8 @@ import com.hcmute.lovestream.service.admin.movie.AdminMovieManagementService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -60,9 +62,22 @@ public class AdminMovieController {
     public String listMovies(
             @RequestParam(required = false) ContentStatus status,
             @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
             Model model) {
-        List<Movie> movies = movieManagementService.filterMovies(status, keyword);
-        model.addAttribute("movies", movies);
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+
+        Page<Movie> moviePage = movieManagementService.filterMovies(
+                status,
+                keyword,
+                PageRequest.of(safePage, safeSize)
+        );
+
+        model.addAttribute("movies", moviePage.getContent());
+        model.addAttribute("moviePage", moviePage);
+        model.addAttribute("currentPage", safePage);
+        model.addAttribute("pageSize", safeSize);
         model.addAttribute("currentStatus", status);
         model.addAttribute("currentKeyword", keyword);
         return "admin/movies/list";

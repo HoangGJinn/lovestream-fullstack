@@ -11,7 +11,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class MovieDetail {
+public class VideoContentDetail {
     private String id;
     private String title;
     private String description;

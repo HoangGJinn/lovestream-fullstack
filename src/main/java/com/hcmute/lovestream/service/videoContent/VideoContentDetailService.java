@@ -1,39 +1,33 @@
 package com.hcmute.lovestream.service.videoContent;
 
-import com.hcmute.lovestream.dto.response.MovieDetail;
+import com.hcmute.lovestream.dto.response.VideoContentDetail;
 import com.hcmute.lovestream.entity.ContentCredit;
 import com.hcmute.lovestream.entity.MediaAsset;
 import com.hcmute.lovestream.entity.Movie;
 import com.hcmute.lovestream.entity.enums.AssetType;
 import com.hcmute.lovestream.entity.enums.ContentStatus;
 import com.hcmute.lovestream.entity.enums.CreditType;
-import com.hcmute.lovestream.entity.enums.SubscriptionStatus;
 import com.hcmute.lovestream.repository.MovieRepository;
 import com.hcmute.lovestream.repository.RatingRepository;
-import com.hcmute.lovestream.repository.SubscriptionRepository;
-import com.hcmute.lovestream.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE, makeFinal = true)
-public class MovieDetailService {
+public class VideoContentDetailService {
 
     MovieRepository movieRepository;
     RatingRepository ratingRepository;
-    UserRepository userRepository;
-    SubscriptionRepository subscriptionRepository;
 
     @Transactional(readOnly = true)
-    public MovieDetail getMovieDetail(String movieId, String userEmail) {
-        Movie movie = movieRepository.findByIdAndStatus(movieId, ContentStatus.ACTIVE)
+    public VideoContentDetail getMovieDetail(String movieId, String userEmail, boolean isVip) {
+        Movie movie = movieRepository.findDetailedByIdAndStatus(movieId, ContentStatus.ACTIVE)
                 .orElseThrow(() -> new IllegalArgumentException("Phim không tồn tại hoặc đã bị gỡ khỏi hệ thống."));
 
         Double avg = ratingRepository.calculateAverageScoreByVideoId(movieId);
@@ -55,9 +49,9 @@ public class MovieDetailService {
 
         long views = 0L;
 
-        WatchDecision decision = decideWatch(userEmail);
+        WatchDecision decision = decideWatch(userEmail, isVip);
 
-        return MovieDetail.builder()
+        return VideoContentDetail.builder()
                 .id(movie.getId())
                 .title(movie.getTitle())
                 .description(movie.getDescription())
@@ -112,24 +106,12 @@ public class MovieDetailService {
                 .orElse(defaultValue);
     }
 
-    private WatchDecision decideWatch(String userEmail) {
+    private WatchDecision decideWatch(String userEmail, boolean isVip) {
         if (userEmail == null || userEmail.isBlank()) {
             return new WatchDecision(false, "LOGIN_REQUIRED");
         }
 
-        var userOpt = userRepository.findByEmail(userEmail);
-        if (userOpt.isEmpty()) {
-            return new WatchDecision(false, "LOGIN_REQUIRED");
-        }
-
-        String userId = userOpt.get().getId();
-        boolean hasActiveSub = subscriptionRepository.existsByUser_IdAndStatusAndEndDateAfter(
-                userId,
-                SubscriptionStatus.ACTIVE,
-                LocalDateTime.now()
-        );
-
-        if (!hasActiveSub) {
+        if (!isVip) {
             return new WatchDecision(false, "BUY_PACKAGE");
         }
 

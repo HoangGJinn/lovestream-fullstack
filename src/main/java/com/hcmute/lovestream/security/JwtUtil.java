@@ -1,5 +1,6 @@
 package com.hcmute.lovestream.security;
 
+import com.hcmute.lovestream.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -7,6 +8,7 @@ import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -19,6 +21,7 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
+    private final UserRepository userRepository;
     // Khóa bí mật (Lấy từ application.properties)
     @Value("${jwt.secret}")
     private String secretKey;
@@ -28,6 +31,10 @@ public class JwtUtil {
 
     @Value("${jwt.refresh-token.expiration}")
     private Long refreshExpiration;
+
+    public JwtUtil(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     // Lấy Username (Email) từ Token
     public String extractUsername(String token) {
@@ -44,21 +51,42 @@ public class JwtUtil {
         return extractClaim(token, claims -> claims.get("type", String.class));
     }
 
+    public boolean extractIsVip(String token) {
+        Boolean isVip = extractClaim(token, claims -> claims.get("isVip", Boolean.class));
+        return Boolean.TRUE.equals(isVip);
+    }
+
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
 
+    // Lấy FullName từ Token
+    public String extractFullName(String token) {
+        return extractClaim(token, claims -> claims.get("fullName", String.class));
+    }
+
+    // Lấy Avatar từ Token
+    public String extractAvatar(String token) {
+        return extractClaim(token, claims -> claims.get("avatar", String.class));
+    }
+
     // ----------------- GENERATE TOKENS -----------------
 
     // Dành cho luồng AuthServiceImpl đăng nhập đơn giản
-    public String generateToken(String email, String role) {
+    public String generateToken(com.hcmute.lovestream.entity.User user, boolean isVip) {
+
         Map<String, Object> claims = new HashMap<>();
-        claims.put("role", role);
-        claims.put("type", "ACCESS"); // Đảm bảo Access Token luôn có type để Filter phân biệt được với Refresh Token
+
+        claims.put("role", user.getRole().getAuthority());
+        claims.put("isVip", isVip);
+        claims.put("type", "ACCESS");
+        claims.put("fullName", user.getFullName());
+        claims.put("avatar", user.getAvatar());
+
         return Jwts.builder()
                 .claims(claims)
-                .subject(email)
+                .subject(user.getEmail())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
                 .signWith(getSignInKey())
@@ -97,6 +125,14 @@ public class JwtUtil {
     public boolean validateRefreshToken(String token) {
         try {
             return "REFRESH".equals(extractTokenType(token)) && !isTokenExpired(token);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean isTokenValid(String token) {
+        try {
+            return !isTokenExpired(token);
         } catch (Exception e) {
             return false;
         }
@@ -155,5 +191,9 @@ public class JwtUtil {
     private SecretKey getSignInKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    public String extractRole(String token) {
+        return extractClaim(token, claims -> claims.get("role", String.class));
     }
 }

@@ -33,6 +33,13 @@ public class Payment {
     @EqualsAndHashCode.Exclude
     private ServicePlan servicePlan;
 
+    // Mối quan hệ N-1: Nhiều Hóa đơn có thể dùng chung 1 Voucher
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "voucher_id", nullable = true) // nullable = true vì có người thanh toán không xài mã
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Voucher voucher;
+
     @Column(nullable = false)
     private BigDecimal amount;
 

@@ -11,21 +11,14 @@ import com.hcmute.lovestream.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE, makeFinal = true)
-
 public class MovieService {
     MovieMapper movieMapper;
     MovieRepository movieRepository;
@@ -33,52 +26,59 @@ public class MovieService {
     FavoriteListRepository favoriteListRepository;
     UserRepository userRepository;
 
+    @Transactional(readOnly = true)
     public List<MovieResponse> getAllMovies() {
         return getMoviesForListing("default", null);
     }
 
+    @Transactional(readOnly = true)
     public List<MovieResponse> getMoviesForListing(String sortKey, String userEmail) {
+        // 1. Lấy toàn bộ danh sách Movie (Dữ liệu Rating đã có sẵn trong bảng
+        // video_content)
         List<Movie> movies = new ArrayList<>(movieRepository.findAll());
 
         if (movies.isEmpty()) {
             return List.of();
         }
 
-        List<String> movieIds = movies.stream().map(Movie::getId).toList();
-        Map<String, Double> averageRatings = buildAverageRatingMap(movieIds);
-        Map<String, Long> ratingCounts = buildRatingCountMap(movieIds);
-        Map<String, Long> favoriteCounts = buildFavoriteCountMap(movieIds);
-
+        // 2. Chuẩn hóa Key sắp xếp
         String normalizedSort = Optional.ofNullable(sortKey)
                 .map(s -> s.trim().toLowerCase(Locale.ROOT))
                 .filter(s -> !s.isEmpty())
                 .orElse("default");
 
-        Comparator<Movie> comparator = buildComparator(normalizedSort, userEmail, averageRatings, ratingCounts, favoriteCounts);
+        // 3. Xây dựng bộ so sánh và thực hiện sắp xếp (KHÔNG dùng Map trung gian tốn
+        // kém)
+        Comparator<Movie> comparator = buildComparator(normalizedSort, userEmail);
         movies.sort(comparator);
 
+        // 4. Map sang MovieResponse
         return movies.stream()
-                .map(movieMapper::toMovieResponse)
+                .map(this::mapToMovieResponse)
                 .collect(Collectors.toList());
     }
 
-    private Comparator<Movie> buildComparator(String sortKey,
-                                              String userEmail,
-                                              Map<String, Double> averageRatings,
-                                              Map<String, Long> ratingCounts,
-                                              Map<String, Long> favoriteCounts) {
+    private MovieResponse mapToMovieResponse(Movie movie) {
+        return MovieResponse.builder()
+                .id(movie.getId())
+                .title(movie.getTitle())
+                .imagePosterUrl(movie.getPosterUrl()) // Lấy từ hàm @Transient trong Entity
+                .build();
+    }
+
+    private Comparator<Movie> buildComparator(String sortKey, String userEmail) {
         return switch (sortKey) {
             case "popularity" -> Comparator
-                    .comparingDouble((Movie movie) -> popularityScore(movie.getId(), ratingCounts, favoriteCounts))
+                    .comparingInt(Movie::getTotalRatings) // Dùng luôn field có sẵn
                     .reversed()
                     .thenComparing(movie -> safeTitle(movie.getTitle()));
             case "newest" -> Comparator
                     .comparing(Movie::getReleaseDate, Comparator.nullsLast(Comparator.reverseOrder()))
                     .thenComparing(movie -> safeTitle(movie.getTitle()));
             case "top_rated" -> Comparator
-                    .comparingDouble((Movie movie) -> averageRatings.getOrDefault(movie.getId(), 0.0))
+                    .comparingDouble((Movie movie) -> movie.getAverageRating() != null ? movie.getAverageRating() : 0.0)
                     .reversed()
-                    .thenComparing(Comparator.comparingLong((Movie movie) -> ratingCounts.getOrDefault(movie.getId(), 0L)).reversed())
+                    .thenComparing(Comparator.comparingInt(Movie::getTotalRatings).reversed())
                     .thenComparing(movie -> safeTitle(movie.getTitle()));
             case "az" -> Comparator.comparing(movie -> safeTitle(movie.getTitle()));
             case "za" -> Comparator.comparing((Movie movie) -> safeTitle(movie.getTitle())).reversed();
@@ -89,68 +89,69 @@ public class MovieService {
                     .comparingInt(Movie::getDurationMinutes)
                     .reversed()
                     .thenComparing(movie -> safeTitle(movie.getTitle()));
-            case "recommended", "default" -> buildRecommendedComparator(userEmail, averageRatings, ratingCounts, favoriteCounts);
-            default -> buildRecommendedComparator(userEmail, averageRatings, ratingCounts, favoriteCounts);
+            case "recommended", "default" -> buildRecommendedComparator(userEmail);
+            default -> buildRecommendedComparator(userEmail);
         };
     }
 
-    private Comparator<Movie> buildRecommendedComparator(String userEmail,
-                                                         Map<String, Double> averageRatings,
-                                                         Map<String, Long> ratingCounts,
-                                                         Map<String, Long> favoriteCounts) {
-        Map<String, Integer> genreAffinity = buildGenreAffinityByEmail(userEmail);
-        Map<String, Integer> personalScores = buildPersonalScoresByEmail(userEmail);
+    private Comparator<Movie> buildRecommendedComparator(String userEmail) {
+        Optional<String> userIdOpt = resolveUserId(userEmail);
+
+        if (userIdOpt.isEmpty()) {
+            return Comparator
+                    .comparingDouble((Movie movie) -> recommendationScore(movie, Map.of(), Map.of()))
+                    .reversed()
+                    .thenComparing(movie -> safeTitle(movie.getTitle()));
+        }
+
+        String userId = userIdOpt.get();
+
+        // Chỉ lấy GenreAffinity và PersonalScores (Liên quan đến cá nhân hóa, bắt buộc gọi DB)
+        Map<String, Integer> genreAffinity = buildGenreAffinityByUserId(userId);
+        Map<String, Integer> personalScores = buildPersonalScoresByUserId(userId);
 
         return Comparator
-                .comparingDouble((Movie movie) -> recommendationScore(movie, genreAffinity, personalScores, averageRatings, ratingCounts, favoriteCounts))
+                .comparingDouble((Movie movie) -> recommendationScore(movie, genreAffinity, personalScores))
                 .reversed()
                 .thenComparing(movie -> safeTitle(movie.getTitle()));
     }
 
     private double recommendationScore(Movie movie,
-                                       Map<String, Integer> genreAffinity,
-                                       Map<String, Integer> personalScores,
-                                       Map<String, Double> averageRatings,
-                                       Map<String, Long> ratingCounts,
-                                       Map<String, Long> favoriteCounts) {
+            Map<String, Integer> genreAffinity,
+            Map<String, Integer> personalScores) {
+        // Tính điểm tương đồng thể loại
         int affinityScore = movie.getGenres() == null
                 ? 0
                 : movie.getGenres().stream()
-                .map(Genre::getName)
-                .mapToInt(name -> genreAffinity.getOrDefault(name, 0))
-                .sum();
+                        .map(Genre::getName)
+                        .mapToInt(name -> genreAffinity.getOrDefault(name, 0))
+                        .sum();
 
+        // Lấy điểm user đã chấm cho phim này (nếu có)
         int personalScore = personalScores.getOrDefault(movie.getId(), 0);
-        double avgRating = averageRatings.getOrDefault(movie.getId(), 0.0);
-        double popularity = popularityScore(movie.getId(), ratingCounts, favoriteCounts);
 
-        return (affinityScore * 2.2) + (personalScore * 2.0) + (avgRating * 1.2) + popularity;
+        // Lấy dữ liệu rating và độ phổ biến TRỰC TIẾP từ Entity
+        double avgRating = movie.getAverageRating() != null ? movie.getAverageRating() : 0.0;
+        double popularity = (double) movie.getTotalRatings(); // Proxy cho popularity
+
+        return (affinityScore * 2.2) + (personalScore * 2.0) + (avgRating * 1.2) + (popularity * 0.5);
     }
 
-    private Map<String, Integer> buildGenreAffinityByEmail(String userEmail) {
-        Optional<String> userId = resolveUserId(userEmail);
-        if (userId.isEmpty()) {
-            return Map.of();
-        }
-
+    // --- Các hàm xử lý User và Genre (Giữ lại vì nó phục vụ cá nhân hóa) ---
+    private Map<String, Integer> buildGenreAffinityByUserId(String userId) {
         Map<String, Integer> affinity = new HashMap<>();
-        for (String genreName : favoriteListRepository.findFavoriteGenreNamesByUserId(userId.get())) {
+        for (String genreName : favoriteListRepository.findFavoriteGenreNamesByUserId(userId)) {
             affinity.merge(genreName, 3, Integer::sum);
         }
-        for (String genreName : ratingRepository.findPreferredGenreNamesByUserId(userId.get())) {
+        for (String genreName : ratingRepository.findPreferredGenreNamesByUserId(userId)) {
             affinity.merge(genreName, 2, Integer::sum);
         }
         return affinity;
     }
 
-    private Map<String, Integer> buildPersonalScoresByEmail(String userEmail) {
-        Optional<String> userId = resolveUserId(userEmail);
-        if (userId.isEmpty()) {
-            return Map.of();
-        }
-
+    private Map<String, Integer> buildPersonalScoresByUserId(String userId) {
         Map<String, Integer> scores = new HashMap<>();
-        for (Object[] row : ratingRepository.findUserScoresByUserId(userId.get())) {
+        for (Object[] row : ratingRepository.findUserScoresByUserId(userId)) {
             String videoId = (String) row[0];
             Integer score = (Integer) row[1];
             if (videoId != null && score != null) {
@@ -161,46 +162,9 @@ public class MovieService {
     }
 
     private Optional<String> resolveUserId(String userEmail) {
-        if (userEmail == null || userEmail.isBlank()) {
+        if (userEmail == null || userEmail.isBlank())
             return Optional.empty();
-        }
         return userRepository.findByEmail(userEmail).map(user -> user.getId());
-    }
-
-    private Map<String, Double> buildAverageRatingMap(Collection<String> movieIds) {
-        Map<String, Double> map = new HashMap<>();
-        for (Object[] row : ratingRepository.findRatingStatsByVideoIds(movieIds)) {
-            String movieId = (String) row[0];
-            Double average = row[1] == null ? 0.0 : ((Number) row[1]).doubleValue();
-            map.put(movieId, average);
-        }
-        return map;
-    }
-
-    private Map<String, Long> buildRatingCountMap(Collection<String> movieIds) {
-        Map<String, Long> map = new HashMap<>();
-        for (Object[] row : ratingRepository.findRatingStatsByVideoIds(movieIds)) {
-            String movieId = (String) row[0];
-            Long count = row[2] == null ? 0L : ((Number) row[2]).longValue();
-            map.put(movieId, count);
-        }
-        return map;
-    }
-
-    private Map<String, Long> buildFavoriteCountMap(Collection<String> movieIds) {
-        Map<String, Long> map = new HashMap<>();
-        for (Object[] row : favoriteListRepository.countFavoritesByVideoIds(movieIds)) {
-            String movieId = (String) row[0];
-            Long count = row[1] == null ? 0L : ((Number) row[1]).longValue();
-            map.put(movieId, count);
-        }
-        return map;
-    }
-
-    private double popularityScore(String movieId, Map<String, Long> ratingCounts, Map<String, Long> favoriteCounts) {
-        long ratingCount = ratingCounts.getOrDefault(movieId, 0L);
-        long favoriteCount = favoriteCounts.getOrDefault(movieId, 0L);
-        return (favoriteCount * 2.0) + ratingCount;
     }
 
     private String safeTitle(String title) {

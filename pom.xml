@@ -166,7 +166,6 @@
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
                             <version>1.18.30</version>
-                            <scope>provided</scope>
                         </path>
                         <path>
                             <groupId>org.mapstruct</groupId>

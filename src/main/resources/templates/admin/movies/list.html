@@ -118,6 +118,24 @@
                     </tr>
                 </tbody>
             </table>
+
+            <div class="pagination-bar" th:if="${moviePage != null and moviePage.totalPages > 1}">
+                <a class="btn btn-secondary btn-sm"
+                   th:if="${!moviePage.first}"
+                   th:href="@{/admin/movies(status=${currentStatus},keyword=${currentKeyword},page=${currentPage - 1},size=${pageSize})}">
+                    ← Trang trước
+                </a>
+                <span>
+                    Trang <strong th:text="${currentPage + 1}">1</strong> /
+                    <strong th:text="${moviePage.totalPages}">1</strong>
+                    (<span th:text="${moviePage.totalElements}">0</span> phim)
+                </span>
+                <a class="btn btn-secondary btn-sm"
+                   th:if="${!moviePage.last}"
+                   th:href="@{/admin/movies(status=${currentStatus},keyword=${currentKeyword},page=${currentPage + 1},size=${pageSize})}">
+                    Trang sau →
+                </a>
+            </div>
         </div>
 
     </div><!-- /.admin-content -->
