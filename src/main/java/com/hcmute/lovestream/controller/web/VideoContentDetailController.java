@@ -40,11 +40,16 @@ public class VideoContentDetailController {
     }
 
     private boolean extractVip(Authentication authentication) {
-        Object details = authentication.getDetails();
-        if (!(details instanceof java.util.Map<?, ?> detailMap)) {
-            return false;
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof java.util.Map<?, ?> principalMap) {
+            return Boolean.TRUE.equals(principalMap.get("isVip"));
         }
-        return Boolean.TRUE.equals(detailMap.get("isVip"));
+
+        Object details = authentication.getDetails();
+        if (details instanceof java.util.Map<?, ?> detailMap) {
+            return Boolean.TRUE.equals(detailMap.get("isVip"));
+        }
+        return false;
     }
 }
 

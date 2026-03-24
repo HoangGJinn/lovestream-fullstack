@@ -80,7 +80,7 @@ public class VnpayWebController {
         if (authentication == null || !authentication.isAuthenticated() || payment.getUser() == null) {
             return;
         }
-        
+
         // Kiểm tra xem user thanh toán có đúng là user đang đăng nhập không
         if (!payment.getUser().getEmail().equalsIgnoreCase(authentication.getName())) {
             return;
@@ -94,7 +94,7 @@ public class VnpayWebController {
         );
 
         String token = jwtUtil.generateToken(payment.getUser(), isVip);
-        
+
         Cookie jwtCookie = new Cookie("JWT_TOKEN", token);
         jwtCookie.setHttpOnly(true);
         jwtCookie.setPath("/");
