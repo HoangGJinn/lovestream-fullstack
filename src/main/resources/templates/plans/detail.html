@@ -105,12 +105,28 @@
             Đây là gói hiện tại của bạn
         </div>
 
-        <!-- Đã đăng nhập và có thể đổi sang gói khác -->
-        <button th:if="${currentUser != null and (currentPlanId == null or currentPlanId != plan.id)}"
+        <!-- Đang chọn gói thấp hơn gói hiện tại -->
+        <div th:if="${currentUser != null and currentPlanId != null and isDowngradeTarget == true}" class="purchase-result purchase-result--error" style="display:flex;">
+            <i class="fa-solid fa-circle-xmark"></i>
+            Hiện tại hệ thống chưa hỗ trợ hạ cấp gói trong thời gian còn hiệu lực.
+        </div>
+
+        <!-- Chưa có gói, mua mới -->
+        <button th:if="${currentUser != null and currentPlanId == null}"
                 class="btn-purchase"
                 th:data-plan-id="${plan.id}"
                 onclick="handlePurchase(this)">
-            <i class="fa-solid fa-bolt"></i> Chuyển sang gói này — <span th:text="${plan.formattedPrice}">0 ₫</span>
+            <i class="fa-solid fa-bolt"></i> Mua gói này — <span th:text="${plan.formattedPrice}">0 ₫</span>
+        </button>
+
+        <!-- Đã có gói và chọn gói cao hơn -->
+        <button th:if="${currentUser != null and currentPlanId != null and isUpgradeTarget == true}"
+                class="btn-purchase"
+                th:data-plan-id="${plan.id}"
+                onclick="handleUpgrade(this)">
+            <i class="fa-solid fa-rocket"></i>
+            Nâng cấp gói — Thanh toán chênh lệch
+            <span th:text="${#numbers.formatDecimal(upgradeDifference, 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</span>
         </button>
 
         <!-- Chưa đăng nhập -->
@@ -141,17 +157,46 @@
     </div>
 </div>
 
+<div id="payment-overlay" class="payment-overlay" aria-hidden="true">
+    <div class="payment-overlay__card">
+        <i class="fa-solid fa-spinner fa-spin"></i>
+        <span id="payment-overlay-text">Đang xử lý thanh toán...</span>
+    </div>
+</div>
+
+<div id="payment-toast" class="toast toast--error" role="status" aria-live="polite">
+    <i class="fa-solid fa-circle-xmark"></i>
+    <span id="payment-toast-text">Đã xảy ra lỗi. Vui lòng thử lại.</span>
+</div>
+
 <script th:inline="javascript">
     async function handlePurchase(btn) {
         const planId = btn.dataset.planId;
+        await startPayment(btn, `/api/v1/plans/${planId}/purchase`, 'Đang xử lý mua gói...');
+    }
+
+    async function handleUpgrade(btn) {
+        const planId = btn.dataset.planId;
+        await startPayment(btn, `/api/v1/plans/${planId}/upgrade`, 'Đang xử lý nâng cấp gói...');
+    }
+
+    async function startPayment(btn, endpoint, loadingText) {
         const resultEl = document.getElementById('purchase-result');
+        const defaultHtml = btn.innerHTML;
+        const overlayTextEl = document.getElementById('payment-overlay-text');
+
+        showOverlay(loadingText);
+        if (overlayTextEl) {
+            overlayTextEl.textContent = loadingText;
+        }
 
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
 
         try {
-            const res = await fetch(`/api/v1/plans/${planId}/purchase`, { method: 'POST' });
-            const data = await res.json();
+            const res = await fetch(endpoint, { method: 'POST' });
+            const data = await res.json().catch(() => ({}));
+            hideOverlay();
 
             if (res.ok) {
                 if (data.paymentUrl) {
@@ -168,23 +213,53 @@
                 resultEl.className = 'purchase-result purchase-result--success';
                 resultEl.innerHTML = `
                     <i class="fa-solid fa-circle-check"></i>
-                    <strong>${data.message}</strong><br>
+                    <strong>${data.message || 'Thao tác thành công.'}</strong><br>
                     <span>Hiệu lực đến: ${formatDate(data.endDate)}</span>
                 `;
                 btn.style.display = 'none';
             } else {
                 resultEl.className = 'purchase-result purchase-result--error';
-                resultEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ${data}`;
+                resultEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ${extractErrorMessage(data)}`;
+                showToast(extractErrorMessage(data));
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Thử lại';
+                btn.innerHTML = defaultHtml;
             }
         } catch (e) {
+            hideOverlay();
             resultEl.className = 'purchase-result purchase-result--error';
-            resultEl.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Lỗi kết nối, vui lòng thử lại.';
+            resultEl.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Không thể tải dữ liệu, vui lòng thử lại';
+            showToast('Đã xảy ra lỗi. Vui lòng liên hệ hỗ trợ.');
             btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Thử lại';
+            btn.innerHTML = defaultHtml;
         }
         resultEl.style.display = 'flex';
+    }
+
+    function extractErrorMessage(data) {
+        if (!data) return 'Không thể nâng cấp do thanh toán thất bại.';
+        if (typeof data === 'string') return data;
+        return data.error || data.message || 'Không thể nâng cấp do thanh toán thất bại.';
+    }
+
+    function showOverlay(text) {
+        const overlay = document.getElementById('payment-overlay');
+        const overlayText = document.getElementById('payment-overlay-text');
+        if (overlayText && text) overlayText.textContent = text;
+        if (overlay) overlay.classList.add('is-visible');
+    }
+
+    function hideOverlay() {
+        const overlay = document.getElementById('payment-overlay');
+        if (overlay) overlay.classList.remove('is-visible');
+    }
+
+    function showToast(message) {
+        const toast = document.getElementById('payment-toast');
+        const text = document.getElementById('payment-toast-text');
+        if (!toast || !text) return;
+        text.textContent = message;
+        toast.classList.add('is-visible');
+        window.setTimeout(() => toast.classList.remove('is-visible'), 3200);
     }
 
     function formatDate(dateArray) {
