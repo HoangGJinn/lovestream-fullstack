@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Netflix Style - Watch History</title>
+  <style>
+    /* Toàn bộ CSS phong cách Netflix */
+    :root {
+      --netflix-red: #e50914;
+      --netflix-black: #141414;
+      --netflix-grey: #808080;
+      --text-white: #ffffff;
+      --card-hover: #2f2f2f;
+    }
+
+    body {
+      background-color: var(--netflix-black);
+      color: var(--text-white);
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      padding: 20px 4%;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.7) 10%, transparent);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    h1 {
+      color: var(--text-white);
+      font-size: 2rem;
+      margin-bottom: 20px;
+    }
+
+    .history-container {
+      padding: 0 4% 50px 4%;
+    }
+
+    .history-section {
+      margin-bottom: 40px;
+    }
+
+    .section-title {
+      font-size: 1.2rem;
+      color: var(--netflix-grey);
+      margin-bottom: 15px;
+      border-bottom: 1px solid #333;
+      padding-bottom: 10px;
+    }
+
+    /* Danh sách video */
+    .video-list {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    /* Thẻ video phong cách kết hợp */
+    .video-item {
+      display: flex;
+      background: transparent;
+      border-radius: 4px;
+      overflow: hidden;
+      transition: background 0.3s ease;
+      cursor: pointer;
+      padding: 10px;
+      position: relative;
+    }
+
+    .video-item:hover {
+      background-color: var(--card-hover);
+    }
+
+    /* Thumbnail với thanh tiến trình */
+    .thumbnail-container {
+      position: relative;
+      min-width: 240px;
+      width: 240px;
+      height: 135px;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .thumbnail-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .progress-bar-container {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: rgba(255,255,255,0.3);
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--netflix-red);
+      width: 70%; /* Giả lập % đã xem */
+    }
+
+    /* Chi tiết video */
+    .video-details {
+      padding-left: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .video-title {
+      font-size: 1.1rem;
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: var(--text-white);
+    }
+
+    .video-meta {
+      font-size: 0.9rem;
+      color: var(--netflix-grey);
+      margin-bottom: 10px;
+    }
+
+    .video-description {
+      font-size: 0.85rem;
+      color: #b3b3b3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      max-width: 600px;
+    }
+
+    /* Nút xóa lịch sử (đặc trưng YouTube) */
+    .remove-btn {
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--netflix-grey);
+      font-size: 1.5rem;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .video-item:hover .remove-btn {
+      opacity: 1;
+    }
+
+    .remove-btn:hover {
+      color: var(--text-white);
+    }
+
+    @media (max-width: 768px) {
+      .thumbnail-container {
+        min-width: 160px;
+        width: 160px;
+        height: 90px;
+      }
+      .video-description {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Lịch sử xem</h1>
+</header>
+
+<div class="history-container">
+
+  <div class="history-section">
+    <div class="section-title">Hôm nay</div>
+
+    <div class="video-list">
+      <div class="video-item">
+        <div class="thumbnail-container">
+          <img src="https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?q=80&w=1470&auto=format&fit=crop" alt="Movie">
+          <div class="progress-bar-container">
+            <div class="progress-fill" style="width: 85%;"></div>
+          </div>
+        </div>
+        <div class="video-details">
+          <div class="video-title">Stranger Things: Mùa 4 | Tập 1</div>
+          <div class="video-meta">Netflix Original • 1.2M lượt xem</div>
+          <div class="video-description">Sau sáu tháng kể từ Trận chiến Starcourt, nhóm bạn đối mặt với mối đe dọa siêu nhiên mới kinh hoàng hơn.</div>
+        </div>
+        <button class="remove-btn" title="Xóa khỏi lịch sử">&times;</button>
+      </div>
+
+      <div class="video-item">
+        <div class="thumbnail-container">
+          <img src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1325&auto=format&fit=crop" alt="Movie">
+          <div class="progress-bar-container">
+            <div class="progress-fill" style="width: 30%;"></div>
+          </div>
+        </div>
+        <div class="video-details">
+          <div class="video-title">Inception: Kẻ Đánh Cắp Giấc Mơ</div>
+          <div class="video-meta">Hành động • 2 giờ 28 phút</div>
+          <div class="video-description">Một kẻ trộm có khả năng xâm nhập vào giấc mơ của người khác để đánh cắp bí mật từ tiềm thức của họ.</div>
+        </div>
+        <button class="remove-btn" title="Xóa khỏi lịch sử">&times;</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="history-section">
+    <div class="section-title">Hôm qua</div>
+    <div class="video-list">
+      <div class="video-item">
+        <div class="thumbnail-container">
+          <img src="https://images.unsplash.com/photo-1594909122845-11baa439b7bf?q=80&w=1470&auto=format&fit=crop" alt="Movie">
+          <div class="progress-bar-container">
+            <div class="progress-fill" style="width: 100%;"></div>
+          </div>
+        </div>
+        <div class="video-details">
+          <div class="video-title">The Dark Knight</div>
+          <div class="video-meta">DC Studios • Đã xem xong</div>
+          <div class="video-description">Batman đối đầu với Joker, một tên tội phạm tâm thần đang gieo rắc hỗn loạn tại Gotham.</div>
+        </div>
+        <button class="remove-btn" title="Xóa khỏi lịch sử">&times;</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
