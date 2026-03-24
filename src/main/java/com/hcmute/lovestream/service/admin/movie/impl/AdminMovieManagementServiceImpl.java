@@ -138,7 +138,9 @@ public class AdminMovieManagementServiceImpl implements AdminMovieManagementServ
     public MediaAsset addAsset(String movieId, AssetType assetType, String assetUrl) {
         Movie movie = getMovieById(movieId);
         
-        MediaAsset asset = mediaAssetRepository.findByVideoContent_IdAndAssetType(movieId, assetType)
+        MediaAsset asset = movie.getMediaAssets().stream()
+                .filter(a -> a.getAssetType() == assetType)
+                .findFirst()
                 .orElse(new MediaAsset());
                 
         asset.setAssetType(assetType);

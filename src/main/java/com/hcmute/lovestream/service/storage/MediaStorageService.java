@@ -15,7 +15,7 @@ public interface MediaStorageService {
      * Upload a media file to remote storage.
      *
      * @param file      the file to upload
-     * @param assetType the type of asset (POSTER, TRAILER, MOVIE_VIDEO, etc.)
+     * @param assetType the type of asset (POSTER, TRAILER, FULL_VIDEO, etc.)
      * @return the public URL of the uploaded file
      * @throws IOException if the upload fails
      */
