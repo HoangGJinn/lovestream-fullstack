@@ -1,0 +1,21 @@
+package com.hcmute.lovestream.controller.api;
+
+import com.hcmute.lovestream.service.videoContent.MediaAssetService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/video")
+public class MediaAssetController {
+
+    @Autowired
+    private MediaAssetService mediaService;
+
+    @GetMapping("/watch/{id}")
+    public String getVideo(@PathVariable("id") String videoContentId) {
+        return mediaService.getVideoUrl(videoContentId);
+    }
+}

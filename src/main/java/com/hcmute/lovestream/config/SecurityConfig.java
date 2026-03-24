@@ -39,10 +39,11 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.POST, "/api/v1/password/backup-change").permitAll()
                     // Trang gói dịch vụ: khách chưa đăng nhập vẫn xem được
                     .requestMatchers(HttpMethod.GET, "/plans", "/plans/**", "/packages", "/packages/**").permitAll()
+                    // VNPay callback thường không có JWT
+                    .requestMatchers(HttpMethod.GET, "/v1/api/vnpay/payment-callback").permitAll()
                     // Tìm kiếm nội dung: cho phép khách truy cập
                     .requestMatchers("/videocontents", "/videocontents/**").permitAll()
-                    // Trang phim chi tiet/danh sach: cho phép khách truy cập
-                    .requestMatchers("/movies", "/movies/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/video/**").permitAll()
 
                         // CÁC TRANG CÒN LẠI BẮT BUỘC PHẢI ĐĂNG NHẬP
                         .anyRequest().authenticated()
@@ -50,12 +51,12 @@ public class SecurityConfig {
                 // Xử lý khi bị chặn (Chưa đăng nhập)
                 .exceptionHandling(exc -> exc.authenticationEntryPoint((request, response, authException) -> {
                     // Nếu gọi API -> Báo lỗi 401
-                    if (request.getRequestURI().startsWith("/api/")) {
-                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Vui lòng đăng nhập");
-                    } else {
-                        // Nếu là người dùng vào trang Web -> Đá về trang Đăng nhập
-                        response.sendRedirect("/login");
-                    }
+//                    if (request.getRequestURI().startsWith("/api/")) {
+//                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Vui lòng đăng nhập");
+//                    } else {
+//                        // Nếu là người dùng vào trang Web -> Đá về trang Đăng nhập
+//                        response.sendRedirect("/login");
+//                    }
                 }))
                 // Chèn chốt kiểm tra JWT vào trước chốt kiểm tra mặc định của Spring
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

@@ -60,6 +60,7 @@
 
             <!-- Badge "Phổ biến" cho gói ở giữa (mặc định) -->
             <div th:if="${iterStat.index == 1}" class="plan-badge">Phổ biến nhất</div>
+            <div th:if="${currentPlanId != null and currentPlanId == plan.id}" class="plan-badge plan-badge--current">Gói hiện tại</div>
 
             <div class="plan-card__header">
                 <h2 class="plan-card__name" th:text="${plan.name}">Gói Standard</h2>
@@ -90,9 +91,14 @@
                 </li>
             </ul>
 
-            <a th:href="@{/packages/{id}(id=${plan.id})}" class="plan-card__btn">
+            <a th:if="${currentPlanId == null or currentPlanId != plan.id}"
+               th:href="@{/packages/{id}(id=${plan.id})}"
+               class="plan-card__btn">
                 Xem chi tiết
             </a>
+            <span th:if="${currentPlanId != null and currentPlanId == plan.id}" class="plan-card__btn plan-card__btn--current">
+                Gói hiện tại
+            </span>
         </div>
     </div>
 </div>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${success ? 'Kết quả thanh toán VNPay - LoveStream' : 'Thanh toán VNPay thất bại - LoveStream'}">
+        Kết quả thanh toán VNPay - LoveStream
+    </title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap">
+    <link rel="stylesheet" href="/css/packages.css">
+</head>
+<body>
+<div class="plans-container" style="max-width: 860px; margin: 40px auto;">
+    <div style="padding: 24px; border: 1px solid #e5e7eb; border-radius: 12px;">
+        <h1 style="margin-top: 0;"
+            th:text="${success ? 'Thanh toán thành công' : 'Thanh toán thất bại'}">
+            Thanh toán
+        </h1>
+
+        <p th:text="${message}"
+           style="margin: 12px 0 18px 0; color: #374151;">
+            Nội dung
+        </p>
+
+        <div th:if="${success}">
+            <h3 style="margin: 18px 0 10px 0;">Thông tin giao dịch</h3>
+            <div style="display: grid; grid-template-columns: 220px 1fr; gap: 10px 18px;">
+                <div style="font-weight: 600; color: #111827;">Payment ID</div>
+                <div th:text="${paymentId}">paymentId</div>
+
+                <div style="font-weight: 600; color: #111827;">Mã giao dịch</div>
+                <div th:text="${transactionCode}">transactionCode</div>
+
+                <div style="font-weight: 600; color: #111827;">Gói</div>
+                <div th:text="${planName}">planName</div>
+
+                <div style="font-weight: 600; color: #111827;">Thời hạn (ngày)</div>
+                <div th:text="${durationDays}">durationDays</div>
+
+                <div style="font-weight: 600; color: #111827;">Số tiền</div>
+                <div th:text="${amount}">amount</div>
+            </div>
+        </div>
+
+        <div style="margin-top: 22px; display: flex; gap: 12px; flex-wrap: wrap;">
+            <a class="btn-purchase" th:href="@{/packages}">
+                Quay lại gói dịch vụ
+            </a>
+            <a class="btn-purchase btn-purchase--guest" th:href="@{/account}">
+                Về trang tài khoản
+            </a>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+

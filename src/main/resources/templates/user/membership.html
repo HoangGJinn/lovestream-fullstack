@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tư cách thành viên - LoveStream</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/profile.css">
+    <link rel="stylesheet" href="/css/user-menu.css">
+    <style>
+        .membership-wrap { display: grid; gap: 24px; }
+        .membership-card { border: 1px solid #e5e5e5; border-radius: 10px; background: #fff; overflow: hidden; }
+        .membership-top { padding: 20px 24px; border-bottom: 1px solid #eee; }
+        .membership-badge { display: inline-block; padding: 6px 14px; border-radius: 0 0 8px 0; background: linear-gradient(90deg, #2e3192 0%, #ed1c24 100%); color: #fff; font-size: 13px; font-weight: 700; margin-bottom: 12px; }
+        .membership-plan { font-size: 34px; font-weight: 800; margin: 0 0 8px 0; color: #1f2937; }
+        .membership-desc { margin: 0; color: #4b5563; font-size: 16px; }
+        .membership-action-row { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; text-decoration: none; color: #111827; font-weight: 700; border-top: 1px solid #eee; }
+        .membership-action-row:hover { background: #fafafa; }
+        .membership-section-title { font-size: 28px; font-weight: 800; margin: 0 0 4px 0; }
+        .membership-section-sub { color: #4b5563; margin: 0 0 16px 0; font-size: 16px; }
+        .payment-sub-note { color: #6b7280; font-size: 14px; margin-top: 4px; }
+        .voucher-text { color: #6b7280; font-size: 14px; margin: 8px 0 0 0; }
+    </style>
+</head>
+<body>
+
+<div style="height: 70px; display: flex; align-items: center; padding: 0 40px; border-bottom: 1px solid #e5e5e5; background: #fff;">
+    <a href="/home" style="color: #e50914; font-size: 28px; font-weight: 900; text-decoration: none; letter-spacing: -1px;">LoveStream</a>
+    <div style="margin-left: auto;" th:insert="~{fragments/user-menu :: userMenu(${currentUser}, 'light')}"></div>
+</div>
+
+<div class="profile-container">
+    <div class="sidebar">
+        <a href="/home" class="logo-link"><i class="fa-solid fa-arrow-left"></i> Quay lại LoveStream</a>
+        <ul class="menu-list">
+            <li><a href="/account" class="menu-item"><i class="fa-solid fa-house"></i> Tổng quan</a></li>
+            <li><a href="/account/membership" class="menu-item active"><i class="fa-regular fa-credit-card"></i> Tư cách thành viên</a></li>
+            <li><a href="#" class="menu-item"><i class="fa-solid fa-shield-halved"></i> Bảo mật</a></li>
+            <li><a href="#" class="menu-item"><i class="fa-solid fa-laptop-mobile"></i> Thiết bị</a></li>
+            <li><a href="/profile" class="menu-item"><i class="fa-solid fa-users"></i> Hồ sơ</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content membership-wrap">
+        <div>
+            <h1 class="membership-section-title">Tư cách thành viên</h1>
+            <p class="membership-section-sub">Thông tin gói dịch vụ</p>
+        </div>
+
+        <div class="membership-card">
+            <div class="membership-top">
+                <div class="membership-badge"
+                     th:text="${activeSubscription != null ? 'Thành viên từ ' + #temporals.format(activeSubscription.startDate, 'MM/yyyy') : 'Chưa mua gói'}">
+                    Chưa mua gói
+                </div>
+
+                <h2 class="membership-plan"
+                    th:text="${activeSubscription != null ? activeSubscription.plan.name : 'Chưa mua gói'}">
+                    Chưa mua gói
+                </h2>
+
+                <p class="membership-desc"
+                   th:text="${activeSubscription != null and activeSubscription.plan.description != null and !#strings.isEmpty(activeSubscription.plan.description) ? activeSubscription.plan.description : 'Bạn chưa có tư cách thành viên đang hoạt động.'}">
+                    Bạn chưa có tư cách thành viên đang hoạt động.
+                </p>
+            </div>
+
+            <a href="/packages" class="membership-action-row">
+                <span>Thay đổi gói dịch vụ</span>
+                <i class="fa-solid fa-chevron-right"></i>
+            </a>
+        </div>
+
+        <div>
+            <p class="membership-section-sub">Thông tin thanh toán</p>
+            <div class="membership-card">
+                <div class="membership-top">
+                    <h3 style="font-size: 30px; margin: 0 0 8px 0; color: #1f2937;">Lần thanh toán tiếp theo</h3>
+                    <p style="font-size: 30px; margin: 0; color: #374151;"
+                       th:text="${activeSubscription != null ? #temporals.format(activeSubscription.endDate, 'dd/MM/yyyy') : 'Chưa có dữ liệu'}">
+                        Chưa có dữ liệu
+                    </p>
+                    <div class="payment-sub-note">Kỳ tháng tiếp theo</div>
+                </div>
+
+                <a href="#" class="membership-action-row">
+                    <span>Quản lý phương thức thanh toán</span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+
+                <a href="#" class="membership-action-row">
+                    <span>Đổi mã quà tặng hoặc khuyến mại</span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+
+                <a href="#" class="membership-action-row">
+                    <span>Xem voucher</span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+            </div>
+            <p class="voucher-text">Voucher sẽ được hiển thị theo các ưu đãi đang áp dụng cho tài khoản của bạn.</p>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
