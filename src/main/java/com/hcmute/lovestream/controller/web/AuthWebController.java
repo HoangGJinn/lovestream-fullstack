@@ -22,11 +22,11 @@ public class AuthWebController {
     public String loginPage() {
         if (isAuthenticated()) {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            
+
             // Logic: Kiểm tra xem User có phải là Quản trị viên không
             boolean isAdminOrManager = auth.getAuthorities().stream()
                     .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_CONTENT_MANAGER"));
-            
+
             if (isAdminOrManager) {
                 return "redirect:/admin/dashboard";
             }
@@ -55,3 +55,4 @@ public class AuthWebController {
         if (isAuthenticated()) return "redirect:/home";
         return "auth/verify-email";
     }
+}
