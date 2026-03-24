@@ -47,24 +47,18 @@ public class SecurityConfig {
                         .requestMatchers("/videocontents", "/videocontents/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/video/**").permitAll()
 
-                        // 3. GIỮ LẠI TỪ NHÁNH CỦA BẠN: Phân quyền Admin
-                        // Route admin dashboard và movies cho cả ADMIN và CONTENT_MANAGER
-                        .requestMatchers("/admin", "/admin/dashboard", "/admin/movies", "/admin/movies/**", "/api/v1/admin/movies/**").hasAnyAuthority("ROLE_ADMIN", "ADMIN", "ROLE_CONTENT_MANAGER", "CONTENT_MANAGER")
-                        // Các route admin khác chỉ dành cho ADMIN
-                        .requestMatchers("/admin/**", "/api/v1/admin/**").hasAnyAuthority("ROLE_ADMIN", "ADMIN")
-
                         // CÁC TRANG CÒN LẠI BẮT BUỘC PHẢI ĐĂNG NHẬP
                         .anyRequest().authenticated()
                 )
                 // Xử lý khi bị chặn (Chưa đăng nhập)
                 .exceptionHandling(exc -> exc.authenticationEntryPoint((request, response, authException) -> {
-
-                    if (request.getRequestURI().startsWith("/api/")) {
-                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Vui lòng đăng nhập");
-                    } else {
-                        // Nếu là người dùng vào trang Web -> Đá về trang Đăng nhập
-                        response.sendRedirect("/login");
-                    }
+                    Nếu gọi API -> Báo lỗi 401
+                   if (request.getRequestURI().startsWith("/api/")) {
+                       response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Vui lòng đăng nhập");
+                   } else {
+                       // Nếu là người dùng vào trang Web -> Đá về trang Đăng nhập
+                       response.sendRedirect("/login");
+                   }
                 }))
                 // Chèn chốt kiểm tra JWT vào trước chốt kiểm tra mặc định của Spring
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

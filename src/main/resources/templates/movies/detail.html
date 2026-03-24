@@ -50,7 +50,11 @@
                 <a class="vc-back-link" th:href="${movie.trailerUrl}" target="_blank" rel="noopener">Xem trailer</a>
             </div>
 
-            <a class="vc-buy-btn" th:if="${movie.watchAction == 'WATCH'}" th:href="@{/watch/{id}(id=${movie.id})}">Xem phim</a>
+            <a class="vc-buy-btn"
+               th:if="${movie.watchAction == 'WATCH'}"
+               th:href="@{/watch-movie(id=${movie.id})}">
+                Xem phim
+            </a>
             <a class="vc-buy-btn" th:if="${movie.watchAction == 'LOGIN_REQUIRED'}" href="/login">Đăng nhập để xem</a>
             <a class="vc-buy-btn" th:if="${movie.watchAction == 'BUY_PACKAGE'}" href="/packages">Mua gói để xem</a>
         </div>

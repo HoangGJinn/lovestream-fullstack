@@ -5,7 +5,6 @@ public enum AssetType {
     TRAILER,
     BACKGROUND,
     MOVIE_VIDEO,
-    EPISODE_VIDEO,
     FULL_VIDEO,
     SEASON_POSTER,
 }
