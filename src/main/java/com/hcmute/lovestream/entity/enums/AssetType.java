@@ -7,5 +7,5 @@ public enum AssetType {
     MOVIE_VIDEO,
     EPISODE_VIDEO,
     FULL_VIDEO,
-    SEASON_POSTER
+    SEASON_POSTER,
 }

@@ -33,24 +33,29 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Cho phép các trang đăng nhập/đăng ký/css/hình ảnh không cần đăng nhập
-                    .requestMatchers("/api/v1/auth/**", "/login", "/register", "/forgot-password", "/verify-email", "/css/**", "/js/**", "/images/**").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/account/change-password/backup").permitAll()
-                    .requestMatchers(HttpMethod.POST, "/api/v1/password/backup-change").permitAll()
-                    // Trang gói dịch vụ: khách chưa đăng nhập vẫn xem được
-                    .requestMatchers(HttpMethod.GET, "/plans", "/plans/**", "/packages", "/packages/**").permitAll()
-                    // VNPay callback thường không có JWT
-                    .requestMatchers(HttpMethod.GET, "/v1/api/vnpay/payment-callback").permitAll()
-                    // Tìm kiếm nội dung: cho phép khách truy cập
-                    .requestMatchers("/videocontents", "/videocontents/**").permitAll()
+                        // 1. GIỮ LẠI TỪ NHÁNH CỦA BẠN (Đã có /error)
+                        .requestMatchers("/api/v1/auth/**", "/login", "/register", "/forgot-password", "/verify-email", "/css/**", "/js/**", "/images/**", "/error").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/account/change-password/backup").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/password/backup-change").permitAll()
+
+                        // 2. LẤY TỪ NHÁNH DEV: Cho phép các trang public
+                        // Trang gói dịch vụ: khách chưa đăng nhập vẫn xem được
+                        .requestMatchers(HttpMethod.GET, "/plans", "/plans/**", "/packages", "/packages/**").permitAll()
+                        // VNPay callback thường không có JWT
+                        .requestMatchers(HttpMethod.GET, "/v1/api/vnpay/payment-callback").permitAll()
+                        // Tìm kiếm nội dung: cho phép khách truy cập
+                        .requestMatchers("/videocontents", "/videocontents/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/video/**").permitAll()
+
+                        // 3. GIỮ LẠI TỪ NHÁNH CỦA BẠN: Phân quyền Admin
+                        .requestMatchers("/admin/**", "/api/v1/admin/**").hasAnyAuthority("ROLE_ADMIN", "ADMIN")
 
                         // CÁC TRANG CÒN LẠI BẮT BUỘC PHẢI ĐĂNG NHẬP
                         .anyRequest().authenticated()
                 )
                 // Xử lý khi bị chặn (Chưa đăng nhập)
                 .exceptionHandling(exc -> exc.authenticationEntryPoint((request, response, authException) -> {
-                    // Nếu gọi API -> Báo lỗi 401
+                    //
 //                    if (request.getRequestURI().startsWith("/api/")) {
 //                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Vui lòng đăng nhập");
 //                    } else {
