@@ -21,11 +21,13 @@ public class MovieController {
     public ResponseEntity<?> getMovieDetail(@PathVariable String movieId, Authentication authentication) {
         try {
             String userEmail = null;
+            boolean isVip = false;
             if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getName())) {
                 userEmail = authentication.getName();
+                isVip = extractVip(authentication);
             }
 
-            VideoContentDetail dto = movieDetailService.getMovieDetail(movieId, userEmail);
+            VideoContentDetail dto = movieDetailService.getMovieDetail(movieId, userEmail, isVip);
             return ResponseEntity.ok(dto);
 
         } catch (IllegalArgumentException ex) {
@@ -34,6 +36,14 @@ public class MovieController {
         } catch (Exception ex) {
             return ResponseEntity.status(500).body("Không thể tải dữ liệu, vui lòng thử lại");
         }
+    }
+
+    private boolean extractVip(Authentication authentication) {
+        Object details = authentication.getDetails();
+        if (!(details instanceof java.util.Map<?, ?> detailMap)) {
+            return false;
+        }
+        return Boolean.TRUE.equals(detailMap.get("isVip"));
     }
 }
 

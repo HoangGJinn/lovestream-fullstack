@@ -38,6 +38,7 @@ public class ServicePlanServiceImpl implements ServicePlanService {
 
     @Override
     @Transactional(readOnly = true)
+    @org.springframework.cache.annotation.Cacheable("activeServicePlans")
     public List<ServicePlanResponse> getAllActivePlans() {
         return servicePlanRepository.findByIsActiveTrueOrderByPriceAsc()
                 .stream()

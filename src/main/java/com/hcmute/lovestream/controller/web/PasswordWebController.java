@@ -22,8 +22,7 @@ public class PasswordWebController {
 
     @GetMapping("/account/change-password")
     public String changePasswordPage(Authentication authentication, Model model) {
-        User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
-        model.addAttribute("currentUser", currentUser);
+
 
         model.addAttribute("changePasswordForm", new ChangePasswordRequest());
 

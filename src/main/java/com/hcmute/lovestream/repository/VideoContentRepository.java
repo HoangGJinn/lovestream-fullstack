@@ -1,12 +1,11 @@
 package com.hcmute.lovestream.repository;
 
-import com.hcmute.lovestream.entity.MediaAsset;
 import com.hcmute.lovestream.entity.VideoContent;
+import com.hcmute.lovestream.entity.enums.ContentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
-import com.hcmute.lovestream.entity.enums.ContentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
@@ -17,16 +16,24 @@ import java.util.Optional;
 @Repository
 public interface VideoContentRepository extends JpaRepository<VideoContent, String>, JpaSpecificationExecutor<VideoContent> {
 
+    // Đã bỏ EntityGraph để tối ưu RAM (tránh Cartesian product), Hibernate sẽ tự dùng BatchSize IN fetch media_assets.
     List<VideoContent> findByGenres_Name(String genreName);
 
-    // 1. Chỉ lấy Nội dung (Phim/Series) đang có trạng thái ACTIVE và thuộc Genre chỉ định
+    // Đã bỏ EntityGraph
     List<VideoContent> findDistinctByStatusAndGenres_Name(ContentStatus status, String genreName);
+
+    @EntityGraph(attributePaths = {"mediaAssets"})
+    Page<VideoContent> findDistinctByStatusAndGenres_NameOrderByReleaseYearDesc(
+            ContentStatus status,
+            String genreName,
+            Pageable pageable
+    );
+
     @Override
-    @EntityGraph(attributePaths = {"genres", "mediaAssets"})
+    @EntityGraph(attributePaths = {"mediaAssets"})
     Page<VideoContent> findAll(Specification<VideoContent> spec, Pageable pageable);
 
     @Override
-    @EntityGraph(attributePaths = {"genres", "mediaAssets"})
+    @EntityGraph(attributePaths = {"mediaAssets"})
     Optional<VideoContent> findById(String id);
-
 }

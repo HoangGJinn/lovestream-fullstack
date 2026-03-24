@@ -25,7 +25,7 @@ public class NotificationWebController {
                                    Model model) {
         User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
 
-        model.addAttribute("currentUser", currentUser);
+
         model.addAttribute("notifications", notificationService.getVisibleNotificationsByFilter(currentUser.getId(), filter));
         model.addAttribute("unreadCount", notificationService.countUnread(currentUser.getId()));
         model.addAttribute("selectedFilter", filter);

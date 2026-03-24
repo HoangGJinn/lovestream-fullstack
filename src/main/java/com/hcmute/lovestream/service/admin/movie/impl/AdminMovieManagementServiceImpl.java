@@ -12,6 +12,8 @@ import com.hcmute.lovestream.repository.MovieRepository;
 import com.hcmute.lovestream.service.admin.movie.AdminMovieManagementService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,40 +36,40 @@ public class AdminMovieManagementServiceImpl implements AdminMovieManagementServ
 
     @Override
     @Transactional(readOnly = true)
-    public List<Movie> getAllMovies() {
-        return movieRepository.findAllByOrderByTitleAsc();
+    public Page<Movie> getAllMovies(Pageable pageable) {
+        return movieRepository.findAllByOrderByTitleAsc(pageable);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Movie> getMoviesByStatus(ContentStatus status) {
-        return movieRepository.findAllByStatusOrderByTitleAsc(status);
+    public Page<Movie> getMoviesByStatus(ContentStatus status, Pageable pageable) {
+        return movieRepository.findAllByStatusOrderByTitleAsc(status, pageable);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Movie> searchMoviesByTitle(String keyword) {
+    public Page<Movie> searchMoviesByTitle(String keyword, Pageable pageable) {
         if (keyword == null || keyword.trim().isEmpty()) {
-            return getAllMovies();
+            return getAllMovies(pageable);
         }
-        return movieRepository.findByTitleContainingIgnoreCaseOrderByTitleAsc(keyword);
+        return movieRepository.findByTitleContainingIgnoreCaseOrderByTitleAsc(keyword, pageable);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Movie> filterMovies(ContentStatus status, String keyword) {
+    public Page<Movie> filterMovies(ContentStatus status, String keyword, Pageable pageable) {
         boolean hasKeyword = keyword != null && !keyword.trim().isEmpty();
 
         if (!hasKeyword && status == null) {
-            return getAllMovies();
+            return getAllMovies(pageable);
         }
         if (!hasKeyword) {
-            return getMoviesByStatus(status);
+            return getMoviesByStatus(status, pageable);
         }
         if (status == null) {
-            return searchMoviesByTitle(keyword);
+            return searchMoviesByTitle(keyword, pageable);
         }
-        return movieRepository.findByStatusAndTitleContainingIgnoreCaseOrderByTitleAsc(status, keyword);
+        return movieRepository.findByStatusAndTitleContainingIgnoreCaseOrderByTitleAsc(status, keyword, pageable);
     }
 
     @Override
