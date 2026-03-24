@@ -52,7 +52,7 @@ public class SecurityConfig {
                 )
                 // Xử lý khi bị chặn (Chưa đăng nhập)
                 .exceptionHandling(exc -> exc.authenticationEntryPoint((request, response, authException) -> {
-                    Nếu gọi API -> Báo lỗi 401
+//                    Nếu gọi API -> Báo lỗi 401
                    if (request.getRequestURI().startsWith("/api/")) {
                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Vui lòng đăng nhập");
                    } else {
