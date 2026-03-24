@@ -11,12 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 // @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ADMIN')") // Mở comment này nếu bạn dùng Method Security
 public class AdminWebController {
 
-    // Trả về trang Dashboard thống kê
-    @GetMapping("/dashboard")
-    public String dashboardPage(Model model) {
-        model.addAttribute("pageTitle", "Admin Dashboard - Netflix Clone");
-        return "admin/admin-dashboard";
-    }
+
 
     // Tiện tay tạo sẵn các endpoint cho các Use Case khác luôn
     @GetMapping("/vouchers")

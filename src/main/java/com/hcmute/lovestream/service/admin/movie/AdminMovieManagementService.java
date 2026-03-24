@@ -31,6 +31,7 @@ public interface AdminMovieManagementService {
 
     // -- 4. Media Asset Management (URL-based from existing service) --
     MediaAsset addAsset(String movieId, AssetType assetType, String assetUrl);
+    MediaAsset addAssetFromUrl(String movieId, AssetType assetType, String assetUrl);
     void removeAsset(String movieId, String assetId);
 
     // -- 5. Upload Media Asset (triggers real file upload + addAsset) --

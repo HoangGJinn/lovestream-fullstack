@@ -15,7 +15,7 @@ public class MediaAsset {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = com.hcmute.lovestream.entity.converter.AssetTypeConverter.class)
     private AssetType assetType;
 
     private String assetUrl;

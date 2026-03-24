@@ -7,9 +7,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class MediaAssetWebController {
-    @GetMapping("/watch-movie")
-    public String moviePage(@RequestParam String id, Model model) {
-        model.addAttribute("id", id);
+    @GetMapping("/watch/{movieId}")
+    public String moviePage(@org.springframework.web.bind.annotation.PathVariable String movieId, org.springframework.ui.Model model) {
+        model.addAttribute("movieId", movieId);
         return "videocontent/watch_movie";
     }
 }
