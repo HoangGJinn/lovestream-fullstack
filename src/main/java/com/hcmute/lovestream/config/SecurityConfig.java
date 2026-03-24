@@ -48,6 +48,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/video/**").permitAll()
 
                         // 3. GIỮ LẠI TỪ NHÁNH CỦA BẠN: Phân quyền Admin
+                        // Route admin dashboard và movies cho cả ADMIN và CONTENT_MANAGER
+                        .requestMatchers("/admin", "/admin/dashboard", "/admin/movies", "/admin/movies/**", "/api/v1/admin/movies/**").hasAnyAuthority("ROLE_ADMIN", "ADMIN", "ROLE_CONTENT_MANAGER", "CONTENT_MANAGER")
+                        // Các route admin khác chỉ dành cho ADMIN
                         .requestMatchers("/admin/**", "/api/v1/admin/**").hasAnyAuthority("ROLE_ADMIN", "ADMIN")
 
                         // CÁC TRANG CÒN LẠI BẮT BUỘC PHẢI ĐĂNG NHẬP

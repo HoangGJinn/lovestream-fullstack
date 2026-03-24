@@ -22,7 +22,7 @@ public class CloudinaryMediaStorageService implements MediaStorageService {
     private final CloudinaryProperties cloudinaryProperties;
 
     /** Asset types that map to Cloudinary's "video" resource_type */
-    private static final Set<AssetType> VIDEO_TYPES = Set.of(AssetType.MOVIE_VIDEO, AssetType.TRAILER, AssetType.EPISODE_VIDEO);
+    private static final Set<AssetType> VIDEO_TYPES = Set.of(AssetType.FULL_VIDEO, AssetType.MOVIE_VIDEO, AssetType.TRAILER, AssetType.EPISODE_VIDEO);
 
     @Override
     public String upload(MultipartFile file, AssetType assetType) throws IOException {
@@ -70,7 +70,7 @@ public class CloudinaryMediaStorageService implements MediaStorageService {
             case POSTER     -> "lovestream/movies/posters";
             case BACKGROUND -> "lovestream/movies/backgrounds";
             case TRAILER    -> "lovestream/movies/trailers";
-            case MOVIE_VIDEO -> "lovestream/movies/videos";
+            case MOVIE_VIDEO, FULL_VIDEO -> "lovestream/movies/videos";
             default         -> "lovestream/media";
         };
     }

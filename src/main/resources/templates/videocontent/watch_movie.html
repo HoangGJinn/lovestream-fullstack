@@ -256,7 +256,7 @@
 </div>
 <div> Đây là phần bình luận </div>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-<script>
+<script th:inline="javascript">
     const video = document.getElementById('video');
     const player = document.getElementById('player');
     const playPauseBtn = document.getElementById('playPauseBtn');
@@ -386,27 +386,48 @@
     });
 
 
-    // --- Logic Tải Video (giữ nguyên) ---
+    // --- Logic Tải Video ---
     async function loadVideo() {
         try {
-            // Thay đổi API endpoint của bạn ở đây
-            const res = await fetch('/api/video/watch/967f613a-ee23-4e0a-af45-865f36550e3c');
-            const videoSrc = await res.text();
+            // Lấy ID thật sự từ model của Thymeleaf
+            const movieId = /*[[${movieId}]]*/ null;
+            if (!movieId) {
+                console.error("Không tìm thấy movieId trong template!");
+                return;
+            }
 
-            if (Hls.isSupported()) {
-                const hls = new Hls();
-                hls.loadSource(videoSrc);
-                hls.attachMedia(video);
-                hls.on(Hls.Events.MANIFEST_PARSED, function() {
-                    // Tự động play (chú ý: trình duyệt có thể block nếu chưa có tương tác người dùng)
-                });
-            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            console.log("Đang tải video với movieId:", movieId);
+            const res = await fetch(`/api/video/watch/${movieId}`);
+            
+            if (!res.ok) {
+                throw new Error(`API trả về lỗi: ${res.status} ${res.statusText}`);
+            }
+            
+            const videoSrc = await res.text();
+            console.log("Tìm thấy nguồn video:", videoSrc);
+
+            if (videoSrc.includes(".m3u8")) {
+                if (Hls.isSupported()) {
+                    console.log("Đang sử dụng HLS.js để phát...");
+                    const hls = new Hls();
+                    hls.loadSource(videoSrc);
+                    hls.attachMedia(video);
+                    hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                        // Tự động play (chú ý: trình duyệt có thể block nếu chưa có tương tác người dùng)
+                    });
+                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                    console.log("Trình duyệt hỗ trợ HLS native...");
+                    video.src = videoSrc;
+                } else {
+                    console.error("Trình duyệt không hỗ trợ HLS!");
+                }
+            } else {
+                console.log("Video nguồn phổ thông (như MP4), gán trực tiếp...");
                 video.src = videoSrc;
             }
         } catch (error) {
             console.error("Lỗi tải video hoặc API không phản hồi:", error);
-            // Demo url nếu API lỗi (thay bằng url .m3u8 thật của bạn)
-            // video.src = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+            // Có thể thêm hiển thị thông báo lỗi lên màn hình cho người dùng ở đây
         }
     }
 

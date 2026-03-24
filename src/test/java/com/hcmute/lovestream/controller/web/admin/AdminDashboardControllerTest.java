@@ -25,7 +25,8 @@ public class AdminDashboardControllerTest {
         mockMvc.perform(get("/admin/dashboard"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Quản lý Content Manager")))
-                .andExpect(content().string(containsString("Quản lý phim lẻ")));
+                .andExpect(content().string(containsString("Quản lý phim lẻ")))
+                .andExpect(content().string(containsString("Tổng Doanh Thu")));
     }
 
     @Test
@@ -34,7 +35,8 @@ public class AdminDashboardControllerTest {
         mockMvc.perform(get("/admin/dashboard"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(not(containsString("Quản lý Content Manager"))))
-                .andExpect(content().string(containsString("Quản lý phim lẻ")));
+                .andExpect(content().string(containsString("Quản lý phim lẻ")))
+                .andExpect(content().string(not(containsString("Tổng Doanh Thu"))));
     }
 
     @Test

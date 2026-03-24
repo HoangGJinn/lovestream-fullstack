@@ -8,11 +8,13 @@
 </head>
 <body>
 
-<div class="admin-container">
+<div th:replace="~{admin/fragments/sidebar :: sidebar(activeMenu='movies')}"></div>
+
+<div class="admin-content">
     <header class="admin-header">
-        <h1 th:text="${movieUpsertRequest.id != null} ? '✏️ Cập nhật phim' : '+ Tạo phim mới'">Form Phim</h1>
+        <h1 th:text="${movieUpsertRequest.id != null} ? 'Cập nhật thông tin phim' : 'Tạo phim mới'">Form Phim</h1>
         <div class="header-actions">
-            <a th:href="@{/admin/movies}" class="btn btn-secondary">← Danh sách phim</a>
+            <a th:href="@{/admin/movies}" class="btn btn-secondary">Danh sách phim</a>
         </div>
     </header>
 
@@ -147,7 +149,7 @@
                 <div class="form-actions">
                     <a th:href="@{/admin/movies}" class="btn btn-secondary">Hủy</a>
                     <button type="submit" class="btn btn-primary">
-                        <span th:text="${movieUpsertRequest.id != null} ? '💾 Cập nhật' : '✅ Tạo phim'">Lưu</span>
+                        <span th:text="${movieUpsertRequest.id != null} ? 'Lưu thay đổi' : 'Tạo phim'"></span>
                     </button>
                 </div>
 
@@ -164,7 +166,7 @@
                   enctype="multipart/form-data"
                   class="upload-section">
 
-                <div class="form-section-title">📎 Upload Tài nguyên Media</div>
+                <div class="form-section-title">Ủy quyền File Tài nguyên (POSTER, TRAILER)</div>
 
                 <div class="form-row two-col">
                     <div class="form-group">
@@ -180,22 +182,55 @@
                                accept="image/*,video/*" />
                     </div>
                 </div>
-                <div style="text-align: right;">
-                    <button type="submit" class="btn btn-primary">⬆️ Upload</button>
+                <div style="text-align: right; margin-top: 15px;">
+                    <button type="submit" class="btn btn-primary">Tải lên file</button>
                 </div>
 
             </form>
         </div><!-- /.form-card (upload form) -->
 
+        <!-- ────────────────────────────────────────────────────
+             FORM 3: Thêm asset bằng URL Cloudinary
+             (Giải pháp cho mạng yếu / file siêu lớn tải qua Cloudinary trước)
+             ──────────────────────────────────────────────────── -->
+        <div class="form-card" th:if="${movieUpsertRequest.id != null}">
+            <form th:action="@{/admin/movies/{id}/assets/url(id=${movieUpsertRequest.id})}"
+                  method="post"
+                  class="upload-section">
+
+                <div class="form-section-title">Ủy quyền File theo Link URL (Cloudinary)</div>
+                <p style="margin: 0 0 15px 0; color: #b3b3b3; font-size: 14px;">
+                    Thay vì tải lên, nhập đường dẫn <code>Secure URL</code> để đính kèm (Khuyên dùng với FULL_VIDEO).
+                </p>
+
+                <div class="form-row two-col">
+                    <div class="form-group">
+                        <label for="urlAssetType">Loại tài nguyên <span class="required">*</span></label>
+                        <select id="urlAssetType" name="assetType" class="form-control" required>
+                            <option value="">-- Chọn loại --</option>
+                            <option th:each="at : ${allAssetTypes}" th:value="${at}" th:text="${at}"></option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="assetUrl">Đường dẫn URL Cloudinary <span class="required">*</span></label>
+                        <input id="assetUrl" type="url" name="assetUrl" class="form-control" required
+                               placeholder="VD: https://res.cloudinary.com/.../video/upload/v1234/movie.mp4" />
+                    </div>
+                </div>
+                <div style="text-align: right; margin-top: 15px;">
+                    <button type="submit" class="btn btn-secondary">Thêm link URL</button>
+                </div>
+
+            </form>
+        </div><!-- /.form-card (URL form) -->
+
         <!-- Gợi ý khi đang tạo mới: nhắc user lưu phim trước -->
         <div class="form-card" th:if="${movieUpsertRequest.id == null}">
-            <p style="margin: 0; color: #555;">
-                💡 <strong>Lưu phim trước</strong> để tải lên tài nguyên media (poster, trailer, video).
+            <p style="margin: 0; color: #b3b3b3;">
+                Vui lòng <strong>Lưu nội dung phim</strong> ở trên trước để hệ thống cấp ID. Sau đó bạn có thể tải lên tài liệu Media (poster, trailer, video).
             </p>
         </div>
 
     </div><!-- /.admin-content -->
-</div><!-- /.admin-container -->
-
 </body>
 </html>
