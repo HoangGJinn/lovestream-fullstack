@@ -61,7 +61,6 @@ public class ServicePlanWebController {
         }
 
         User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
-        model.addAttribute("currentUser", currentUser);
 
         Subscription activeSubscription = subscriptionRepository
                 .findTopByUserAndStatusOrderByEndDateDesc(currentUser, SubscriptionStatus.ACTIVE)

@@ -4,8 +4,10 @@ import com.hcmute.lovestream.dto.request.*;
 import com.hcmute.lovestream.entity.RefreshToken;
 import com.hcmute.lovestream.entity.User;
 import com.hcmute.lovestream.entity.enums.Role;
+import com.hcmute.lovestream.entity.enums.SubscriptionStatus;
 import com.hcmute.lovestream.entity.enums.UserStatus;
 import com.hcmute.lovestream.repository.RefreshTokenRepository;
+import com.hcmute.lovestream.repository.SubscriptionRepository;
 import com.hcmute.lovestream.repository.UserRepository;
 import com.hcmute.lovestream.security.JwtUtil;
 import com.hcmute.lovestream.service.email.EmailService;
@@ -33,6 +35,7 @@ public class AuthServiceImpl implements AuthService {
     // private final EmailService emailService;
     private final EmailService emailService;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final SubscriptionRepository subscriptionRepository;
 
     @Value("${jwt.refresh-token.expiration}")
     private Long refreshExpiration;
@@ -103,8 +106,13 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Tài khoản của bạn đã bị xóa. Vui lòng sử dụng tài khoản khác.");
         }
 
-// 1. Tạo Access Token (Vé xem phim - Hạn ngắn)
-        String accessToken = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
+        // 1. Tạo Access Token (Vé xem phim - Hạn ngắn)
+        boolean isVip = subscriptionRepository.existsByUser_IdAndStatusAndEndDateAfter(
+                user.getId(),
+                SubscriptionStatus.ACTIVE,
+                LocalDateTime.now()
+        );
+        String accessToken = jwtUtil.generateToken(user, isVip);
 
         // 2. Tạo Refresh Token (Thẻ thành viên - Hạn dài)
         String refreshTokenString = java.util.UUID.randomUUID().toString();
@@ -132,7 +140,7 @@ public class AuthServiceImpl implements AuthService {
         Map<String, String> tokens = new HashMap<>();
         tokens.put("accessToken", accessToken);
         tokens.put("refreshToken", refreshTokenString);
-        tokens.put("role", user.getRole().name());
+        tokens.put("role", user.getRole().getAuthority());
 
         return tokens;
     }
@@ -227,7 +235,12 @@ public class AuthServiceImpl implements AuthService {
         refreshTokenRepository.save(refreshToken);
 
         // 4b. Tạo Access Token mới
-        String newAccessToken = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
+        boolean isVip = subscriptionRepository.existsByUser_IdAndStatusAndEndDateAfter(
+                user.getId(),
+                SubscriptionStatus.ACTIVE,
+                LocalDateTime.now()
+        );
+        String newAccessToken = jwtUtil.generateToken(user, isVip);
 
         // 4c. Tạo Refresh Token mới và lưu vào DB
         String newRefreshTokenStr = UUID.randomUUID().toString();

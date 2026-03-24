@@ -5,6 +5,8 @@ import com.hcmute.lovestream.entity.MediaAsset;
 import com.hcmute.lovestream.entity.Movie;
 import com.hcmute.lovestream.entity.enums.AssetType;
 import com.hcmute.lovestream.entity.enums.ContentStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -13,10 +15,10 @@ import java.util.List;
 public interface AdminMovieManagementService {
     
     // -- 1. Queries --
-    List<Movie> getAllMovies();
-    List<Movie> getMoviesByStatus(ContentStatus status);
-    List<Movie> searchMoviesByTitle(String keyword);
-    List<Movie> filterMovies(ContentStatus status, String keyword);
+    Page<Movie> getAllMovies(Pageable pageable);
+    Page<Movie> getMoviesByStatus(ContentStatus status, Pageable pageable);
+    Page<Movie> searchMoviesByTitle(String keyword, Pageable pageable);
+    Page<Movie> filterMovies(ContentStatus status, String keyword, Pageable pageable);
     Movie getMovieById(String id);
 
     // -- 2. CRUD Operations --
