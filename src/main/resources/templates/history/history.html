@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Netflix Style - Watch History</title>
+  <title>Lich su xem - LoveStream</title>
   <style>
     /* Toàn bộ CSS phong cách Netflix */
     :root {
@@ -121,10 +121,29 @@
       color: var(--text-white);
     }
 
-    .video-meta {
-      font-size: 0.9rem;
-      color: var(--netflix-grey);
-      margin-bottom: 10px;
+    .resume-timeline {
+      margin: 6px 0 10px;
+      width: min(560px, 90%);
+    }
+
+    .resume-track {
+      width: 100%;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.2);
+      overflow: hidden;
+    }
+
+    .resume-fill {
+      height: 100%;
+      background: var(--netflix-red);
+      border-radius: 999px;
+    }
+
+    .resume-time {
+      margin-top: 5px;
+      font-size: 0.82rem;
+      color: #c6c6c6;
     }
 
     .video-description {
@@ -181,62 +200,124 @@
 <div class="history-container">
 
   <div class="history-section">
-    <div class="section-title">Hôm nay</div>
-
-    <div class="video-list">
-      <div class="video-item">
-        <div class="thumbnail-container">
-          <img src="https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?q=80&w=1470&auto=format&fit=crop" alt="Movie">
-          <div class="progress-bar-container">
-            <div class="progress-fill" style="width: 85%;"></div>
-          </div>
-        </div>
-        <div class="video-details">
-          <div class="video-title">Stranger Things: Mùa 4 | Tập 1</div>
-          <div class="video-meta">Netflix Original • 1.2M lượt xem</div>
-          <div class="video-description">Sau sáu tháng kể từ Trận chiến Starcourt, nhóm bạn đối mặt với mối đe dọa siêu nhiên mới kinh hoàng hơn.</div>
-        </div>
-        <button class="remove-btn" title="Xóa khỏi lịch sử">&times;</button>
-      </div>
-
-      <div class="video-item">
-        <div class="thumbnail-container">
-          <img src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1325&auto=format&fit=crop" alt="Movie">
-          <div class="progress-bar-container">
-            <div class="progress-fill" style="width: 30%;"></div>
-          </div>
-        </div>
-        <div class="video-details">
-          <div class="video-title">Inception: Kẻ Đánh Cắp Giấc Mơ</div>
-          <div class="video-meta">Hành động • 2 giờ 28 phút</div>
-          <div class="video-description">Một kẻ trộm có khả năng xâm nhập vào giấc mơ của người khác để đánh cắp bí mật từ tiềm thức của họ.</div>
-        </div>
-        <button class="remove-btn" title="Xóa khỏi lịch sử">&times;</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="history-section">
-    <div class="section-title">Hôm qua</div>
-    <div class="video-list">
-      <div class="video-item">
-        <div class="thumbnail-container">
-          <img src="https://images.unsplash.com/photo-1594909122845-11baa439b7bf?q=80&w=1470&auto=format&fit=crop" alt="Movie">
-          <div class="progress-bar-container">
-            <div class="progress-fill" style="width: 100%;"></div>
-          </div>
-        </div>
-        <div class="video-details">
-          <div class="video-title">The Dark Knight</div>
-          <div class="video-meta">DC Studios • Đã xem xong</div>
-          <div class="video-description">Batman đối đầu với Joker, một tên tội phạm tâm thần đang gieo rắc hỗn loạn tại Gotham.</div>
-        </div>
-        <button class="remove-btn" title="Xóa khỏi lịch sử">&times;</button>
-      </div>
-    </div>
+    <div class="section-title">Gan day</div>
+    <div class="video-list" id="historyList"></div>
   </div>
 
 </div>
+
+<script>
+  const historyList = document.getElementById('historyList');
+
+  function formatDuration(seconds) {
+    const safe = Number.isFinite(seconds) && seconds > 0 ? Math.floor(seconds) : 0;
+    const h = Math.floor(safe / 3600);
+    const m = Math.floor((safe % 3600) / 60);
+    const s = safe % 60;
+    if (h > 0) {
+      return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
+
+  function escapeHtml(text) {
+    if (!text) return '';
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function renderHistory(items) {
+    if (!Array.isArray(items) || items.length === 0) {
+      historyList.innerHTML = '<p>Ban chua co lich su xem.</p>';
+      return;
+    }
+
+    historyList.innerHTML = items.map(item => {
+      const percent = Number.isFinite(item.progressPercent) ? item.progressPercent : 0;
+      const progressSeconds = Number.isFinite(item.progressSeconds) ? Math.max(0, item.progressSeconds) : 0;
+      const durationSeconds = Number.isFinite(item.durationSeconds) ? Math.max(progressSeconds, item.durationSeconds) : progressSeconds;
+      const rawVideoId = String(item.videoContentId || '');
+      const safeVideoId = encodeURIComponent(rawVideoId);
+      const title = escapeHtml(item.title || 'Khong co tieu de');
+      const description = escapeHtml(item.description || '');
+      const posterUrl = escapeHtml(item.posterUrl || 'https://via.placeholder.com/300x169?text=No+Poster');
+      const startSeconds = Math.floor(progressSeconds);
+      const baseWatchUrl = item.watchUrl || `/watch-movie?id=${safeVideoId}`;
+      const joiner = baseWatchUrl.includes('?') ? '&' : '?';
+      const watchUrl = `${baseWatchUrl}${joiner}start=${startSeconds}`;
+      const watchedDuration = formatDuration(progressSeconds);
+      const totalDuration = formatDuration(durationSeconds);
+
+      return `
+        <div class="video-item" data-video-id="${escapeHtml(rawVideoId)}" data-watch-url="${escapeHtml(watchUrl)}">
+          <div class="thumbnail-container">
+            <img src="${posterUrl}" alt="${title}">
+            <div class="progress-bar-container">
+              <div class="progress-fill" style="width: ${percent}%;"></div>
+            </div>
+          </div>
+          <div class="video-details">
+            <div class="video-title">${title}</div>
+            <div class="resume-timeline">
+              <div class="resume-track">
+                <div class="resume-fill" style="width: ${percent}%;"></div>
+              </div>
+              <div class="resume-time">${watchedDuration} / ${totalDuration}</div>
+            </div>
+            <div class="video-description">${description}</div>
+          </div>
+          <button class="remove-btn" title="Xoa khoi lich su" onclick="removeHistoryItem(event, '${escapeHtml(rawVideoId)}')">&times;</button>
+        </div>
+      `;
+    }).join('');
+
+    historyList.querySelectorAll('.video-item').forEach((card) => {
+      card.addEventListener('click', (event) => {
+        if (event.target.closest('.remove-btn')) {
+          return;
+        }
+        const watchUrl = card.getAttribute('data-watch-url');
+        if (watchUrl) {
+          window.location.href = watchUrl;
+        }
+      });
+    });
+  }
+
+  async function loadHistory() {
+    try {
+      const response = await fetch('/api/v1/history');
+      if (!response.ok) {
+        throw new Error('Khong the tai lich su');
+      }
+      const data = await response.json();
+      renderHistory(data);
+    } catch (error) {
+      historyList.innerHTML = '<p>Khong the tai lich su. Vui long thu lai.</p>';
+      console.error(error);
+    }
+  }
+
+  async function removeHistoryItem(event, videoContentId) {
+    event.stopPropagation();
+    try {
+      const response = await fetch(`/api/v1/history/${videoContentId}`, { method: 'DELETE' });
+      if (!response.ok && response.status !== 204) {
+        throw new Error('Khong the xoa lich su');
+      }
+      await loadHistory();
+    } catch (error) {
+      console.error(error);
+      alert('Xoa lich su that bai');
+    }
+  }
+
+  loadHistory();
+</script>
 
 </body>
 </html>
