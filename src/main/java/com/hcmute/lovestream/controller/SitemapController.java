@@ -48,8 +48,11 @@ public class SitemapController {
                 .toList();
 
         for (VideoContent content : contents) {
+            String urlPath = (content.getSlug() != null && !content.getSlug().isBlank())
+                    ? content.getSlug()
+                    : content.getId();
             xml.append("  <url>\n");
-            xml.append("    <loc>").append(BASE_URL).append("/movies/").append(content.getId()).append("</loc>\n");
+            xml.append("    <loc>").append(BASE_URL).append("/movies/").append(urlPath).append("</loc>\n");
             xml.append("    <priority>0.8</priority>\n");
             xml.append("  </url>\n");
         }

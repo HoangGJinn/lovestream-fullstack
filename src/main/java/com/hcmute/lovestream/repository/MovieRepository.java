@@ -22,6 +22,14 @@ public interface MovieRepository extends JpaRepository<Movie, String> {
     @EntityGraph(attributePaths = { "mediaAssets" })
     Optional<Movie> findDetailedByIdAndStatus(String id, ContentStatus status);
 
+    // Slug-based lookups for SEO-friendly URLs
+    // Chỉ load mediaAssets eager (giống UUID method) — tránh Cartesian product.
+    // genres và contentCredits sẽ được Hibernate batch-fetch qua @BatchSize trên entity.
+    Optional<Movie> findBySlug(String slug);
+
+    @EntityGraph(attributePaths = { "mediaAssets" })
+    Optional<Movie> findDetailedBySlugAndStatus(String slug, ContentStatus status);
+
     @Query("SELECT DISTINCT m FROM Movie m LEFT JOIN FETCH m.genres")
     List<Movie> findAllWithGenres();
 
