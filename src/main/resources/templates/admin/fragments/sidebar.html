@@ -5,22 +5,22 @@
     <div class="admin-logo">LoveStream Admin</div>
     <div class="admin-menu">
         <a th:href="@{/admin/dashboard}" th:classappend="${activeMenu == 'dashboard'} ? 'active'">Dashboard</a>
-        
-        <!-- MODULE QUẢN LÝ PHIM LẺ: ADMIN và CONTENT_MANAGER cùng thấy -->
+
         <a th:href="@{/admin/movies}" th:classappend="${activeMenu == 'movies'} ? 'active'">Quản lý phim lẻ</a>
         <a th:href="@{/admin/series}" th:classappend="${activeMenu == 'series'} ? 'active'">Quản lý TV Series</a>
 
-        <!-- MODULE CHỈ DÀNH CHO ADMIN -->
         <th:block sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ADMIN')">
             <a th:href="@{/admin/users/content-managers}" th:classappend="${activeMenu == 'content-managers'} ? 'active'">Quản lý Content Manager</a>
             <a th:href="@{/admin/users}" th:classappend="${activeMenu == 'users'} ? 'active'">Quản lý Người dùng</a>
             <a th:href="@{/admin/plans}" th:classappend="${activeMenu == 'plans'} ? 'active'">Quản lý Gói dịch vụ</a>
             <a th:href="@{/admin/vouchers}" th:classappend="${activeMenu == 'vouchers'} ? 'active'">Quản lý Voucher</a>
+
+            <a th:href="@{/admin/transactions}" th:classappend="${activeMenu == 'transactions'} ? 'active'">Quản lý Giao dịch</a>
         </th:block>
 
         <a href="#" onclick="handleAdminLogout(event)" style="margin-top: 50px; color: var(--netflix-red);">Đăng xuất</a>
     </div>
-    
+
     <script>
         function handleAdminLogout(event) {
             event.preventDefault();
