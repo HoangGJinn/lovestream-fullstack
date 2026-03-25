@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết phim - LoveStream</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans:wght@400;500;600;700;800;900&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/videocontents.css">
+</head>
+<body>
+<main class="vc-detail-page">
+    <a class="vc-back-link" href="/movies"><i class="fa-solid fa-arrow-left"></i> Quay lại danh sách phim</a>
+
+    <div class="vc-detail-error" th:if="${errorMessage != null}">
+        <h2 th:text="${errorMessage}">Nội dung không tồn tại</h2>
+    </div>
+
+    <article class="vc-detail-card" th:if="${movie != null}">
+        <img th:src="${movie.posterUrl}" th:alt="${movie.title}">
+        <div class="vc-detail-content">
+            <h1 th:text="${movie.title}">Tên phim</h1>
+            <p class="vc-meta">
+                <span th:text="${movie.releaseYear}">2026</span>
+                <span> • </span>
+                <span th:text="${movie.country != null ? movie.country : 'Đang cập nhật quốc gia'}">Đang cập nhật quốc gia</span>
+                <span th:if="${movie.duration > 0}"> • <span th:text="${movie.duration + ' phút'}">120 phút</span></span>
+            </p>
+            <p class="vc-desc" th:text="${movie.description}">Mô tả phim</p>
+
+            <div class="vc-tags" th:if="${movie.genres != null}">
+                <span th:each="g : ${movie.genres}" th:text="${g}">Drama</span>
+            </div>
+
+            <p class="vc-meta" th:if="${movie.director != null}">
+                Đạo diễn: <strong th:text="${movie.director}">Tên đạo diễn</strong>
+            </p>
+
+            <p class="vc-meta" th:if="${movie.actors != null and !#lists.isEmpty(movie.actors)}">
+                Diễn viên: <span th:text="${#strings.listJoin(movie.actors, ', ')}">Tên diễn viên</span>
+            </p>
+
+            <p class="vc-meta">
+                Đánh giá: <span th:text="${#numbers.formatDecimal(movie.rating, 1, 1)}">0.0</span>
+                <span> • </span>
+                Lượt xem: <span th:text="${movie.views}">0</span>
+            </p>
+
+            <div class="vc-meta" th:if="${movie.trailerUrl != null}">
+                <a class="vc-back-link" th:href="${movie.trailerUrl}" target="_blank" rel="noopener">Xem trailer</a>
+            </div>
+
+            <a class="vc-buy-btn"
+               th:if="${movie.watchAction == 'WATCH'}"
+               th:href="@{/watch-movie(id=${movie.id})}">
+                Xem phim
+            </a>
+            <a class="vc-buy-btn" th:if="${movie.watchAction == 'LOGIN_REQUIRED'}" href="/login">Đăng nhập để xem</a>
+            <a class="vc-buy-btn" th:if="${movie.watchAction == 'BUY_PACKAGE'}" href="/packages">Mua gói để xem</a>
+            <!-- Nút thêm yêu thích -->
+            <button id="btn-favorite" class="vc-buy-btn" style="background-color: transparent; border: 1px solid #fff; margin-left: 10px; cursor: pointer;"
+                    th:data-video-id="${movie.id}">
+                <span th:if="${movie.isFavorited}">
+                    <i class="fa-solid fa-check"></i> Đã yêu thích
+                </span>
+                <span th:unless="${movie.isFavorited}">
+                    <i class="fa-solid fa-plus"></i> Thêm vào yêu thích
+                </span>
+            </button>
+
+        </div>
+    </article>
+</main>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const btnFavorite = document.getElementById("btn-favorite");
+
+        if (btnFavorite) {
+            btnFavorite.addEventListener("click", async function(e) {
+                e.preventDefault();
+
+                // Lấy ID phim
+                const videoId = this.getAttribute("data-video-id");
+
+                try {
+                    // Gọi API
+                    const response = await fetch(`/api/favorites/${videoId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+
+                    // Chuyển đổi response
+                    const data = await response.json();
+
+                    if (response.ok && data.status === 'success') {
+                        if (data.isAdded) {
+                            btnFavorite.innerHTML = '<i class="fa-solid fa-check"></i> Đã yêu thích';
+                            btnFavorite.style.opacity = '1';
+                        } else {
+
+                            btnFavorite.innerHTML = '<i class="fa-solid fa-plus"></i> Thêm vào yêu thích';
+                            btnFavorite.style.opacity = '1';
+                        }
+
+
+                    } else if (response.status === 401) {
+                        alert("Bạn cần đăng nhập để thao tác.");
+                        window.location.href = '/login';
+                    } else {
+                        alert(data.message || "Lỗi thao tác.");
+                    }
+                } catch (error) {
+                    alert("Lỗi kết nối, vui lòng thử lại sau.");
+                    console.error(error);
+                }
+            });
+        }
+    });
+</script>
+
+
+</body>
+</html>
+

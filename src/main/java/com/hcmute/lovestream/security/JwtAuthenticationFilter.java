@@ -1,7 +1,9 @@
 package com.hcmute.lovestream.security;
 
 import com.hcmute.lovestream.entity.RefreshToken;
+import com.hcmute.lovestream.entity.enums.SubscriptionStatus;
 import com.hcmute.lovestream.repository.RefreshTokenRepository;
+import com.hcmute.lovestream.repository.SubscriptionRepository;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -12,14 +14,18 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Component
@@ -27,8 +33,8 @@ import java.util.UUID;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
-    private final CustomUserDetailsService userDetailsService;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final SubscriptionRepository subscriptionRepository;
 
     @Value("${jwt.refresh-token.expiration}")
     private Long refreshExpiration;
@@ -37,36 +43,60 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        // 1. Lấy token từ request (Cookie hoặc Header)
+        String path = request.getRequestURI();
+
+        // Bỏ qua hoàn toàn việc xác thực JWT cho các file tĩnh
+        if (path.startsWith("/css/") || path.startsWith("/js/") || path.startsWith("/images/")
+                || path.startsWith("/assets/") || path.startsWith("/webjars/")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // 1. Lấy token từ request
         String token = jwtUtil.extractTokenFromRequest(request);
 
-        // 2. Nếu có token và chưa có thông tin xác thực trong SecurityContext
+        // 2. Nếu có token và chưa xác thực
         if (token != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
-                String email = jwtUtil.extractUsername(token);
+                if (jwtUtil.isTokenValid(token) && "ACCESS".equals(jwtUtil.extractTokenType(token))) {
 
-                if (email != null) {
-                    UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                    String email = jwtUtil.extractUsername(token);
+                    String roleStr = jwtUtil.extractRole(token);
+                    boolean isVip = jwtUtil.extractIsVip(token);
+                    String fullName = jwtUtil.extractFullName(token);
+                    String avatar = jwtUtil.extractAvatar(token);
 
-                    // 3. Kiểm tra tính hợp lệ của token VÀ đảm bảo đây là Access Token (không phải Refresh Token)
-                    if (jwtUtil.validateToken(token, userDetails) && "ACCESS".equals(jwtUtil.extractTokenType(token))) {
-                        // 4. Cấp quyền truy cập
-                        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                                userDetails, null, userDetails.getAuthorities()
-                        );
-                        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                    if (roleStr != null && !roleStr.startsWith("ROLE_")) {
+                        roleStr = "ROLE_" + roleStr;
                     }
+
+                    List<SimpleGrantedAuthority> authorities =
+                            roleStr != null ? Collections.singletonList(new SimpleGrantedAuthority(roleStr)) : Collections.emptyList();
+
+                    // Gom tất cả dữ liệu vào một Map (Principal)
+                    JwtPrincipal principalData = new JwtPrincipal();
+                    principalData.put("email", email);
+                    principalData.put("fullName", fullName);
+                    principalData.put("avatar", avatar);
+                    principalData.put("isVip", isVip);
+
+                    // Cấp quyền trực tiếp vào Context, truyền principalData làm tham số đầu tiên
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            principalData, null, authorities
+                    );
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
 
             } catch (ExpiredJwtException e) {
-                // Access Token hết hạn → thử auto-refresh bằng REFRESH_TOKEN cookie
                 logger.debug("Access Token hết hạn, đang thử auto-refresh...");
                 tryAutoRefresh(request, response, e.getClaims().getSubject());
-
             } catch (JwtException e) {
-                // Token bị giả mạo, sai chữ ký, hoặc malformed — bỏ qua
                 logger.warn("JWT token không hợp lệ: " + e.getMessage());
+                clearAuthCookies(response);
+            } catch (Exception e) {
+                logger.warn("Lỗi xác thực JWT không mong muốn: " + e.getMessage());
+                clearAuthCookies(response);
             }
         }
 
@@ -74,33 +104,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    /**
-     * Tự động làm mới Access Token khi hết hạn (dành cho Thymeleaf web app).
-     * Nếu REFRESH_TOKEN cookie hợp lệ: cấp token mới vào cookie và authenticate request ngay.
-     * Nếu không hợp lệ: bỏ qua → Spring Security sẽ redirect về /login.
-     */
     private void tryAutoRefresh(HttpServletRequest request, HttpServletResponse response, String email) {
-        // Lấy giá trị REFRESH_TOKEN từ cookie
         String refreshTokenValue = extractRefreshTokenCookie(request);
         if (refreshTokenValue == null) {
             logger.debug("Không tìm thấy REFRESH_TOKEN cookie, yêu cầu đăng nhập lại.");
+            clearAuthCookies(response);
             return;
         }
 
         // Tìm trong database
         refreshTokenRepository.findByToken(refreshTokenValue).ifPresentOrElse(rt -> {
-            // Kiểm tra chưa bị revoke và chưa hết hạn
+
+            if (email != null && !email.equalsIgnoreCase(rt.getUser().getEmail())) {
+                logger.warn("REFRESH_TOKEN không khớp với subject trong access token.");
+                clearAuthCookies(response);
+                return;
+            }
+
             if (rt.isRevoked() || rt.getExpiresAt().isBefore(LocalDateTime.now())) {
                 logger.debug("REFRESH_TOKEN không hợp lệ hoặc đã hết hạn, yêu cầu đăng nhập lại.");
+                clearAuthCookies(response);
                 return;
             }
 
             // ---- Token Rotation ----
-            // 1. Revoke refresh token cũ
             rt.setRevoked(true);
             refreshTokenRepository.save(rt);
 
-            // 2. Tạo refresh token mới
             String newRefreshTokenStr = UUID.randomUUID().toString();
             RefreshToken newRefreshToken = RefreshToken.builder()
                     .user(rt.getUser())
@@ -110,10 +140,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .build();
             refreshTokenRepository.save(newRefreshToken);
 
-            // 3. Tạo Access Token mới
-            String newAccessToken = jwtUtil.generateToken(rt.getUser().getEmail(), rt.getUser().getRole().name());
+            boolean isVip = subscriptionRepository.existsByUser_IdAndStatusAndEndDateAfter(
+                    rt.getUser().getId(),
+                    SubscriptionStatus.ACTIVE,
+                    LocalDateTime.now()
+            );
 
-            // 4. Ghi hai cookie mới vào response
+            // SỬA: Dùng hàm generateToken theo thiết kế mới (User user, boolean isVip)
+            String newAccessToken = jwtUtil.generateToken(rt.getUser(), isVip);
+
             Cookie jwtCookie = new Cookie("JWT_TOKEN", newAccessToken);
             jwtCookie.setHttpOnly(true);
             jwtCookie.setPath("/");
@@ -126,20 +161,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             refreshCookie.setMaxAge(604800);
             response.addCookie(refreshCookie);
 
-            // 5. Authenticate request hiện tại (user không bị redirect)
-            UserDetails userDetails = userDetailsService.loadUserByUsername(rt.getUser().getEmail());
+            // Cấp quyền ngay cho request hiện tại để khỏi bị redirect (Không gọi userDetailsService nữa)
+            JwtPrincipal principalData = new JwtPrincipal();
+            principalData.put("email", rt.getUser().getEmail());
+            principalData.put("fullName", rt.getUser().getFullName());
+            principalData.put("avatar", rt.getUser().getAvatar());
+            principalData.put("isVip", isVip);
+
+            String roleStr = rt.getUser().getRole().getAuthority();
+            List<SimpleGrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority(roleStr));
+
             UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                    userDetails, null, userDetails.getAuthorities()
+                    principalData, null, authorities
             );
             authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authToken);
 
             logger.debug("Auto-refresh thành công cho user: " + rt.getUser().getEmail());
 
-        }, () -> logger.debug("Không tìm thấy REFRESH_TOKEN trong database."));
+        }, () -> {
+            logger.debug("Không tìm thấy REFRESH_TOKEN trong database.");
+            clearAuthCookies(response);
+        });
     }
 
-    /** Trích xuất giá trị của REFRESH_TOKEN cookie từ request */
     private String extractRefreshTokenCookie(HttpServletRequest request) {
         if (request.getCookies() == null) return null;
         for (Cookie cookie : request.getCookies()) {
@@ -149,5 +194,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         return null;
     }
-}
 
+    private void clearAuthCookies(HttpServletResponse response) {
+        Cookie jwtCookie = new Cookie("JWT_TOKEN", null);
+        jwtCookie.setHttpOnly(true);
+        jwtCookie.setPath("/");
+        jwtCookie.setMaxAge(0);
+        response.addCookie(jwtCookie);
+
+        Cookie refreshCookie = new Cookie("REFRESH_TOKEN", null);
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setPath("/");
+        refreshCookie.setMaxAge(0);
+        response.addCookie(refreshCookie);
+    }
+
+    public static class JwtPrincipal extends HashMap<String, Object> implements java.security.Principal {
+        @Override
+        public String getName() {
+            return (String) get("email");
+        }
+    }
+}

@@ -3,8 +3,10 @@ package com.hcmute.lovestream.entity;
 import com.hcmute.lovestream.entity.enums.AgeRating;
 import com.hcmute.lovestream.entity.enums.ContentStatus;
 import com.hcmute.lovestream.entity.enums.Quality;
+import com.hcmute.lovestream.util.VietnameseNormalizer;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -26,10 +28,15 @@ public abstract class VideoContent {
 
     private String title;
 
+    @Column(name = "title_unsigned")
+    private String titleUnsigned;
+
     @Column(columnDefinition = "TEXT")
     private String description;
 
     private int releaseYear;
+
+    private String country;
 
     @Enumerated(EnumType.STRING)
     private AgeRating ageRating;
@@ -66,6 +73,7 @@ public abstract class VideoContent {
     @OneToMany(mappedBy = "videoContent", cascade = CascadeType.ALL)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @BatchSize(size = 100)
     private List<MediaAsset> mediaAssets;
 
     // THÊM MỚI: 1-N với Comment (Một phim có nhiều bình luận)
@@ -102,6 +110,12 @@ public abstract class VideoContent {
             }
         }
         return "https://via.placeholder.com/300x450?text=No+Poster"; // Ảnh mặc định nếu phim chưa có poster
+    }
+
+    @PrePersist
+    @PreUpdate
+    protected void syncSearchFields() {
+        this.titleUnsigned = VietnameseNormalizer.normalize(this.title);
     }
 
     public abstract void getDetails(); // Khai báo method như trong UML

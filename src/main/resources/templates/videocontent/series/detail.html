@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${series.title} + ' - LoveStream'">Chi tiết Series</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/home.css">
+    <link rel="stylesheet" href="/css/user-menu.css">
+    <style>
+        body { background: #141414; color: #fff; margin: 0; font-family: 'Roboto', sans-serif; }
+
+        .series-detail { padding: 80px 4% 40px; }
+
+        .series-hero {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .series-poster img {
+            width: 220px;
+            border-radius: 8px;
+            box-shadow: 0 8px 30px rgba(0,0,0,.6);
+        }
+
+        .series-info { flex: 1; min-width: 280px; }
+
+        .series-title {
+            font-size: 2.4rem;
+            font-weight: 800;
+            margin: 0 0 10px;
+        }
+
+        .series-meta {
+            color: #b3b3b3;
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+        }
+
+        .series-description {
+            color: #ccc;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .tag {
+            display: inline-block;
+            background: rgba(255,255,255,.1);
+            border-radius: 4px;
+            padding: 3px 10px;
+            margin: 3px 4px 3px 0;
+            font-size: 0.82rem;
+        }
+
+        .watch-cta {
+            margin-top: 20px;
+        }
+
+        .btn-watch {
+            display: inline-block;
+            background: #e50914;
+            color: #fff;
+            padding: 10px 28px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .btn-watch:hover { background: #f40612; }
+
+        /* Season accordion */
+        .seasons { margin-top: 10px; }
+
+        .season-block { margin-bottom: 24px; }
+
+        .season-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin: 0 0 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,.15);
+        }
+
+        .episode-list { list-style: none; padding: 0; margin: 0; }
+
+        .episode-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            background: rgba(255,255,255,.06);
+            transition: background .2s;
+        }
+
+        .episode-item:hover { background: rgba(255,255,255,.12); }
+
+        .ep-info { flex: 1; }
+
+        .ep-number { font-weight: 700; margin-right: 10px; color: #e50914; }
+
+        .ep-title { font-size: 0.95rem; }
+
+        .ep-duration { font-size: 0.82rem; color: #999; margin-top: 2px; }
+
+        .btn-ep {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            text-decoration: none;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .btn-ep-watch { background: #e50914; color: #fff; }
+        .btn-ep-watch:hover { background: #f40612; }
+
+        .btn-ep-login { background: #f5a623; color: #000; }
+        .btn-ep-buy { background: #2ecc71; color: #000; }
+
+        .empty-season { color: #777; font-size: 0.9rem; padding: 8px 0; }
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<div class="navbar" id="navbar">
+    <div class="nav-left">
+        <a href="/" class="logo">LoveStream</a>
+        <ul class="nav-links">
+            <li><a href="/home">Trang chủ</a></li>
+            <li><a href="/series" class="active">Series</a></li>
+            <li><a href="/movies">Phim</a></li>
+        </ul>
+    </div>
+    <div class="nav-right">
+        <div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>
+    </div>
+</div>
+
+<div class="series-detail">
+
+    <!-- Hero section -->
+    <div class="series-hero">
+        <div class="series-poster">
+            <img th:src="${series.posterUrl}" th:alt="${series.title}" />
+        </div>
+        <div class="series-info">
+            <h1 class="series-title" th:text="${series.title}">Tên series</h1>
+
+            <div class="series-meta">
+                <span th:text="${series.releaseYear}">2024</span>
+                <span th:if="${series.durationMinutes != null}"> • <span th:text="${series.durationMinutes}"></span> phút/tập</span>
+                <span th:if="${series.director != null}"> • Đạo diễn: <strong th:text="${series.director}"></strong></span>
+            </div>
+
+            <!-- Genres -->
+            <div style="margin-bottom:14px;">
+                <span class="tag" th:each="g : ${series.genres}" th:text="${g}">Thể loại</span>
+            </div>
+
+            <!-- Cast -->
+            <div th:if="${series.cast != null and !series.cast.isEmpty()}" style="margin-bottom:14px;color:#ccc;font-size:0.9rem;">
+                <strong>Diễn viên: </strong>
+                <span th:text="${#strings.listJoin(series.cast, ', ')}"></span>
+            </div>
+
+            <p class="series-description" th:text="${series.description}">Mô tả</p>
+
+            <!-- Watch CTA based on action -->
+            <div class="watch-cta">
+                <p th:if="${series.watchAction == 'LOGIN_REQUIRED'}" style="color:#f5a623;">
+                    Bạn cần <a href="/login" style="color:#e50914;font-weight:700;">đăng nhập</a> để xem series này.
+                </p>
+                <p th:if="${series.watchAction == 'BUY_PACKAGE'}" style="color:#2ecc71;">
+                    Bạn cần <a href="/packages" style="color:#2ecc71;font-weight:700;">mua gói xem phim</a> để truy cập nội dung này.
+                </p>
+                <p th:if="${series.watchAction == 'WATCH'}" style="color:#aaa;font-size:0.9rem;">
+                    Chọn tập để bắt đầu xem ↓
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Season / Episode list -->
+    <div class="seasons">
+        <h2 style="font-size:1.5rem;margin-bottom:20px;">Danh sách tập</h2>
+
+        <div th:if="${series.seasons == null or series.seasons.isEmpty()}" style="color:#777;">
+            Series chưa có mùa nào.
+        </div>
+
+        <div class="season-block" th:each="season : ${series.seasons}">
+            <div class="season-title">
+                Mùa <span th:text="${season.seasonNumber}">1</span>
+                <span th:if="${season.name != null and !#strings.isEmpty(season.name)}"
+                      th:text="' — ' + ${season.name}"></span>
+                <span style="font-weight:400;color:#999;font-size:0.9rem;" th:if="${season.releaseYear > 0}">
+                    (<span th:text="${season.releaseYear}"></span>)
+                </span>
+            </div>
+
+            <div th:if="${season.episodes == null or season.episodes.isEmpty()}" class="empty-season">
+                Mùa này chưa có tập nào.
+            </div>
+
+            <ul class="episode-list" th:if="${season.episodes != null and !season.episodes.isEmpty()}">
+                <li class="episode-item" th:each="ep : ${season.episodes}">
+                    <div class="ep-info">
+                        <span class="ep-number" th:text="'Tập ' + ${ep.episodeNumber}">Tập 1</span>
+                        <span class="ep-title" th:text="${ep.title}">Tên tập</span>
+                        <div class="ep-duration" th:if="${ep.durationInMinutes > 0}"
+                             th:text="${ep.durationInMinutes} + ' phút'">45 phút</div>
+                    </div>
+                    <div>
+                        <!-- WATCH -->
+                        <a th:if="${series.watchAction == 'WATCH'}"
+                           th:href="@{/watch-episode(episodeId=${ep.id})}"
+                           class="btn-ep btn-ep-watch">
+                            <i class="fas fa-play"></i> Xem
+                        </a>
+                        <!-- LOGIN REQUIRED -->
+                        <a th:if="${series.watchAction == 'LOGIN_REQUIRED'}"
+                           href="/login"
+                           class="btn-ep btn-ep-login">
+                            Đăng nhập để xem
+                        </a>
+                        <!-- BUY PACKAGE -->
+                        <a th:if="${series.watchAction == 'BUY_PACKAGE'}"
+                           href="/packages"
+                           class="btn-ep btn-ep-buy">
+                            Mua gói xem
+                        </a>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    window.addEventListener('scroll', () => {
+        const navbar = document.getElementById('navbar');
+        if (navbar) {
+            if (window.scrollY > 50) navbar.classList.add('scrolled');
+            else navbar.classList.remove('scrolled');
+        }
+    });
+</script>
+
+</body>
+</html>

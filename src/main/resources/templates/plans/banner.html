@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<body>
+
+<div th:fragment="packageCta(hasActiveSub, isAuthenticated, showBanner)" class="package-cta">
+    <div th:if="${showBanner}" class="package-banner">
+        <div class="package-banner__content">
+            <div class="package-banner__title">Nâng cấp trải nghiệm xem phim</div>
+            <div class="package-banner__desc">Nâng cấp trải nghiệm xem phim – Xem các gói ngay</div>
+        </div>
+        <div class="package-banner__actions">
+            <a th:if="${hasActiveSub}"
+               th:href="@{/packages}"
+               class="package-banner__btn package-banner__btn--active"
+               onclick="console.log('[CTA] go-to', this.href)">
+                <i class="fa-solid fa-crown"></i> Gói của bạn
+            </a>
+            <a th:if="${!hasActiveSub}"
+               th:href="@{/packages}"
+               class="package-banner__btn"
+               onclick="console.log('[CTA] go-to', this.href)">
+                <i class="fa-solid fa-gem"></i> Xem gói
+            </a>
+        </div>
+    </div>
+
+    <div class="pkg-float-wrapper">
+        <a th:if="${hasActiveSub}"
+           th:href="@{/packages}"
+           class="pkg-float-btn pkg-float-btn--active"
+           data-tooltip="Gói dịch vụ của bạn"
+           th:attr="data-cta-link=@{/packages}"
+           onclick="console.log('[CTA] go-to', this.href)">
+            <span class="pkg-float-icon"><i class="fa-solid fa-crown"></i></span>
+            <span class="pkg-float-label">Gói của bạn</span>
+        </a>
+
+        <a th:if="${!hasActiveSub}"
+           th:href="${isAuthenticated} ? @{/packages} : @{/login}"
+           class="pkg-float-btn pkg-float-btn--cta"
+           data-tooltip="Xem gói dịch vụ"
+           th:attr="data-cta-link=${isAuthenticated} ? @{/packages} : @{/login}"
+           onclick="console.log('[CTA] go-to', this.href)">
+            <span class="pkg-float-icon"><i class="fa-solid fa-gem"></i></span>
+            <span class="pkg-float-label">Mua gói</span>
+        </a>
+    </div>
+</div>
+
+<script>
+    if (!window.__packageCtaInit) {
+        window.__packageCtaInit = true;
+        document.addEventListener('click', function (event) {
+            const target = event.target.closest('[data-cta-link]');
+            if (!target) return;
+            if (target.tagName === 'A') return;
+            const link = target.getAttribute('data-cta-link');
+            if (link) {
+                event.preventDefault();
+                window.location.href = link;
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
+

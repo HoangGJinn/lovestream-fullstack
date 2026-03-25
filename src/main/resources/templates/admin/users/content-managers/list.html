@@ -1,0 +1,62 @@
+<!--<!DOCTYPE html>-->
+<!--<html xmlns:th="http://www.thymeleaf.org">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <title>Quản lý Content Manager</title>-->
+<!--    &lt;!&ndash; Basic Reset & Styles &ndash;&gt;-->
+<!--    <link rel="stylesheet" th:href="@{/css/admin/admin-theme.css}" />-->
+<!--    <link rel="stylesheet" th:href="@{/css/admin/users/content-managers.css}" />-->
+<!--</head>-->
+<!--<body>-->
+
+<!--<div class="admin-container">-->
+<!--    <header class="admin-header">-->
+<!--        <h1>Danh sách Content Manager</h1>-->
+<!--        <div class="header-actions">-->
+<!--            <a th:href="@{/admin/users/content-managers/new}" class="btn btn-primary">Tạo mới</a>-->
+<!--            <a th:href="@{/admin/dashboard}" class="btn btn-secondary">Giao diện Admin</a>-->
+<!--        </div>-->
+<!--    </header>-->
+
+<!--    <div class="admin-content">-->
+<!--        &lt;!&ndash; Thông báo thành công từ Flash Attribute &ndash;&gt;-->
+<!--        <div th:if="${successMessage}" class="alert alert-success">-->
+<!--            <span th:text="${successMessage}"></span>-->
+<!--        </div>-->
+
+<!--        <div class="card">-->
+<!--            <table class="table">-->
+<!--                <thead>-->
+<!--                    <tr>-->
+<!--                        <th>Họ và tên</th>-->
+<!--                        <th>Email</th>-->
+<!--                        <th>Số điện thoại</th>-->
+<!--                        <th>Role</th>-->
+<!--                        <th>Trạng thái</th>-->
+<!--                    </tr>-->
+<!--                </thead>-->
+<!--                <tbody>-->
+<!--                    <tr th:each="manager : ${managers}">-->
+<!--                        <td th:text="${manager.fullName}"></td>-->
+<!--                        <td th:text="${manager.email}"></td>-->
+<!--                        <td th:text="${manager.phone}"></td>-->
+<!--                        <td>-->
+<!--                            <span class="badge badge-manager">CONTENT_MANAGER</span>-->
+<!--                        </td>-->
+<!--                        <td>-->
+<!--                            <span class="badge" -->
+<!--                                  th:classappend="${manager.isActive} ? 'badge-active' : 'badge-inactive'" -->
+<!--                                  th:text="${manager.isActive} ? 'Hoạt động' : 'Đã khóa'"></span>-->
+<!--                        </td>-->
+<!--                    </tr>-->
+<!--                    <tr th:if="${#lists.isEmpty(managers)}">-->
+<!--                        <td colspan="5" class="text-center">Chưa có Content Manager nào.</td>-->
+<!--                    </tr>-->
+<!--                </tbody>-->
+<!--            </table>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--</div>-->
+
+<!--</body>-->
+<!--</html>-->

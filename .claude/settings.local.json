@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./mvnw compile:*)",
+      "Bash(./mvnw package:*)",
+      "Bash(xargs grep:*)",
+      "Bash(./mvnw clean:*)"
+    ]
+  }
+}

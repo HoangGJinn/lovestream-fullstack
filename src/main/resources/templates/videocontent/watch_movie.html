@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamFlix Player - Chi tiết Điều khiển</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary-color: #e50914;
+            --bg-color: #000;
+            --control-bg: rgba(0, 0, 0, 0.7);
+            --text-color: #ffffff;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            font-family: 'Roboto', sans-serif;
+            color: var(--text-color);
+            overflow: hidden;
+        }
+
+        /* Container cho toàn bộ trình phát */
+        .video-player {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer; /* Cho phép click để play/pause */
+        }
+
+        /* Thẻ video (ẩn điều khiển mặc định) */
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none; /* Tránh tương tác trực tiếp, để JS xử lý click container */
+        }
+
+        /* Overlay chính chứa toàn bộ điều khiển */
+        .controls-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 150px; /* Tăng độ cao để thanh tiến trình nằm trên */
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, transparent 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 20px 40px;
+            box-sizing: border-box;
+            opacity: 0; /* Ẩn đi mặc định */
+            transition: opacity 0.3s;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        /* Hiển thị overlay khi có tương tác hoặc đang pause */
+        .video-player.user-active .controls-overlay,
+        .video-player.paused-state .controls-overlay {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* 1. Thanh tiến trình (ProgressBar) nằm riêng biệt phía trên */
+        .progress-bar-container {
+            width: 100%;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.3);
+            margin-bottom: 20px;
+            border-radius: 5px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .progress-bar-container:hover {
+            height: 8px; /* Phóng to khi hover để dễ thao tác */
+            bottom: -2px;
+        }
+
+        .current-progress {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background: var(--primary-color);
+            border-radius: 5px;
+            width: 0%;
+        }
+
+        /* Thời gian */
+        .time-display {
+            position: absolute;
+            top: -20px; /* Nằm trên thanh tiến trình */
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-size: 0.9rem;
+            color: #ddd;
+        }
+
+        /* 2. Thanh nút điều khiển chính */
+        .controls-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        /* Nhóm các nút (bên trái/bên phải) */
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+
+        /* Nút chung */
+        .control-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+            opacity: 0.8;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+
+        .control-btn:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        /* Nút Play/Pause lớn hơn */
+        #playPauseBtn {
+            font-size: 2.5rem;
+        }
+
+        /* Thanh âm lượng */
+        .volume-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #volumeSlider {
+            width: 100px;
+            cursor: pointer;
+        }
+
+        .settings-control {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .settings-menu {
+            position: absolute;
+            bottom: 52px;
+            right: 0;
+            background: rgba(20, 20, 20, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            min-width: 220px;
+            padding: 8px;
+            display: none;
+            flex-direction: column;
+            gap: 6px;
+            z-index: 20;
+        }
+
+        .settings-control.open .settings-menu {
+            display: flex;
+        }
+
+        .settings-panel {
+            display: none;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .settings-panel.active {
+            display: flex;
+        }
+
+        .settings-entry {
+            border: none;
+            border-radius: 6px;
+            padding: 8px 10px;
+            cursor: pointer;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.08);
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .settings-entry:hover,
+        .settings-entry.active {
+            background: var(--primary-color);
+        }
+
+        .settings-entry.disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .settings-entry.disabled:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .settings-entry-label {
+            flex: 1;
+            text-align: left;
+        }
+
+        .settings-entry-value {
+            font-size: 0.84rem;
+            opacity: 0.9;
+        }
+
+        .settings-option {
+            border: none;
+            border-radius: 6px;
+            padding: 6px 10px;
+            text-align: left;
+            cursor: pointer;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.08);
+            font-size: 0.95rem;
+        }
+
+        .settings-option:hover,
+        .settings-option.active {
+            background: var(--primary-color);
+        }
+
+        .setting-summary {
+            font-size: 0.85rem;
+            min-width: 46px;
+            opacity: 0.9;
+            display: none;
+        }
+
+        .settings-subtitle {
+            font-size: 0.8rem;
+            opacity: 0.75;
+            margin: 0 0 4px;
+            padding: 0 2px;
+        }
+
+        .settings-back {
+            text-align: left;
+        }
+
+        .spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255,255,255,0.3);
+            border-top: 5px solid white;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: spin 1s linear infinite;
+            z-index: 10;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="video-player" id="player">
+    <video id="video"></video>
+    <div id="loadingSpinner" class="spinner hidden"></div>
+    <div class="controls-overlay" id="controlsOverlay">
+
+        <div class="progress-bar-container" id="progressBarContainer">
+            <div class="time-display">
+                <span id="currentTime">00:00</span>
+                <span id="duration">--:--</span>
+            </div>
+            <div class="current-progress" id="currentProgress"></div>
+        </div>
+
+        <div class="controls-row">
+
+            <div class="control-group central-controls">
+                <button class="control-btn" id="rewindBtn"><i class="fas fa-undo-alt"></i></button>
+                <button class="control-btn" id="playPauseBtn"><i class="fas fa-play"></i></button>
+                <button class="control-btn" id="forwardBtn"><i class="fas fa-redo-alt"></i></button>
+                <div class="volume-container">
+                    <button class="control-btn" id="muteBtn"><i class="fas fa-volume-up"></i></button>
+                    <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="1">
+                </div>
+            </div>
+
+            <div class="control-group right-controls">
+                <button class="control-btn" id="nextBtn"><i class="fas fa-step-forward"></i></button>
+                <button class="control-btn" id="pipBtn"><i class="fas fa-external-link-alt"></i></button>
+                <div class="settings-control" id="settingsControl">
+                    <button class="control-btn" id="settingsBtn" title="Tốc độ phát">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <span class="setting-summary" id="speedSummary">1x</span>
+                    <span class="setting-summary" id="qualitySummary">Auto</span>
+                    <div class="settings-menu" id="settingsMenu">
+                        <div class="settings-panel active" id="settingsMenuRoot">
+                            <button class="settings-entry" id="openSpeedMenuBtn" type="button">
+                                <span class="settings-entry-label">Tốc độ phát</span>
+                                <span class="settings-entry-value" id="speedValueLabel">1x</span>
+                            </button>
+                            <button class="settings-entry" id="openQualityMenuBtn" type="button">
+                                <span class="settings-entry-label">Chất lượng</span>
+                                <span class="settings-entry-value" id="qualityValueLabel">Auto</span>
+                            </button>
+                        </div>
+
+                        <div class="settings-panel" id="settingsSpeedMenu">
+                            <button class="settings-entry settings-back" id="backFromSpeedBtn" type="button">← Quay lại</button>
+                            <p class="settings-subtitle">Tốc độ phát</p>
+                            <button class="settings-option" data-speed="0.5" type="button">0.5x</button>
+                            <button class="settings-option" data-speed="0.75" type="button">0.75x</button>
+                            <button class="settings-option active" data-speed="1" type="button">1x (Mặc định)</button>
+                            <button class="settings-option" data-speed="1.25" type="button">1.25x</button>
+                            <button class="settings-option" data-speed="1.5" type="button">1.5x</button>
+                            <button class="settings-option" data-speed="2" type="button">2x</button>
+                        </div>
+
+                        <div class="settings-panel" id="settingsQualityMenu">
+                            <button class="settings-entry settings-back" id="backFromQualityBtn" type="button">← Quay lại</button>
+                            <p class="settings-subtitle">Chất lượng phát</p>
+                            <div id="qualityOptions">
+                                <button class="settings-option active" data-quality="auto" type="button">Auto</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button class="control-btn" id="fullscreenBtn"><i class="fas fa-expand"></i></button>
+            </div>
+        </div>
+
+    </div>
+</div>
+<div> Đây là phần bình luận </div>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script th:inline="javascript">
+    const video = document.getElementById('video');
+    const player = document.getElementById('player');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const rewindBtn = document.getElementById('rewindBtn');
+    const forwardBtn = document.getElementById('forwardBtn');
+    const muteBtn = document.getElementById('muteBtn');
+    const volumeSlider = document.getElementById('volumeSlider');
+    const progressBarContainer = document.getElementById('progressBarContainer');
+    const currentProgress = document.getElementById('currentProgress');
+    const currentTimeDisplay = document.getElementById('currentTime');
+    const durationDisplay = document.getElementById('duration');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const settingsBtn = document.getElementById('settingsBtn');
+    const controlsOverlay = document.getElementById('controlsOverlay');
+    const settingsControl = document.getElementById('settingsControl');
+    const settingsMenuRoot = document.getElementById('settingsMenuRoot');
+    const settingsSpeedMenu = document.getElementById('settingsSpeedMenu');
+    const settingsQualityMenu = document.getElementById('settingsQualityMenu');
+    const openSpeedMenuBtn = document.getElementById('openSpeedMenuBtn');
+    const openQualityMenuBtn = document.getElementById('openQualityMenuBtn');
+    const backFromSpeedBtn = document.getElementById('backFromSpeedBtn');
+    const backFromQualityBtn = document.getElementById('backFromQualityBtn');
+    const speedSummary = document.getElementById('speedSummary');
+    const speedValueLabel = document.getElementById('speedValueLabel');
+    const qualitySummary = document.getElementById('qualitySummary');
+    const qualityValueLabel = document.getElementById('qualityValueLabel');
+    const qualityOptionsContainer = document.getElementById('qualityOptions');
+    const speedOptions = document.querySelectorAll('.settings-option[data-speed]');
+
+    const spinner = document.getElementById('loadingSpinner');
+    const fallbackVideoId = /*[[${id}]]*/ '';
+    const queryParams = new URLSearchParams(window.location.search);
+    const videoContentId = queryParams.get('id') || fallbackVideoId;
+    const startSecondsParam = Number(queryParams.get('start'));
+    const resumeStartSeconds = Number.isFinite(startSecondsParam) && startSecondsParam > 0 ? startSecondsParam : 0;
+    let hls; // ✅ FIX: đưa ra global
+    let selectedManualLevel = null;
+    let isAutoQuality = true;
+    const CONTROL_HIDE_DELAY_MS = 2500;
+    let controlsHideTimer = null;
+    let lastHistorySyncAt = 0;
+    const HISTORY_SYNC_INTERVAL_MS = 12000;
+    let hasAppliedResume = false;
+
+    // Khi đang load dữ liệu
+    video.addEventListener('waiting', () => {
+        spinner.classList.remove('hidden');
+    });
+
+    // Khi đã load xong và có thể play
+    video.addEventListener('playing', () => {
+        spinner.classList.add('hidden');
+    });
+
+    function clearControlsHideTimer() {
+        if (controlsHideTimer) {
+            clearTimeout(controlsHideTimer);
+            controlsHideTimer = null;
+        }
+    }
+
+    function hideControlsIfIdle() {
+        if (settingsControl.classList.contains('open') || video.paused) {
+            return;
+        }
+        player.classList.remove('user-active');
+    }
+
+    function scheduleControlsHide() {
+        clearControlsHideTimer();
+        controlsHideTimer = setTimeout(hideControlsIfIdle, CONTROL_HIDE_DELAY_MS);
+    }
+
+    function showControls() {
+        player.classList.add('user-active');
+        if (!video.paused && !settingsControl.classList.contains('open')) {
+            scheduleControlsHide();
+        }
+    }
+
+    function syncPauseState() {
+        if (video.paused) {
+            player.classList.add('paused-state');
+            player.classList.add('user-active');
+            clearControlsHideTimer();
+        } else {
+            player.classList.remove('paused-state');
+            scheduleControlsHide();
+        }
+    }
+
+    player.addEventListener('mousemove', showControls);
+    player.addEventListener('mouseenter', showControls);
+    player.addEventListener('mouseleave', () => {
+        clearControlsHideTimer();
+        if (!video.paused) {
+            player.classList.remove('user-active');
+        }
+    });
+    controlsOverlay.addEventListener('mousemove', showControls);
+
+
+    // Khi tua xong
+    video.addEventListener('seeked', () => {
+        spinner.classList.add('hidden');
+
+        video.play().catch(() => {});
+    });
+
+    // --- Play/Pause ---
+    function togglePlay() {
+        if (video.paused) {
+            video.play();
+            playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+        } else {
+            video.pause();
+            playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+        }
+        syncPauseState();
+    }
+
+    player.addEventListener('click', (e) => {
+        if (e.target === player || e.target === video) togglePlay();
+    });
+    playPauseBtn.addEventListener('click', togglePlay);
+
+    // --- Tua 10s ---
+    rewindBtn.addEventListener('click', () => { video.currentTime -= 10; });
+    forwardBtn.addEventListener('click', () => { video.currentTime += 10; });
+
+    // --- Volume ---
+    volumeSlider.addEventListener('input', (e) => {
+        video.volume = e.target.value;
+        video.muted = false;
+        muteBtn.innerHTML = video.volume > 0
+            ? '<i class="fas fa-volume-up"></i>'
+            : '<i class="fas fa-volume-mute"></i>';
+    });
+
+    muteBtn.addEventListener('click', () => {
+        video.muted = !video.muted;
+        muteBtn.innerHTML = video.muted
+            ? '<i class="fas fa-volume-mute"></i>'
+            : '<i class="fas fa-volume-up"></i>';
+    });
+
+    // --- Fullscreen ---
+    fullscreenBtn.addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+            player.requestFullscreen();
+        } else {
+            document.exitFullscreen();
+        }
+    });
+
+    // --- Settings menu ---
+    const allSettingsPanels = [settingsMenuRoot, settingsSpeedMenu, settingsQualityMenu];
+
+    function showSettingsPanel(panel) {
+        allSettingsPanels.forEach(item => item.classList.remove('active'));
+        panel.classList.add('active');
+    }
+
+    function openSettingsMenu(panel = settingsMenuRoot) {
+        settingsControl.classList.add('open');
+        showSettingsPanel(panel);
+        showControls();
+        clearControlsHideTimer();
+    }
+
+    function closeSettingsMenu() {
+        settingsControl.classList.remove('open');
+        showSettingsPanel(settingsMenuRoot);
+        if (!video.paused) {
+            scheduleControlsHide();
+        }
+    }
+
+    settingsBtn.addEventListener('click', () => {
+        if (settingsControl.classList.contains('open')) {
+            closeSettingsMenu();
+            return;
+        }
+        openSettingsMenu(settingsMenuRoot);
+    });
+
+    openSpeedMenuBtn.addEventListener('click', () => showSettingsPanel(settingsSpeedMenu));
+
+    openQualityMenuBtn.addEventListener('click', () => {
+        if (openQualityMenuBtn.classList.contains('disabled')) {
+            return;
+        }
+        showSettingsPanel(settingsQualityMenu);
+    });
+
+    backFromSpeedBtn.addEventListener('click', () => showSettingsPanel(settingsMenuRoot));
+    backFromQualityBtn.addEventListener('click', () => showSettingsPanel(settingsMenuRoot));
+
+    document.addEventListener('click', (event) => {
+        if (!settingsControl.contains(event.target)) {
+            closeSettingsMenu();
+        }
+    });
+
+    // --- Speed ---
+    function setPlaybackSpeed(speed) {
+        video.playbackRate = speed;
+        const speedText = speed + 'x';
+        speedSummary.textContent = speedText;
+        speedValueLabel.textContent = speedText;
+        speedOptions.forEach(option => {
+            option.classList.toggle('active', Number(option.dataset.speed) === speed);
+        });
+    }
+
+    speedOptions.forEach(option => {
+        option.addEventListener('click', () => {
+            setPlaybackSpeed(Number(option.dataset.speed));
+            closeSettingsMenu();
+        });
+    });
+
+    setPlaybackSpeed(1);
+    syncPauseState();
+
+    // --- Quality ---
+    function getQualityLabel(level) {
+        if (!level) return 'Unknown';
+        if (level.height) return `${level.height}p`;
+        if (level.attrs && level.attrs.RESOLUTION) {
+            const resolution = String(level.attrs.RESOLUTION).split('x');
+            if (resolution.length === 2) return `${resolution[1]}p`;
+        }
+        if (level.bitrate) return `${Math.round(level.bitrate / 1000)} kbps`;
+        return 'Unknown';
+    }
+
+    function updateQualityDisplay(currentLevelIndex = null) {
+        if (isAutoQuality) {
+            if (currentLevelIndex !== null && hls && hls.levels[currentLevelIndex]) {
+                const autoLabel = getQualityLabel(hls.levels[currentLevelIndex]);
+                qualitySummary.textContent = `Auto (${autoLabel})`;
+            } else {
+                qualitySummary.textContent = 'Auto';
+            }
+            qualityValueLabel.textContent = 'Auto';
+            return;
+        }
+
+        const manualLabel = selectedManualLevel !== null && hls && hls.levels[selectedManualLevel]
+            ? getQualityLabel(hls.levels[selectedManualLevel])
+            : 'Auto';
+        qualitySummary.textContent = manualLabel;
+        qualityValueLabel.textContent = manualLabel;
+    }
+
+    function refreshQualityActiveState() {
+        const allQualityButtons = qualityOptionsContainer.querySelectorAll('.settings-option[data-quality]');
+        allQualityButtons.forEach(button => {
+            if (button.dataset.quality === 'auto') {
+                button.classList.toggle('active', isAutoQuality);
+            } else {
+                const buttonLevel = Number(button.dataset.level);
+                button.classList.toggle('active', !isAutoQuality && buttonLevel === selectedManualLevel);
+            }
+        });
+    }
+
+    function setQualityAvailability(isAvailable) {
+        openQualityMenuBtn.classList.toggle('disabled', !isAvailable);
+        openQualityMenuBtn.setAttribute('aria-disabled', String(!isAvailable));
+        if (!isAvailable) {
+            qualitySummary.textContent = 'N/A';
+            qualityValueLabel.textContent = 'Không hỗ trợ';
+        }
+    }
+
+    function applyQualitySelection(levelIndex) {
+        if (!hls) return;
+
+        if (levelIndex === -1) {
+            isAutoQuality = true;
+            selectedManualLevel = null;
+            hls.currentLevel = -1;
+            hls.nextLevel = -1;
+        } else {
+            isAutoQuality = false;
+            selectedManualLevel = levelIndex;
+            hls.currentLevel = levelIndex;
+            hls.nextLevel = levelIndex;
+        }
+
+        updateQualityDisplay();
+        refreshQualityActiveState();
+    }
+
+    function renderQualityOptionsFromHls() {
+        if (!hls || !hls.levels || hls.levels.length === 0) {
+            setQualityAvailability(false);
+            return;
+        }
+
+        const dedupByHeight = new Map();
+        hls.levels.forEach((level, index) => {
+            const height = level.height || 0;
+            const current = dedupByHeight.get(height);
+            if (!current || (level.bitrate || 0) > (current.bitrate || 0)) {
+                dedupByHeight.set(height, {
+                    index,
+                    bitrate: level.bitrate || 0,
+                    label: getQualityLabel(level),
+                    height
+                });
+            }
+        });
+
+        const qualityLevels = Array.from(dedupByHeight.values())
+            .sort((a, b) => b.height - a.height);
+
+        const html = [
+            '<button class="settings-option active" data-quality="auto" data-level="-1" type="button">Auto</button>',
+            ...qualityLevels.map(item => (
+                `<button class="settings-option" data-quality="manual" data-level="${item.index}" type="button">${item.label}</button>`
+            ))
+        ].join('');
+
+        qualityOptionsContainer.innerHTML = html;
+        setQualityAvailability(true);
+
+        qualityOptionsContainer.querySelectorAll('.settings-option[data-quality]').forEach(button => {
+            button.addEventListener('click', () => {
+                const levelIndex = Number(button.dataset.level);
+                applyQualitySelection(levelIndex);
+                closeSettingsMenu();
+            });
+        });
+
+        refreshQualityActiveState();
+        updateQualityDisplay();
+    }
+
+    // --- Time format ---
+    function formatTime(seconds) {
+        let m = Math.floor(seconds / 60);
+        let s = Math.floor(seconds % 60);
+        return `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
+    }
+
+    function applyResumePosition(force = false) {
+        if (hasAppliedResume || resumeStartSeconds <= 0) {
+            return;
+        }
+
+        const hasDuration = Number.isFinite(video.duration) && video.duration > 0;
+        if (!hasDuration && !force) {
+            return;
+        }
+
+        const target = hasDuration
+            ? Math.min(resumeStartSeconds, Math.max(video.duration - 1, 0))
+            : resumeStartSeconds;
+
+        if (target > 0) {
+            video.currentTime = target;
+            currentTimeDisplay.textContent = formatTime(target);
+        }
+
+        hasAppliedResume = true;
+    }
+
+    video.addEventListener('loadedmetadata', () => {
+        durationDisplay.textContent = formatTime(video.duration);
+        applyResumePosition(true);
+        syncWatchProgress();
+    });
+
+    video.addEventListener('durationchange', () => applyResumePosition());
+    video.addEventListener('canplay', () => applyResumePosition(true));
+
+    // --- Update progress (giảm lag UI) ---
+    let lastUpdate = 0;
+    video.addEventListener('timeupdate', () => {
+        const now = Date.now();
+        if (now - lastUpdate < 200) return;
+        lastUpdate = now;
+
+        const percent = (video.currentTime / video.duration) * 100;
+        currentProgress.style.width = percent + '%';
+        currentTimeDisplay.textContent = formatTime(video.currentTime);
+
+        if (now - lastHistorySyncAt >= HISTORY_SYNC_INTERVAL_MS) {
+            syncWatchProgress();
+        }
+    });
+
+    video.addEventListener('pause', () => syncWatchProgress());
+    video.addEventListener('ended', () => syncWatchProgress(true));
+
+    // --- Seek tối ưu ---
+    video.addEventListener('seeking', () => {
+        if (hls) {
+            hls.stopLoad();
+            hls.startLoad(video.currentTime); // 🔥 load ngay vị trí mới
+        }
+    });
+
+    video.preload = "auto";
+
+    // --- Click progress ---
+    let seekingLock = false;
+
+    progressBarContainer.addEventListener('click', (e) => {
+        if (seekingLock) return;
+        seekingLock = true;
+
+        const rect = progressBarContainer.getBoundingClientRect();
+        const percent = (e.clientX - rect.left) / rect.width;
+        const newTime = percent * video.duration;
+
+        // ✅ Update UI ngay
+        currentProgress.style.width = (percent * 100) + '%';
+        currentTimeDisplay.textContent = formatTime(newTime);
+
+        // ✅ Set video time
+        video.currentTime = newTime;
+
+        setTimeout(() => seekingLock = false, 200);
+    });
+
+    // --- Load video ---
+    async function loadVideo() {
+        try {
+            if (!videoContentId) {
+                console.error('Thieu videoContentId de tai video');
+                return;
+            }
+
+            const res = await fetch(`/api/video/watch/${videoContentId}`);
+            const videoSrc = await res.text();
+
+            if (Hls.isSupported()) {
+                hls = new Hls({
+                    enableWorker: true,
+                    lowLatencyMode: true,
+
+                    maxBufferLength: 4,
+                    maxMaxBufferLength: 8,
+                    backBufferLength: 0,
+
+                    maxBufferHole: 0.3,
+                    startLevel: 0 // 🔥 load nhanh hơn
+                });
+
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    isAutoQuality = true;
+                    selectedManualLevel = null;
+                    renderQualityOptionsFromHls();
+                    updateQualityDisplay();
+                    applyResumePosition(true);
+                });
+
+                hls.on(Hls.Events.LEVEL_SWITCHED, (_event, data) => {
+                    updateQualityDisplay(data.level);
+                    refreshQualityActiveState();
+                });
+
+                hls.loadSource(videoSrc);
+                hls.attachMedia(video);
+
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = videoSrc;
+                setQualityAvailability(false);
+            }
+
+        } catch (err) {
+            console.error("Lỗi load video:", err);
+        }
+    }
+
+    async function syncWatchProgress(isFinalSync = false) {
+        if (!videoContentId) {
+            return;
+        }
+
+        const currentTime = Number.isFinite(video.currentTime) ? video.currentTime : 0;
+        const duration = Number.isFinite(video.duration) ? video.duration : 0;
+        const payload = {
+            videoContentId,
+            currentTimeSeconds: currentTime,
+            durationSeconds: duration
+        };
+
+        lastHistorySyncAt = Date.now();
+
+        if (isFinalSync && navigator.sendBeacon) {
+            const body = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+            navigator.sendBeacon('/api/v1/history/progress', body);
+            return;
+        }
+
+        try {
+            await fetch('/api/v1/history/progress', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+                keepalive: isFinalSync
+            });
+        } catch (error) {
+            console.warn('Khong the dong bo lich su xem', error);
+        }
+    }
+
+    window.addEventListener('beforeunload', () => {
+        syncWatchProgress(true);
+    });
+
+    loadVideo();
+</script>
+</body>
+</html>

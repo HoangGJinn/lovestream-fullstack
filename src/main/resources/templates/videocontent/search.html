@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tìm kiếm nội dung - LoveStream</title>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans:wght@400;600;700;800;900&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/home.css">
+    <link rel="stylesheet" href="/css/user-menu.css">
+    <link rel="stylesheet" href="/css/videocontents.css">
+</head>
+
+<body>
+    <div class="navbar scrolled" id="navbar">
+        <div class="nav-left">
+            <a href="/" class="logo">LoveStream</a>
+            <ul class="nav-links">
+                <li><a href="/home">Trang chủ</a></li>
+                <li><a href="#">Series</a></li>
+                <li><a href="#">Phim</a></li>
+                <li><a th:href="@{/videocontents/search}" class="active">Mới &amp; Phổ biến</a></li>
+                <li><a href="#">Danh sách của tôi</a></li>
+                <li><a href="/packages">Gói dịch vụ</a></li>
+            </ul>
+        </div>
+        <div class="nav-right">
+            <form id="searchForm" class="nav-search is-open" th:action="@{/videocontents/search}" method="get">
+                <button id="searchToggle" class="nav-icon nav-search-toggle" type="button" aria-label="Tìm kiếm">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+                <input id="searchKeyword" class="nav-search-input" name="keyword" type="text"
+                    placeholder="Tìm phim, series..." th:value="${searchRequest.keyword}" autocomplete="off">
+                <input type="hidden" id="searchGenre" name="genre" th:value="${searchRequest.genre}">
+                <input type="hidden" id="searchYear" name="year" th:value="${searchRequest.year}">
+                <input type="hidden" id="searchCountry" name="country" th:value="${searchRequest.country}">
+                <input type="hidden" id="searchType" name="type" th:value="${searchRequest.type}">
+                <input type="hidden" id="searchSeason" name="season" th:value="${searchRequest.season}">
+            </form>
+            <i class="fa-regular fa-bell nav-icon"></i>
+            <div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>
+        </div>
+    </div>
+
+    <div class="search-page">
+        <div class="search-summary">
+            <h1 th:if="${searchRequest.keyword != null and !#strings.isEmpty(searchRequest.keyword)}"
+                th:text="${'Kết quả cho: ' + searchRequest.keyword}">Kết quả cho</h1>
+            <h1 th:if="${searchRequest.keyword == null or #strings.isEmpty(searchRequest.keyword)}">Khám phá phim và
+                series</h1>
+            <p th:text="${searchResponse.totalResults + ' kết quả được tìm thấy'}">0 kết quả được tìm thấy</p>
+            <div class="search-recent" id="recentSearches"></div>
+            <div class="search-suggest-box" id="searchSuggestions"></div>
+        </div>
+
+        <form id="filterForm" class="search-filter-bar" th:action="@{/videocontents/search}" method="get">
+            <input type="hidden" name="keyword" th:value="${searchRequest.keyword}">
+            <label>
+                Thể loại
+                <select name="genre">
+                    <option value=""
+                        th:selected="${searchRequest.genre == null or #strings.isEmpty(searchRequest.genre)}">Tất cả
+                    </option>
+                    <option th:each="g : ${genres}" th:value="${g.name}" th:text="${g.name}"
+                        th:selected="${searchRequest.genre == g.name}">
+                        Genre
+                    </option>
+                </select>
+            </label>
+            <label>
+                Năm
+                <input type="number" name="year" min="1900" max="2100" th:value="${searchRequest.year}">
+            </label>
+            <label>
+                Quốc gia
+                <input type="text" name="country" th:value="${searchRequest.country}" placeholder="Korea, US...">
+            </label>
+            <label>
+                Loại
+                <select name="type">
+                    <option value=""
+                        th:selected="${searchRequest.type == null or #strings.isEmpty(searchRequest.type)}">Tất cả
+                    </option>
+                    <option value="movie" th:selected="${searchRequest.type == 'movie'}">Phim lẻ</option>
+                    <option value="series" th:selected="${searchRequest.type == 'series'}">Phim bộ</option>
+                </select>
+            </label>
+            <label>
+                Season
+                <input type="number" name="season" min="1" th:value="${searchRequest.season}">
+            </label>
+            <button type="submit" class="search-filter-btn">Lọc</button>
+        </form>
+
+        <div class="main-content search-main-content">
+            <div class="categories-container" th:if="${not #lists.isEmpty(searchResponse.data)}">
+                <h2 class="row-title">Danh sách nội dung</h2>
+                <div class="search-results-grid">
+                    <a class="movie-card" th:each="item : ${searchResponse.data}"
+                        th:href="${item.type == 'series'} ? @{/videocontents/{id}(id=${item.id})} : @{/movies/{id}(id=${item.id})}">
+                        <img th:src="${item.posterUrl}" class="row-poster" th:alt="${item.title}">
+                        <div class="movie-title-overlay">
+                            <div class="search-card-title" th:text="${item.title}">Tên phim</div>
+                            <div class="search-card-meta"
+                                th:text="${item.releaseYear + ' • ' + (item.type == 'movie' ? 'Phim lẻ' : 'Phim bộ')}">
+                                2026 • Phim lẻ</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <div class="search-empty" th:if="${#lists.isEmpty(searchResponse.data)}">
+                <h3>Không tìm thấy phim phù hợp</h3>
+                <p>Thử từ khóa khác hoặc bỏ bớt bộ lọc để xem nhiều kết quả hơn.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const form = document.getElementById('searchForm');
+            const toggle = document.getElementById('searchToggle');
+            const keywordInput = document.getElementById('searchKeyword');
+            const suggestionBox = document.getElementById('searchSuggestions');
+            const recentBox = document.getElementById('recentSearches');
+            let debounceTimer;
+
+            function saveRecent(term) {
+                if (!term) return;
+                const key = 'lovestream_recent_searches';
+                const current = JSON.parse(localStorage.getItem(key) || '[]');
+                const next = [term].concat(current.filter(function (s) { return s !== term; })).slice(0, 5);
+                localStorage.setItem(key, JSON.stringify(next));
+                renderRecent();
+            }
+
+            function renderRecent() {
+                const key = 'lovestream_recent_searches';
+                const recent = JSON.parse(localStorage.getItem(key) || '[]');
+                if (!recent.length) {
+                    recentBox.innerHTML = '';
+                    return;
+                }
+
+                recentBox.innerHTML = '<span>Tìm gần đây:</span>' + recent.map(function (item) {
+                    return '<button type="button" class="recent-chip" data-keyword="' + item.replace(/"/g, '&quot;') + '">' + item + '</button>';
+                }).join('');
+            }
+
+            function submitSearch(term) {
+                if (!term || !term.trim()) return;
+                saveRecent(term.trim());
+                keywordInput.value = term.trim();
+                form.submit();
+            }
+
+            function fetchSuggestions() {
+                const value = keywordInput.value.trim();
+                if (value.length < 2) {
+                    suggestionBox.innerHTML = '';
+                    return;
+                }
+
+                const searchEndpoint = form.getAttribute('action') || '/videocontents/search';
+                fetch(searchEndpoint + '?format=json&keyword=' + encodeURIComponent(value) + '&size=6', {
+                    headers: { 'Accept': 'application/json' }
+                })
+                    .then(function (response) { return response.json(); })
+                    .then(function (payload) {
+                        if (!payload.data || payload.data.length === 0) {
+                            suggestionBox.innerHTML = '';
+                            return;
+                        }
+
+                        suggestionBox.innerHTML = payload.data.map(function (item) {
+                            const safeTitle = item.title || '';
+                            return '<button type="button" class="suggest-item" data-keyword="' + safeTitle.replace(/"/g, '&quot;') + '">'
+                                + '<i class="fa-solid fa-magnifying-glass"></i>'
+                                + '<span>' + safeTitle + '</span>'
+                                + '</button>';
+                        }).join('');
+                    })
+                    .catch(function () {
+                        suggestionBox.innerHTML = '';
+                    });
+            }
+
+            toggle.addEventListener('click', function () {
+                if (!form.classList.contains('is-open')) {
+                    form.classList.add('is-open');
+                    keywordInput.focus();
+                    return;
+                }
+                submitSearch(keywordInput.value);
+            });
+
+            keywordInput.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    submitSearch(keywordInput.value);
+                }
+            });
+
+            keywordInput.addEventListener('input', function () {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(fetchSuggestions, 300);
+            });
+
+            suggestionBox.addEventListener('click', function (event) {
+                const target = event.target.closest('[data-keyword]');
+                if (!target) return;
+                submitSearch(target.getAttribute('data-keyword'));
+            });
+
+            recentBox.addEventListener('click', function (event) {
+                const target = event.target.closest('[data-keyword]');
+                if (!target) return;
+                submitSearch(target.getAttribute('data-keyword'));
+            });
+
+            document.addEventListener('click', function (event) {
+                if (!form.contains(event.target) && !suggestionBox.contains(event.target)) {
+                    suggestionBox.innerHTML = '';
+                }
+            });
+
+            renderRecent();
+        })();
+    </script>
+</body>
+
+</html>

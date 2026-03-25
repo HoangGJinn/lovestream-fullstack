@@ -74,10 +74,14 @@
 
         <div class="categories-container" th:each="row : ${seriesRows}">
             <div class="row-posters">
-                <div class="movie-card" th:id="${series.id}" th:each="series : ${row}">
-                    <img th:src="${series.posterUrl}" class="row-poster" th:alt="${series.title}">
-                    <div class="movie-title-overlay" th:text="${series.title}"></div>
-                </div>
+                <a th:each="series : ${row}" th:href="@{/series/{id}(id=${series.id})}"
+                   style="text-decoration:none;color:inherit;">
+                    <div class="movie-card" th:id="${series.id}">
+                        <img th:src="${series.posterUrl}" class="row-poster" th:alt="${series.title}">
+                        <div class="movie-title-overlay" th:text="${series.title}"></div>
+                    </div>
+                </a>
+
             </div>
         </div>
     </div>
