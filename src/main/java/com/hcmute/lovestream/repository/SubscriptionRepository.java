@@ -15,4 +15,6 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Stri
     boolean existsByUserAndStatus(User user, SubscriptionStatus status);
 
     boolean existsByUser_IdAndStatusAndEndDateAfter(String userId, SubscriptionStatus status, LocalDateTime now);
+
+
 }

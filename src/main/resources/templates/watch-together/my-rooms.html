@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phòng của tôi - LoveStream</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #0b0d13;
+            color: #f4f6fa;
+            font-family: "Inter", sans-serif;
+        }
+
+        .page {
+            width: min(1020px, calc(100% - 28px));
+            margin: 18px auto 30px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .title {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 800;
+        }
+
+        .actions {
+            display: inline-flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            text-decoration: none;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            color: #fff;
+            background: transparent;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .card {
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: #131722;
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 10px;
+        }
+
+        .name {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .meta {
+            margin-top: 6px;
+            color: #b9c0cd;
+            font-size: 13px;
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .control-row {
+            margin-top: 10px;
+            display: inline-flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn.start {
+            border-color: rgba(125, 233, 170, 0.42);
+            color: #b4f0c8;
+        }
+
+        .btn.stop {
+            border-color: rgba(255, 149, 159, 0.5);
+            color: #ffc3c8;
+        }
+
+        .msg {
+            margin: 0 0 10px;
+            font-size: 14px;
+        }
+
+        .empty {
+            margin-top: 20px;
+            color: #9ba4b5;
+        }
+    </style>
+</head>
+<body>
+<main class="page">
+    <section class="header">
+        <h1 class="title">Phòng của tôi</h1>
+        <div class="actions">
+            <a href="/watch-together" class="btn">Danh sách phòng</a>
+            <a href="/watch-together/creat-room" class="btn">Tạo phòng mới</a>
+        </div>
+    </section>
+
+    <p class="msg" th:if="${successMessage}" th:text="${successMessage}" style="color:#aeeabd;"></p>
+    <p class="msg" th:if="${errorMessage}" th:text="${errorMessage}" style="color:#ffb2b8;"></p>
+
+    <section th:if="${myRooms != null and !#lists.isEmpty(myRooms)}">
+        <article class="card" th:each="room : ${myRooms}">
+            <h2 class="name" th:text="${room.roomName}">Tên phòng</h2>
+            <div class="meta">
+                <span>Mã: <strong th:text="${room.roomCode}">CODE</strong></span>
+                <span>Phim: <span th:text="${room.movieTitle}">Movie</span></span>
+                <span>Trạng thái: <span th:text="${room.statusText}">Dang cho</span></span>
+                <span>Loại: <span th:text="${room.privateRoom} ? 'Private' : 'Public'">Public</span></span>
+            </div>
+            <div class="control-row">
+                <form th:action="@{/watch-together/{roomCode}/start(roomCode=${room.roomCode})}" method="post">
+                    <button type="submit" class="btn start">Bắt đầu</button>
+                </form>
+                <form th:action="@{/watch-together/{roomCode}/stop(roomCode=${room.roomCode})}" method="post">
+                    <button type="submit" class="btn stop">Dừng phòng</button>
+                </form>
+                <a class="btn" th:href="@{/join/{roomCode}(roomCode=${room.roomCode})}">Vào phòng</a>
+            </div>
+        </article>
+    </section>
+
+    <p class="empty" th:if="${myRooms == null or #lists.isEmpty(myRooms)}">Bạn chưa tạo phòng nào.</p>
+</main>
+</body>
+</html>
+
