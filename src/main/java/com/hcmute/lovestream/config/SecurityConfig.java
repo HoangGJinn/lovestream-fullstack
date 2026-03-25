@@ -45,7 +45,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/v1/api/vnpay/payment-callback").permitAll()
                         // Tìm kiếm nội dung: cho phép khách truy cập
                         .requestMatchers("/videocontents", "/videocontents/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/video/**").permitAll()
+//                        .requestMatchers(HttpMethod.GET, "/api/video/**").permitAll()
 
                         // CÁC TRANG CÒN LẠI BẮT BUỘC PHẢI ĐĂNG NHẬP
                         .anyRequest().authenticated()

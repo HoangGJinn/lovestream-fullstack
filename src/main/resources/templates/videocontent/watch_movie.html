@@ -398,11 +398,19 @@
     const speedOptions = document.querySelectorAll('.settings-option[data-speed]');
 
     const spinner = document.getElementById('loadingSpinner');
+    const fallbackVideoId = /*[[${id}]]*/ '';
+    const queryParams = new URLSearchParams(window.location.search);
+    const videoContentId = queryParams.get('id') || fallbackVideoId;
+    const startSecondsParam = Number(queryParams.get('start'));
+    const resumeStartSeconds = Number.isFinite(startSecondsParam) && startSecondsParam > 0 ? startSecondsParam : 0;
     let hls; // ✅ FIX: đưa ra global
     let selectedManualLevel = null;
     let isAutoQuality = true;
     const CONTROL_HIDE_DELAY_MS = 2500;
     let controlsHideTimer = null;
+    let lastHistorySyncAt = 0;
+    const HISTORY_SYNC_INTERVAL_MS = 12000;
+    let hasAppliedResume = false;
 
     // Khi đang load dữ liệu
     video.addEventListener('waiting', () => {
@@ -708,9 +716,36 @@
         return `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
     }
 
+    function applyResumePosition(force = false) {
+        if (hasAppliedResume || resumeStartSeconds <= 0) {
+            return;
+        }
+
+        const hasDuration = Number.isFinite(video.duration) && video.duration > 0;
+        if (!hasDuration && !force) {
+            return;
+        }
+
+        const target = hasDuration
+            ? Math.min(resumeStartSeconds, Math.max(video.duration - 1, 0))
+            : resumeStartSeconds;
+
+        if (target > 0) {
+            video.currentTime = target;
+            currentTimeDisplay.textContent = formatTime(target);
+        }
+
+        hasAppliedResume = true;
+    }
+
     video.addEventListener('loadedmetadata', () => {
         durationDisplay.textContent = formatTime(video.duration);
+        applyResumePosition(true);
+        syncWatchProgress();
     });
+
+    video.addEventListener('durationchange', () => applyResumePosition());
+    video.addEventListener('canplay', () => applyResumePosition(true));
 
     // --- Update progress (giảm lag UI) ---
     let lastUpdate = 0;
@@ -722,7 +757,14 @@
         const percent = (video.currentTime / video.duration) * 100;
         currentProgress.style.width = percent + '%';
         currentTimeDisplay.textContent = formatTime(video.currentTime);
+
+        if (now - lastHistorySyncAt >= HISTORY_SYNC_INTERVAL_MS) {
+            syncWatchProgress();
+        }
     });
+
+    video.addEventListener('pause', () => syncWatchProgress());
+    video.addEventListener('ended', () => syncWatchProgress(true));
 
     // --- Seek tối ưu ---
     video.addEventListener('seeking', () => {
@@ -758,9 +800,12 @@
     // --- Load video ---
     async function loadVideo() {
         try {
-            const id = new URLSearchParams(window.location.search).get("id");
+            if (!videoContentId) {
+                console.error('Thieu videoContentId de tai video');
+                return;
+            }
 
-            const res = await fetch(`/api/video/watch/${id}`);
+            const res = await fetch(`/api/video/watch/${videoContentId}`);
             const videoSrc = await res.text();
 
             if (Hls.isSupported()) {
@@ -781,6 +826,7 @@
                     selectedManualLevel = null;
                     renderQualityOptionsFromHls();
                     updateQualityDisplay();
+                    applyResumePosition(true);
                 });
 
                 hls.on(Hls.Events.LEVEL_SWITCHED, (_event, data) => {
@@ -800,6 +846,43 @@
             console.error("Lỗi load video:", err);
         }
     }
+
+    async function syncWatchProgress(isFinalSync = false) {
+        if (!videoContentId) {
+            return;
+        }
+
+        const currentTime = Number.isFinite(video.currentTime) ? video.currentTime : 0;
+        const duration = Number.isFinite(video.duration) ? video.duration : 0;
+        const payload = {
+            videoContentId,
+            currentTimeSeconds: currentTime,
+            durationSeconds: duration
+        };
+
+        lastHistorySyncAt = Date.now();
+
+        if (isFinalSync && navigator.sendBeacon) {
+            const body = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+            navigator.sendBeacon('/api/v1/history/progress', body);
+            return;
+        }
+
+        try {
+            await fetch('/api/v1/history/progress', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+                keepalive: isFinalSync
+            });
+        } catch (error) {
+            console.warn('Khong the dong bo lich su xem', error);
+        }
+    }
+
+    window.addEventListener('beforeunload', () => {
+        syncWatchProgress(true);
+    });
 
     loadVideo();
 </script>
