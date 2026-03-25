@@ -19,10 +19,10 @@
             <a href="/" class="logo">LoveStream</a>
             <ul class="nav-links">
                 <li><a href="/home">Trang chủ</a></li>
-                <li><a href="#">Series</a></li>
-                <li><a href="#">Phim</a></li>
+                <li><a href="/series">Series</a></li>
+                <li><a href="/movies">Phim</a></li>
                 <li><a th:href="@{/videocontents/search}" class="active">Mới &amp; Phổ biến</a></li>
-                <li><a href="#">Danh sách của tôi</a></li>
+                <li th:if="${currentUser != null}"><a href="#">Danh sách của tôi</a></li>
                 <li><a href="/packages">Gói dịch vụ</a></li>
             </ul>
         </div>
@@ -39,7 +39,7 @@
                 <input type="hidden" id="searchType" name="type" th:value="${searchRequest.type}">
                 <input type="hidden" id="searchSeason" name="season" th:value="${searchRequest.season}">
             </form>
-            <i class="fa-regular fa-bell nav-icon"></i>
+            <i th:if="${currentUser != null}" class="fa-regular fa-bell nav-icon"></i>
             <div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>
         </div>
     </div>

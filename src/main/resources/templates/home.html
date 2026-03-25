@@ -22,12 +22,11 @@
             <li><a href="#" class="active">Trang chủ</a></li>
             <li><a href="/series">Series</a></li>
             <li><a href="/movies">Phim</a></li>
-            <li><a href="#">Mới & Phổ biến</a></li>
-            <li><a href="#">Danh sách của tôi</a></li>
-            <li><a href="/history">Lịch sử xem phim</a></li>
+            <li><a href="#">Mới &amp; Phổ biến</a></li>
+            <li th:if="${currentUser != null}"><a href="#">Danh sách của tôi</a></li>
+            <li th:if="${currentUser != null}"><a href="/history">Lịch sử xem phim</a></li>
             <li><a href="/packages">Gói dịch vụ</a></li>
-            <li><a href="/watch-together">Xem chung</a></li>
-
+            <li th:if="${currentUser != null}"><a href="/watch-together">Xem chung</a></li>
         </ul>
     </div>
     <div class="nav-right">
@@ -37,7 +36,7 @@
             </button>
             <input id="homeSearchInput" class="nav-search-input" name="keyword" type="text" placeholder="Tìm phim, series..." autocomplete="off">
         </form>
-        <a href="/notifications" class="nav-icon" aria-label="Thông báo"><i class="fa-regular fa-bell"></i></a>
+        <a th:if="${currentUser != null}" href="/notifications" class="nav-icon" aria-label="Thông báo"><i class="fa-regular fa-bell"></i></a>
         <div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>
     </div>
 </div>
@@ -71,7 +70,7 @@
         </div>
 
         <div class="categories-container" th:if="${not #lists.isEmpty(dramaMovies)}">
-            <h2 class="row-title">Tâm Lý & Tình Cảm</h2>
+            <h2 class="row-title">Tâm Lý &amp; Tình Cảm</h2>
             <div class="row-posters">
                 <a class="movie-card" th:each="movie : ${dramaMovies}" th:href="@{/movies/{id}(id=${movie.id})}">
                     <img th:src="${movie.getPosterUrl()}" class="row-poster" th:alt="${movie.title}">

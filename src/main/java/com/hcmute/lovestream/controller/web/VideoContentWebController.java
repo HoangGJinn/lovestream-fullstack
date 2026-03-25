@@ -2,20 +2,20 @@ package com.hcmute.lovestream.controller.web;
 
 import com.hcmute.lovestream.dto.request.VideoContentSearchRequest;
 import com.hcmute.lovestream.dto.response.VideoContentSearchResponse;
-import com.hcmute.lovestream.entity.VideoContent;
 import com.hcmute.lovestream.repository.GenreRepository;
+import com.hcmute.lovestream.service.user.UserProfileService;
 import com.hcmute.lovestream.service.videoContent.VideoContentSearchService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.util.Optional;
 
 @Controller
 @RequiredArgsConstructor
@@ -24,6 +24,7 @@ public class VideoContentWebController {
 
     private final VideoContentSearchService videoContentSearchService;
     private final GenreRepository genreRepository;
+    private final UserProfileService userProfileService;
 
     @GetMapping("/videocontents")
     public String redirectToSearchPage() {
@@ -37,6 +38,7 @@ public class VideoContentWebController {
 
     @GetMapping("/videocontents/search")
     public String viewSearchPage(Model model,
+                                 Authentication authentication,
                                  @RequestParam(required = false) String keyword,
                                  @RequestParam(required = false) String genre,
                                  @RequestParam(required = false) Integer year,
@@ -48,6 +50,17 @@ public class VideoContentWebController {
 
         log.info("Render SearchPage /videocontents/search keyword={}, genre={}, year={}, country={}, type={}, season={}, page={}, size={}",
                 keyword, genre, year, country, type, season, page, size);
+
+        // Đặt currentUser vào model (null nếu chưa đăng nhập → user-menu hiện nút Login)
+        if (authentication != null
+                && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken)) {
+            try {
+                model.addAttribute("currentUser",
+                        userProfileService.getCurrentUserByEmail(authentication.getName()));
+            } catch (RuntimeException ignored) {
+            }
+        }
 
         VideoContentSearchRequest request = toSearchRequest(keyword, genre, year, country, type, season, page, size);
         VideoContentSearchResponse response = videoContentSearchService.searchVideoContents(request);
@@ -97,17 +110,4 @@ public class VideoContentWebController {
         request.setSize(size);
         return request;
     }
-
-    @GetMapping("/videocontents/{id:[0-9a-fA-F\\-]{36}}")
-    public String viewDetail(@PathVariable String id, Model model) {
-        Optional<VideoContent> videoOpt = videoContentSearchService.getPublicVideoById(id);
-        if (videoOpt.isEmpty()) {
-            model.addAttribute("errorMessage", "Noi dung khong ton tai hoac da bi an");
-            return "videocontent/detail";
-        }
-
-        model.addAttribute("video", videoOpt.get());
-        return "videocontent/detail";
-    }
 }
-

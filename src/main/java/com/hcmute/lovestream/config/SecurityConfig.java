@@ -33,22 +33,28 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 1. GIỮ LẠI TỪ NHÁNH CỦA BẠN (Đã có /error)
-                        .requestMatchers("/api/v1/auth/**", "/login", "/register", "/forgot-password", "/verify-email", "/css/**", "/js/**", "/images/**", "/error").permitAll()
+                        // 1. Auth pages + Static resources + SEO files
+                        .requestMatchers("/api/v1/auth/**", "/login", "/register", "/forgot-password", "/verify-email", "/css/**", "/js/**", "/images/**", "/error", "/sitemap.xml", "/robots.txt").permitAll()
                         .requestMatchers(HttpMethod.GET, "/account/change-password/backup").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/password/backup-change").permitAll()
 
-                        // 2. LẤY TỪ NHÁNH DEV: Cho phép các trang public
-                        // Trang gói dịch vụ: khách chưa đăng nhập vẫn xem được
-                        .requestMatchers(HttpMethod.GET, "/plans", "/plans/**", "/packages", "/packages/**").permitAll()
-                        // VNPay callback thường không có JWT
-                        .requestMatchers(HttpMethod.GET, "/v1/api/vnpay/payment-callback").permitAll()
-                        // Tìm kiếm nội dung: cho phép khách truy cập
+                        // 2. Trang công khai cho khách chưa đăng nhập (SEO)
+                        // Trang chủ
+                        .requestMatchers(HttpMethod.GET, "/", "/home").permitAll()
+                        // Trang danh sách phim, chi tiết phim
+                        .requestMatchers(HttpMethod.GET, "/movies", "/movies/**").permitAll()
+                        // Trang series
+                        .requestMatchers(HttpMethod.GET, "/series", "/series/**").permitAll()
+                        // Tìm kiếm và lọc nội dung
                         .requestMatchers("/videocontents", "/videocontents/**").permitAll()
-//                        .requestMatchers(HttpMethod.GET, "/api/video/**").permitAll()
+                        // Trang gói dịch vụ
+                        .requestMatchers(HttpMethod.GET, "/plans", "/plans/**", "/packages", "/packages/**").permitAll()
+                        // Xem bình luận và đánh giá (chỉ GET, không cần đăng nhập)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/comments/**", "/api/v1/ratings/**").permitAll()
+                        // VNPay callback
+                        .requestMatchers(HttpMethod.GET, "/v1/api/vnpay/payment-callback").permitAll()
 
                         // 3. Admin entrypoint + content modules: ADMIN or CONTENT_MANAGER
-                        //    Phải khai báo explicit TRƯỚC wildcard /admin/** để không bị match sai
                         .requestMatchers(
                                 "/admin",
                                 "/admin/dashboard",
@@ -63,7 +69,6 @@ public class SecurityConfig {
 
                         // 5. Phần còn lại của admin: ADMIN only (safety net)
                         .requestMatchers("/admin/**").hasAnyAuthority("ROLE_ADMIN", "ADMIN")
-
 
                         // CÁC TRANG CÒN LẠI BẮT BUỘC PHẢI ĐĂNG NHẬP
                         .anyRequest().authenticated()
