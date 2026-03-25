@@ -1,14 +1,19 @@
 package com.hcmute.lovestream.service.admin.movie.impl;
 
 import com.hcmute.lovestream.dto.request.admin.movie.MovieUpsertRequest;
+import com.hcmute.lovestream.entity.ContentCredit;
 import com.hcmute.lovestream.entity.Genre;
 import com.hcmute.lovestream.entity.MediaAsset;
 import com.hcmute.lovestream.entity.Movie;
+import com.hcmute.lovestream.entity.Person;
 import com.hcmute.lovestream.entity.enums.AssetType;
 import com.hcmute.lovestream.entity.enums.ContentStatus;
+import com.hcmute.lovestream.entity.enums.CreditType;
+import com.hcmute.lovestream.repository.ContentCreditRepository;
 import com.hcmute.lovestream.repository.GenreRepository;
 import com.hcmute.lovestream.repository.MediaAssetRepository;
 import com.hcmute.lovestream.repository.MovieRepository;
+import com.hcmute.lovestream.repository.PersonRepository;
 import com.hcmute.lovestream.service.admin.movie.AdminMovieManagementService;
 import com.hcmute.lovestream.service.storage.MediaStorageService;
 import lombok.RequiredArgsConstructor;
@@ -20,8 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +36,8 @@ public class AdminMovieManagementServiceImpl implements AdminMovieManagementServ
     private final MovieRepository movieRepository;
     private final GenreRepository genreRepository;
     private final MediaAssetRepository mediaAssetRepository;
+    private final PersonRepository personRepository;
+    private final ContentCreditRepository contentCreditRepository;
     private final MediaStorageService mediaStorageService;
 
     // -- 1. Queries (Giữ code gộp hàm của BẠN) --
@@ -64,7 +71,9 @@ public class AdminMovieManagementServiceImpl implements AdminMovieManagementServ
         mapRequestToMovie(request, movie);
         movie.setId(null);
         log.info("Creating new Movie: {}", request.getTitle());
-        return movieRepository.save(movie);
+        Movie saved = movieRepository.save(movie);
+        syncCredits(saved, request.getDirectorNames(), request.getCastNames());
+        return saved;
     }
 
     @Override
@@ -73,7 +82,9 @@ public class AdminMovieManagementServiceImpl implements AdminMovieManagementServ
         Movie targetMovie = getMovieById(id);
         mapRequestToMovie(request, targetMovie);
         log.info("Updating Movie ID: {}", id);
-        return movieRepository.save(targetMovie);
+        Movie saved = movieRepository.save(targetMovie);
+        syncCredits(saved, request.getDirectorNames(), request.getCastNames());
+        return saved;
     }
 
     // -- 3. Status Management --
@@ -160,6 +171,7 @@ public class AdminMovieManagementServiceImpl implements AdminMovieManagementServ
         target.setAgeRating(request.getAgeRating());
         target.setQuality(request.getQuality());
         target.setStatus(request.getStatus());
+        target.setCountry(request.getCountry());
 
         List<String> genreIds = request.getGenreIds();
         if (genreIds != null && !genreIds.isEmpty()) {
@@ -173,5 +185,49 @@ public class AdminMovieManagementServiceImpl implements AdminMovieManagementServ
         } else {
             target.setGenres(new HashSet<>());
         }
+    }
+
+    /** Rewrite directors and cast for a movie based on comma-separated name strings. */
+    private void syncCredits(Movie movie, String directorNamesRaw, String castNamesRaw) {
+        // Remove all existing credits for this movie
+        List<ContentCredit> existing = movie.getContentCredits();
+        if (existing != null && !existing.isEmpty()) {
+            contentCreditRepository.deleteAll(existing);
+        }
+
+        List<ContentCredit> newCredits = new ArrayList<>();
+        newCredits.addAll(buildCredits(movie, directorNamesRaw, CreditType.DIRECTOR));
+        newCredits.addAll(buildCredits(movie, castNamesRaw, CreditType.CAST));
+        contentCreditRepository.saveAll(newCredits);
+    }
+
+    private List<ContentCredit> buildCredits(Movie movie, String namesRaw, CreditType creditType) {
+        if (namesRaw == null || namesRaw.isBlank())
+            return Collections.emptyList();
+
+        return Arrays.stream(namesRaw.split(","))
+                .map(String::trim)
+                .filter(name -> !name.isEmpty())
+                .distinct()
+                .map(name -> {
+                    // Find or create person
+                    Person person = personRepository.findByFullNameContainingIgnoreCase(name)
+                            .stream()
+                            .filter(p -> p.getCreditType() == creditType && p.getFullName().equalsIgnoreCase(name))
+                            .findFirst()
+                            .orElseGet(() -> {
+                                Person p = new Person();
+                                p.setFullName(name);
+                                p.setCreditType(creditType);
+                                return personRepository.save(p);
+                            });
+
+                    ContentCredit credit = new ContentCredit();
+                    credit.setCreditType(creditType);
+                    credit.setPerson(person);
+                    credit.setVideoContent(movie);
+                    return credit;
+                })
+                .collect(Collectors.toList());
     }
 }

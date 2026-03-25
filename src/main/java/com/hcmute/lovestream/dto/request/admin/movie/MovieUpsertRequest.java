@@ -55,4 +55,12 @@ public class MovieUpsertRequest {
 
     @NotEmpty(message = "Vui lòng chọn ít nhất một thể loại cho bộ phim")
     private List<String> genreIds;
+
+    private String country;
+
+    /** Chuỗi nhiều tên đạo diễn, phân tách bằng dấu phẩy */
+    private String directorNames;
+
+    /** Chuỗi nhiều tên diễn viên, phân tách bằng dấu phẩy */
+    private String castNames;
 }

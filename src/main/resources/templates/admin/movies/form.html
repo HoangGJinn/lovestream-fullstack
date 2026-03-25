@@ -66,6 +66,36 @@
                             </div>
                         </div>
 
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="country">Quốc gia</label>
+                                <input id="country" type="text" th:field="*{country}" class="form-control"
+                                    placeholder="VD: Mỹ, Việt Nam, Hàn Quốc..."
+                                    th:classappend="${#fields.hasErrors('country')} ? 'is-invalid'" />
+                                <span class="field-error" th:if="${#fields.hasErrors('country')}"
+                                    th:errors="*{country}"></span>
+                            </div>
+                        </div>
+
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="directorNames">Đạo diễn</label>
+                                <input id="directorNames" type="text" th:field="*{directorNames}" class="form-control"
+                                    placeholder="Tên các đạo diễn, cách nhau bởi dấu phẩy"
+                                    th:classappend="${#fields.hasErrors('directorNames')} ? 'is-invalid'" />
+                                <span class="field-error" th:if="${#fields.hasErrors('directorNames')}"
+                                    th:errors="*{directorNames}"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="castNames">Diễn viên</label>
+                                <input id="castNames" type="text" th:field="*{castNames}" class="form-control"
+                                    placeholder="Tên các diễn viên, cách nhau bởi dấu phẩy"
+                                    th:classappend="${#fields.hasErrors('castNames')} ? 'is-invalid'" />
+                                <span class="field-error" th:if="${#fields.hasErrors('castNames')}"
+                                    th:errors="*{castNames}"></span>
+                            </div>
+                        </div>
+
                         <div class="form-row three-col">
                             <div class="form-group">
                                 <label for="releaseYear">Năm phát hành <span class="required">*</span></label>
