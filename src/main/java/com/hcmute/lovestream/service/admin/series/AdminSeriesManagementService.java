@@ -35,11 +35,7 @@ public interface AdminSeriesManagementService {
     void deleteEpisode(String id);
 
     // ---- Assets ----
-    MediaAsset addSeriesAssetFromUrl(String seriesId, AssetType assetType, String url);
-    MediaAsset addSeasonAssetFromUrl(String seasonId, String url);
-    MediaAsset addEpisodeAssetFromUrl(String episodeId, String url);
-
-    MediaAsset uploadSeriesAsset(String seriesId, AssetType assetType, org.springframework.web.multipart.MultipartFile file) throws java.io.IOException;
-    MediaAsset uploadSeasonAsset(String seasonId, org.springframework.web.multipart.MultipartFile file) throws java.io.IOException;
-    MediaAsset uploadEpisodeAsset(String episodeId, org.springframework.web.multipart.MultipartFile file) throws java.io.IOException;
+    MediaAsset uploadSeriesPoster(String seriesId, org.springframework.web.multipart.MultipartFile file) throws java.io.IOException;
+    MediaAsset addSeriesTrailerFromUrl(String seriesId, String url);
+    MediaAsset addEpisodeVideoFromUrl(String episodeId, String url);
 }

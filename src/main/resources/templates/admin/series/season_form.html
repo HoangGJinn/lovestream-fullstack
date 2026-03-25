@@ -75,44 +75,6 @@
             </form>
         </div><!-- /.form-card metadata -->
 
-        <!-- ── Season Poster Upload (only when editing) ── -->
-        <div class="form-card" th:if="${seasonUpsertRequest.id != null}">
-            <form th:action="@{/admin/series/seasons/{id}/assets/upload(id=${seasonUpsertRequest.id})}"
-                  method="post" enctype="multipart/form-data" class="upload-section">
-                <div class="form-section-title">Tải lên Poster mùa (File)</div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="seasonPosterFile">Chọn file hình ảnh <span class="required">*</span></label>
-                        <input id="seasonPosterFile" type="file" name="file" class="form-control" required
-                               accept="image/*" />
-                    </div>
-                </div>
-                <div style="text-align:right;margin-top:15px;">
-                    <button type="submit" class="btn btn-primary">Tải lên file</button>
-                </div>
-            </form>
-        </div>
-
-        <!-- ── Season Poster URL (only when editing) ── -->
-        <div class="form-card" th:if="${seasonUpsertRequest.id != null}">
-            <form th:action="@{/admin/series/seasons/{id}/assets/url(id=${seasonUpsertRequest.id})}" method="post" class="upload-section">
-                <div class="form-section-title">Poster mùa (Cloudinary URL)</div>
-                <p style="margin:0 0 15px 0;color:#b3b3b3;font-size:14px;">
-                    Nhập đường dẫn Cloudinary để gắn poster cho mùa này.
-                </p>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="seasonPosterUrl">Đường dẫn URL Poster <span class="required">*</span></label>
-                        <input id="seasonPosterUrl" type="url" name="assetUrl" class="form-control" required
-                               placeholder="https://res.cloudinary.com/.../image/upload/v.../season-poster.jpg" />
-                    </div>
-                </div>
-                <div style="text-align:right;margin-top:15px;">
-                    <button type="submit" class="btn btn-secondary">Gắn Poster</button>
-                </div>
-            </form>
-        </div>
-
         <!-- ── Episode List (only when editing) ── -->
         <div class="form-card" th:if="${seasonUpsertRequest.id != null}">
             <div class="form-section-title">Danh sách tập phim (Episode)</div>

@@ -156,54 +156,40 @@
             </form>
         </div><!-- /.form-card metadata -->
 
-        <!-- ── FORM 2: Asset Upload (only when editing) ── -->
+        <!-- ── FORM 2: Poster Upload (Poster only, upload only) ── -->
         <div class="form-card" th:if="${tvSeriesUpsertRequest.id != null}">
-            <form th:action="@{/admin/series/{id}/assets/upload(id=${tvSeriesUpsertRequest.id})}"
+            <form th:action="@{/admin/series/{id}/poster/upload(id=${tvSeriesUpsertRequest.id})}"
                   method="post" enctype="multipart/form-data" class="upload-section">
-                <div class="form-section-title">Tải lên tài nguyên Series (POSTER, TRAILER)</div>
-                <div class="form-row two-col">
+                <div class="form-section-title">Poster Series (File Upload)</div>
+                <div class="form-row">
                     <div class="form-group">
-                        <label for="seriesAssetTypeUpload">Loại tài nguyên <span class="required">*</span></label>
-                        <select id="seriesAssetTypeUpload" name="assetType" class="form-control" required>
-                            <option value="">-- Chọn loại --</option>
-                            <option th:each="at : ${seriesAssetTypes}" th:value="${at}" th:text="${at}"></option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="seriesFile">Chọn file <span class="required">*</span></label>
+                        <label for="seriesFile">Chọn file ảnh poster <span class="required">*</span></label>
                         <input id="seriesFile" type="file" name="file" class="form-control" required
-                               accept="image/*,video/*" />
+                               accept="image/*" />
                     </div>
                 </div>
                 <div style="text-align:right;margin-top:15px;">
-                    <button type="submit" class="btn btn-primary">Tải lên file</button>
+                    <button type="submit" class="btn btn-primary">Tải lên Poster</button>
                 </div>
             </form>
         </div>
 
-        <!-- ── FORM 3: Asset URL (only when editing) ── -->
+        <!-- ── FORM 3: Trailer URL (Trailer only, URL only) ── -->
         <div class="form-card" th:if="${tvSeriesUpsertRequest.id != null}">
-            <form th:action="@{/admin/series/{id}/assets/url(id=${tvSeriesUpsertRequest.id})}" method="post" class="upload-section">
-                <div class="form-section-title">Tài nguyên Series (Cloudinary URL)</div>
+            <form th:action="@{/admin/series/{id}/trailer/url(id=${tvSeriesUpsertRequest.id})}" method="post" class="upload-section">
+                <div class="form-section-title">Trailer Series (Cloudinary URL)</div>
                 <p style="margin:0 0 15px 0;color:#b3b3b3;font-size:14px;">
-                    Nhập đường dẫn <code>Secure URL</code> từ Cloudinary để gắn poster hoặc trailer.
+                    Nhập đường dẫn <code>Secure URL</code> từ Cloudinary để gắn trailer phim.
                 </p>
-                <div class="form-row two-col">
-                    <div class="form-group">
-                        <label for="seriesAssetType">Loại tài nguyên <span class="required">*</span></label>
-                        <select id="seriesAssetType" name="assetType" class="form-control" required>
-                            <option value="">-- Chọn loại --</option>
-                            <option th:each="at : ${seriesAssetTypes}" th:value="${at}" th:text="${at}"></option>
-                        </select>
-                    </div>
+                <div class="form-row">
                     <div class="form-group">
                         <label for="seriesAssetUrl">Đường dẫn URL Cloudinary <span class="required">*</span></label>
                         <input id="seriesAssetUrl" type="url" name="assetUrl" class="form-control" required
-                               placeholder="https://res.cloudinary.com/.../image/upload/v.../poster.jpg" />
+                               placeholder="https://res.cloudinary.com/.../video/upload/v.../trailer.mp4" />
                     </div>
                 </div>
                 <div style="text-align:right;margin-top:15px;">
-                    <button type="submit" class="btn btn-secondary">Gắn URL tài nguyên</button>
+                    <button type="submit" class="btn btn-secondary">Lưu URL Trailer</button>
                 </div>
             </form>
         </div>
