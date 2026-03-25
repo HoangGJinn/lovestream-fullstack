@@ -105,4 +105,13 @@ public class UserWebController {
 
         return "user/membership";
     }
+
+    @GetMapping("/account/favorites")
+    public String getFavoritesPage(Authentication authentication, Model model) {
+        User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
+        model.addAttribute("currentUser", currentUser);
+        return "user/favorites";
+    }
+
+
 }

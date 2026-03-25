@@ -30,6 +30,7 @@ public class MovieDetailService {
     RatingRepository ratingRepository;
     UserRepository userRepository;
     SubscriptionRepository subscriptionRepository;
+    com.hcmute.lovestream.repository.FavoriteListRepository favoriteListRepository;
 
     @Transactional(readOnly = true)
     public MovieDetail getMovieDetail(String movieId, String userEmail) {
@@ -57,6 +58,14 @@ public class MovieDetailService {
 
         WatchDecision decision = decideWatch(userEmail);
 
+        boolean isFavorited = false;
+        if (userEmail != null) {
+            var userOpt = userRepository.findByEmail(userEmail);
+            if (userOpt.isPresent()) {
+                isFavorited = favoriteListRepository.existsByUserIdAndVideoId(userOpt.get().getId(), movieId);
+            }
+        }
+
         return MovieDetail.builder()
                 .id(movie.getId())
                 .title(movie.getTitle())
@@ -73,6 +82,7 @@ public class MovieDetailService {
                 .rating(rating)
                 .canWatch(decision.canWatch)
                 .watchAction(decision.watchAction)
+                .isFavorited(isFavorited)
                 .build();
     }
 

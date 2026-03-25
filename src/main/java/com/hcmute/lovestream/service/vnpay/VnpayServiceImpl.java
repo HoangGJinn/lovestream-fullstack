@@ -43,7 +43,8 @@ public class VnpayServiceImpl implements VnpayService {
     }
 
     @Override
-    public String createPaymentWithOrderCode(Vnpay paymentRequest, String orderCode, HttpServletRequest request) throws UnsupportedEncodingException {
+    public String createPaymentWithOrderCode(Vnpay paymentRequest, String orderCode, HttpServletRequest request)
+            throws UnsupportedEncodingException {
 
         // Lấy giá trị trực tiếp trong hàm để đảm bảo Config đã được load
         String vnp_Version = vnpayConfig.getVnp_Version();
@@ -90,7 +91,8 @@ public class VnpayServiceImpl implements VnpayService {
         vnp_Params.put("vnp_CurrCode", "VND");
         // vnp_Params.put("vnp_BankCode", "NCB");
         vnp_Params.put("vnp_TxnRef", orderCode); // Gửi orderCode nhưng key vẫn là vnp_TxnRef
-        vnp_Params.put("vnp_OrderInfo", paymentRequest.getOrderInfo() != null ? paymentRequest.getOrderInfo() : "Thanh toan don hang:" + orderCode);
+        vnp_Params.put("vnp_OrderInfo", paymentRequest.getOrderInfo() != null ? paymentRequest.getOrderInfo()
+                : "Thanh toan don hang:" + orderCode);
         vnp_Params.put("vnp_OrderType", vnp_OrderType);
         vnp_Params.put("vnp_Locale", "vn");
         vnp_Params.put("vnp_ReturnUrl", vnp_ReturnUrl);
@@ -110,7 +112,7 @@ public class VnpayServiceImpl implements VnpayService {
 
         StringBuilder hashData = new StringBuilder();
         StringBuilder query = new StringBuilder();
-        for (Iterator<String> itr = fieldNames.iterator(); itr.hasNext(); ) {
+        for (Iterator<String> itr = fieldNames.iterator(); itr.hasNext();) {
             String fieldName = itr.next();
             String fieldValue = vnp_Params.get(fieldName);
             if ((fieldValue != null) && (fieldValue.length() > 0)) {
@@ -178,8 +180,7 @@ public class VnpayServiceImpl implements VnpayService {
             if (isSuccess) {
                 // Chỉ tạo Subscription ACTIVE nếu chưa có
                 boolean hasActiveSub = subscriptionRepository.existsByUserAndStatus(
-                        payment.getUser(), SubscriptionStatus.ACTIVE
-                );
+                        payment.getUser(), SubscriptionStatus.ACTIVE);
                 if (!hasActiveSub) {
                     LocalDateTime startDate = LocalDateTime.now();
                     LocalDateTime endDate = startDate.plusDays(payment.getServicePlan().getDurationDays());

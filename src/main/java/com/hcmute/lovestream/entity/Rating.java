@@ -41,4 +41,12 @@ public class Rating {
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    // 1 Đánh giá sẽ gắn liền với 1 Bình luận gốc
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JoinColumn(name = "comment_id") // Tạo cột comment_id trong bảng ratings
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Comment comment;
+
 }
