@@ -99,6 +99,12 @@ public abstract class VideoContent {
     @EqualsAndHashCode.Exclude
     private List<FavoriteList> favoritedByUsers = new ArrayList<>();
 
+    // Lịch sử xem liên quan đến nội dung này
+    @OneToMany(mappedBy = "videoContent", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<WatchHistory> watchHistories = new ArrayList<>();
+
     // Hàm này không lưu xuống Database, chỉ dùng để hỗ trợ Thymeleaf lấy ảnh Poster ra giao diện
     @Transient
     public String getPosterUrl() {

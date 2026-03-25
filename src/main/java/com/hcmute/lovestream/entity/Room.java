@@ -25,11 +25,16 @@ public class Room {
     private String roomName;
 
     @Column(name = "room_code", unique = true, nullable = false)
-    private String roomCode; // Mã phòng hoặc link mời
+    private String roomCode; // mã phòng
+
 
     @Column(name = "is_private")
     @Builder.Default
     private boolean isPrivate = false;
+
+
+    @Column(name = "password")
+    private String password; // Mật khẩu cho phòng riêng (nếu có)
 
     @Column(name = "max_participants")
     @Builder.Default

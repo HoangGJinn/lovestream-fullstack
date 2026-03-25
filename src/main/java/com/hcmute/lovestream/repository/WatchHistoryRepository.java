@@ -15,5 +15,7 @@ public interface WatchHistoryRepository extends JpaRepository<WatchHistory, Stri
     Optional<WatchHistory> findByUserIdAndVideoContentId(String userId, String videoContentId);
 
     long deleteByUserIdAndVideoContentId(String userId, String videoContentId);
+
+    long deleteByVideoContentId(String videoContentId);
 }
 

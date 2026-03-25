@@ -14,6 +14,7 @@ import com.hcmute.lovestream.repository.MediaAssetRepository;
 import com.hcmute.lovestream.repository.PersonRepository;
 import com.hcmute.lovestream.repository.SeasonRepository;
 import com.hcmute.lovestream.repository.TVSeriesRepository;
+import com.hcmute.lovestream.repository.WatchHistoryRepository;
 import com.hcmute.lovestream.service.admin.series.AdminSeriesManagementService;
 import com.hcmute.lovestream.service.storage.MediaStorageService;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,7 @@ public class AdminSeriesManagementServiceImpl implements AdminSeriesManagementSe
     private final SeasonRepository seasonRepository;
     private final EpisodeRepository episodeRepository;
     private final GenreRepository genreRepository;
+    private final WatchHistoryRepository watchHistoryRepository;
     private final MediaAssetRepository mediaAssetRepository;
     private final PersonRepository personRepository;
     private final ContentCreditRepository contentCreditRepository;
@@ -65,7 +67,7 @@ public class AdminSeriesManagementServiceImpl implements AdminSeriesManagementSe
     @Transactional(readOnly = true)
     public TVSeries getSeriesById(String id) {
         return tvSeriesRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Kh\u00f4ng t\u00ecm th\u1ea5y TV Series v\u1edbi ID: " + id));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy TV Series với ID: " + id));
     }
 
     @Override
@@ -108,7 +110,9 @@ public class AdminSeriesManagementServiceImpl implements AdminSeriesManagementSe
     @Transactional
     public void deleteSeries(String id) {
         TVSeries series = getSeriesById(id);
-        log.info("Deleting TV Series ID: {} (cascade: seasons, episodes, assets)", id);
+        log.info("Deleting TV Series ID: {} (cascade: seasons, episodes, assets, watch_history)", id);
+        // Xóa lịch sử xem trước để tránh lỗi ràng buộc khóa ngoại
+        watchHistoryRepository.deleteByVideoContentId(series.getId());
         tvSeriesRepository.delete(series);
     }
 
@@ -120,7 +124,7 @@ public class AdminSeriesManagementServiceImpl implements AdminSeriesManagementSe
     @Transactional(readOnly = true)
     public Season getSeasonById(String id) {
         return seasonRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Kh\u00f4ng t\u00ecm th\u1ea5y Season v\u1edbi ID: " + id));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy Season với ID: " + id));
     }
 
     @Override
@@ -128,9 +132,8 @@ public class AdminSeriesManagementServiceImpl implements AdminSeriesManagementSe
     public Season createSeason(SeasonUpsertRequest request) {
         TVSeries series = getSeriesById(request.getTvSeriesId());
 
-        // Validate unique seasonNumber within the same series (excluding self on update)
         if (seasonRepository.existsByTvSeriesAndSeasonNumber(series, request.getSeasonNumber())) {
-            throw new RuntimeException("S\u1ED1 m\u00f9a " + request.getSeasonNumber() + " \u0111\u00e3 t\u1ED3n t\u1EA1i trong series n\u00e0y!");
+            throw new RuntimeException("Số mùa " + request.getSeasonNumber() + " đã tồn tại trong series này!");
         }
 
         Season season = new Season();
@@ -147,10 +150,9 @@ public class AdminSeriesManagementServiceImpl implements AdminSeriesManagementSe
     public Season updateSeason(String id, SeasonUpsertRequest request) {
         Season season = getSeasonById(id);
 
-        // If seasonNumber changed, check for conflict
         if (season.getSeasonNumber() != request.getSeasonNumber()) {
             if (seasonRepository.existsByTvSeriesAndSeasonNumber(season.getTvSeries(), request.getSeasonNumber())) {
-                throw new RuntimeException("S\u1ED1 m\u00f9a " + request.getSeasonNumber() + " \u0111\u00e3 t\u1ED3n t\u1EA1i trong series n\u00e0y!");
+                throw new RuntimeException("Số mùa " + request.getSeasonNumber() + " đã tồn tại trong series này!");
             }
         }
 
@@ -177,7 +179,7 @@ public class AdminSeriesManagementServiceImpl implements AdminSeriesManagementSe
     @Transactional(readOnly = true)
     public Episode getEpisodeById(String id) {
         return episodeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Kh\u00f4ng t\u00ecm th\u1ea5y Episode v\u1edbi ID: " + id));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy Episode với ID: " + id));
     }
 
     @Override
@@ -186,7 +188,7 @@ public class AdminSeriesManagementServiceImpl implements AdminSeriesManagementSe
         Season season = getSeasonById(request.getSeasonId());
 
         if (episodeRepository.existsBySeasonAndEpisodeNumber(season, request.getEpisodeNumber())) {
-            throw new RuntimeException("S\u1ED1 t\u1EADp " + request.getEpisodeNumber() + " \u0111\u00e3 t\u1ED3n t\u1EA1i trong m\u00f9a n\u00e0y!");
+            throw new RuntimeException("Số tập " + request.getEpisodeNumber() + " đã tồn tại trong mùa này!");
         }
 
         Episode episode = new Episode();
@@ -208,7 +210,7 @@ public class AdminSeriesManagementServiceImpl implements AdminSeriesManagementSe
 
         if (episode.getEpisodeNumber() != request.getEpisodeNumber()) {
             if (episodeRepository.existsBySeasonAndEpisodeNumber(episode.getSeason(), request.getEpisodeNumber())) {
-                throw new RuntimeException("S\u1ED1 t\u1EADp " + request.getEpisodeNumber() + " \u0111\u00e3 t\u1ED3n t\u1EA1i trong m\u00f9a n\u00e0y!");
+                throw new RuntimeException("Số tập " + request.getEpisodeNumber() + " đã tồn tại trong mùa này!");
             }
         }
 
@@ -236,44 +238,46 @@ public class AdminSeriesManagementServiceImpl implements AdminSeriesManagementSe
 
     @Override
     @Transactional
-    public MediaAsset addSeriesAssetFromUrl(String seriesId, AssetType assetType, String url) {
-        validateAssetType(assetType, AssetType.POSTER, AssetType.TRAILER);
-        validateCloudinaryUrl(url);
+    public MediaAsset uploadSeriesPoster(String seriesId, MultipartFile file) throws IOException {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File upload không được để trống!");
+        }
+        String publicUrl = mediaStorageService.upload(file, AssetType.POSTER);
 
         TVSeries series = getSeriesById(seriesId);
         MediaAsset asset = series.getMediaAssets().stream()
-                .filter(a -> a.getAssetType() == assetType)
+                .filter(a -> a.getAssetType() == AssetType.POSTER)
                 .findFirst()
                 .orElse(new MediaAsset());
 
-        asset.setAssetType(assetType);
+        asset.setAssetType(AssetType.POSTER);
+        asset.setAssetUrl(publicUrl);
+        asset.setVideoContent(series);
+        log.info("Saving POSTER to Series ID: {}", seriesId);
+        return mediaAssetRepository.save(asset);
+    }
+
+    @Override
+    @Transactional
+    public MediaAsset addSeriesTrailerFromUrl(String seriesId, String url) {
+        validateCloudinaryUrl(url);
+        TVSeries series = getSeriesById(seriesId);
+
+        MediaAsset asset = series.getMediaAssets().stream()
+                .filter(a -> a.getAssetType() == AssetType.TRAILER)
+                .findFirst()
+                .orElse(new MediaAsset());
+
+        asset.setAssetType(AssetType.TRAILER);
         asset.setAssetUrl(url);
         asset.setVideoContent(series);
-        log.info("Saving {} asset to Series ID: {}", assetType, seriesId);
+        log.info("Saving TRAILER URL to Series ID: {}", seriesId);
         return mediaAssetRepository.save(asset);
     }
 
     @Override
     @Transactional
-    public MediaAsset addSeasonAssetFromUrl(String seasonId, String url) {
-        validateCloudinaryUrl(url);
-        Season season = getSeasonById(seasonId);
-
-        MediaAsset asset = season.getMediaAssets().stream()
-                .filter(a -> a.getAssetType() == AssetType.SEASON_POSTER)
-                .findFirst()
-                .orElse(new MediaAsset());
-
-        asset.setAssetType(AssetType.SEASON_POSTER);
-        asset.setAssetUrl(url);
-        asset.setSeason(season);
-        log.info("Saving SEASON_POSTER to Season ID: {}", seasonId);
-        return mediaAssetRepository.save(asset);
-    }
-
-    @Override
-    @Transactional
-    public MediaAsset addEpisodeAssetFromUrl(String episodeId, String url) {
+    public MediaAsset addEpisodeVideoFromUrl(String episodeId, String url) {
         validateCloudinaryUrl(url);
         Episode episode = getEpisodeById(episodeId);
 
@@ -285,38 +289,8 @@ public class AdminSeriesManagementServiceImpl implements AdminSeriesManagementSe
         asset.setAssetType(AssetType.EPISODE_VIDEO);
         asset.setAssetUrl(url);
         asset.setEpisode(episode);
-        log.info("Saving EPISODE_VIDEO to Episode ID: {}", episodeId);
+        log.info("Saving EPISODE_VIDEO URL to Episode ID: {}", episodeId);
         return mediaAssetRepository.save(asset);
-    }
-
-    @Override
-    @Transactional
-    public MediaAsset uploadSeriesAsset(String seriesId, AssetType assetType, MultipartFile file) throws IOException {
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("File upload kh\u00f4ng \u0111\u01b0\u1ee3c \u0111\u1ec3 tr\u1ed1ng!");
-        }
-        String publicUrl = mediaStorageService.upload(file, assetType);
-        return addSeriesAssetFromUrl(seriesId, assetType, publicUrl);
-    }
-
-    @Override
-    @Transactional
-    public MediaAsset uploadSeasonAsset(String seasonId, MultipartFile file) throws IOException {
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("File upload kh\u00f4ng \u0111\u01b0\u1ee3c \u0111\u1ec3 tr\u1ed1ng!");
-        }
-        String publicUrl = mediaStorageService.upload(file, AssetType.SEASON_POSTER);
-        return addSeasonAssetFromUrl(seasonId, publicUrl);
-    }
-
-    @Override
-    @Transactional
-    public MediaAsset uploadEpisodeAsset(String episodeId, MultipartFile file) throws IOException {
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("File upload kh\u00f4ng \u0111\u01b0\u1ee3c \u0111\u1ec3 tr\u1ed1ng!");
-        }
-        String publicUrl = mediaStorageService.upload(file, AssetType.EPISODE_VIDEO);
-        return addEpisodeAssetFromUrl(episodeId, publicUrl);
     }
 
     // =====================================================================
@@ -336,7 +310,7 @@ public class AdminSeriesManagementServiceImpl implements AdminSeriesManagementSe
         if (genreIds != null && !genreIds.isEmpty()) {
             List<Genre> genres = genreRepository.findAllById(genreIds);
             if (genres.size() != genreIds.size()) {
-                throw new RuntimeException("C\u00f3 \u00edt nh\u1EA5t m\u1ED9t th\u1EC3 lo\u1EA1i kh\u00f4ng t\u1ED3n t\u1EA1i trong h\u1EC7 th\u1ED1ng. Vui l\u00f2ng t\u1EA3i l\u1EA1i trang!");
+                throw new RuntimeException("Có ít nhất một thể loại không tồn tại trong hệ thống. Vui lòng tải lại trang!");
             }
             target.setGenres(new HashSet<>(genres));
         } else {
@@ -344,9 +318,7 @@ public class AdminSeriesManagementServiceImpl implements AdminSeriesManagementSe
         }
     }
 
-    /** Rewrite directors and cast for a series based on comma-separated name strings. */
     private void syncCredits(TVSeries series, String directorNamesRaw, String castNamesRaw) {
-        // Remove all existing credits for this series
         List<ContentCredit> existing = series.getContentCredits();
         if (existing != null && !existing.isEmpty()) {
             contentCreditRepository.deleteAll(existing);
@@ -366,7 +338,6 @@ public class AdminSeriesManagementServiceImpl implements AdminSeriesManagementSe
                 .filter(name -> !name.isEmpty())
                 .distinct()
                 .map(name -> {
-                    // Find or create person
                     Person person = personRepository.findByFullNameContainingIgnoreCase(name)
                             .stream()
                             .filter(p -> p.getCreditType() == creditType && p.getFullName().equalsIgnoreCase(name))
@@ -389,17 +360,10 @@ public class AdminSeriesManagementServiceImpl implements AdminSeriesManagementSe
 
     private void validateCloudinaryUrl(String url) {
         if (url == null || url.isBlank()) {
-            throw new IllegalArgumentException("URL kh\u00f4ng h\u1EE3p l\u1EC7. \u0110\u01B0\u1EddNG d\u1EAbn kh\u00f4ng \u0111\u01b0\u1ee3c \u0111\u1ec3 tr\u1ed1ng!");
+            throw new IllegalArgumentException("URL không hợp lệ. Đường dẫn không được để trống!");
         }
         if (!url.contains("res.cloudinary.com")) {
-            throw new IllegalArgumentException("URL kh\u00f4ng h\u1EE3p l\u1EC7. Ch\u1EC9 ch\u1EA5p nh\u1EADn link public t\u1EEB n\u1EC1n t\u1EA3ng Cloudinary.");
+            throw new IllegalArgumentException("URL không hợp lệ. Chỉ chấp nhận link public từ nền tảng Cloudinary.");
         }
-    }
-
-    private void validateAssetType(AssetType provided, AssetType... allowed) {
-        for (AssetType a : allowed) {
-            if (provided == a) return;
-        }
-        throw new IllegalArgumentException("Lo\u1EA1i asset kh\u00f4ng h\u1EE3p l\u1EC7 cho t\u00e0i nguy\u00ean n\u00e0y!");
     }
 }

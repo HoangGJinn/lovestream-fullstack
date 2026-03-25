@@ -88,30 +88,13 @@
             </form>
         </div><!-- /.form-card metadata -->
 
-        <!-- ── Episode Video Upload (only when editing) ── -->
-        <div class="form-card" th:if="${episodeUpsertRequest.id != null}">
-            <form th:action="@{/admin/series/episodes/{id}/assets/upload(id=${episodeUpsertRequest.id})}"
-                  method="post" enctype="multipart/form-data" class="upload-section">
-                <div class="form-section-title">Tải lên video tập phim (File)</div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="episodeVideoFile">Chọn file video <span class="required">*</span></label>
-                        <input id="episodeVideoFile" type="file" name="file" class="form-control" required
-                               accept="video/*" />
-                    </div>
-                </div>
-                <div style="text-align:right;margin-top:15px;">
-                    <button type="submit" class="btn btn-primary">Tải lên file</button>
-                </div>
-            </form>
-        </div>
 
-        <!-- ── Episode Video URL (only when editing) ── -->
+        <!-- ── Episode Video URL  ── -->
         <div class="form-card" th:if="${episodeUpsertRequest.id != null}">
-            <form th:action="@{/admin/series/episodes/{id}/assets/url(id=${episodeUpsertRequest.id})}" method="post" class="upload-section">
+            <form th:action="@{/admin/series/episodes/{id}/video/url(id=${episodeUpsertRequest.id})}" method="post" class="upload-section">
                 <div class="form-section-title">Video tập phim (Cloudinary URL)</div>
                 <p style="margin:0 0 15px 0;color:#b3b3b3;font-size:14px;">
-                    Nhập đường dẫn Cloudinary để gắn video cho tập này.
+                    Nhập đường dẫn <code>Secure URL</code> từ Cloudinary để gắn video cho tập này.
                 </p>
                 <div class="form-row">
                     <div class="form-group">
@@ -121,7 +104,7 @@
                     </div>
                 </div>
                 <div style="text-align:right;margin-top:15px;">
-                    <button type="submit" class="btn btn-secondary">Gắn Video</button>
+                    <button type="submit" class="btn btn-secondary">Lưu URL Video</button>
                 </div>
             </form>
         </div>
