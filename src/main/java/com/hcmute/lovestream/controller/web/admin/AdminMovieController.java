@@ -57,7 +57,7 @@ public class AdminMovieController {
     // ĐÃ SỬA LỖI Ở ĐÂY: Thay BACKGROUND và MOVIE_VIDEO bằng FULL_VIDEO
     @ModelAttribute("allAssetTypes")
     public AssetType[] populateAssetTypes() {
-        return new AssetType[]{AssetType.POSTER, AssetType.TRAILER, AssetType.FULL_VIDEO};
+        return new AssetType[] { AssetType.POSTER, AssetType.TRAILER, AssetType.FULL_VIDEO };
     }
 
     // --- ROUTES Thực Thi ---
@@ -132,7 +132,9 @@ public class AdminMovieController {
                         .title(movie.getTitle())
                         .description(movie.getDescription())
                         .releaseYear(movie.getReleaseYear())
-                        .releaseDate(movie.getReleaseDate() != null ? new java.sql.Date(movie.getReleaseDate().getTime()).toLocalDate() : null)
+                        .releaseDate(movie.getReleaseDate() != null
+                                ? new java.sql.Date(movie.getReleaseDate().getTime()).toLocalDate()
+                                : null)
                         .durationMinutes(movie.getDurationMinutes())
                         .ageRating(movie.getAgeRating())
                         .quality(movie.getQuality())

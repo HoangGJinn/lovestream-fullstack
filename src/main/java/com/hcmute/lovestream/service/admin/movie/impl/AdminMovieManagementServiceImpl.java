@@ -166,7 +166,8 @@ public class AdminMovieManagementServiceImpl implements AdminMovieManagementServ
             List<Genre> selectedGenres = genreRepository.findAllById(genreIds);
 
             if (selectedGenres.isEmpty() || selectedGenres.size() != genreIds.size()) {
-                throw new RuntimeException("Có ít nhất một thể loại không tồn tại trong hệ thống. Vui lòng tải lại trang!");
+                throw new RuntimeException(
+                        "Có ít nhất một thể loại không tồn tại trong hệ thống. Vui lòng tải lại trang!");
             }
             target.setGenres(new HashSet<>(selectedGenres));
         } else {

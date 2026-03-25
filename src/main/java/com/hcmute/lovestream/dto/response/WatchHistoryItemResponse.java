@@ -18,5 +18,7 @@ public class WatchHistoryItemResponse {
     private boolean completed;
     private LocalDateTime lastWatchedAt;
     private String watchUrl;
+    private boolean available;
+
 }
 

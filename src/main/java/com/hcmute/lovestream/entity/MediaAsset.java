@@ -29,4 +29,9 @@ public class MediaAsset {
     @ManyToOne
     @JoinColumn(name = "episode_id")
     private Episode episode;
+
+    // Hoặc có thể thuộc về 1 Season cụ thể (ví dụ: Season Poster)
+    @ManyToOne
+    @JoinColumn(name = "season_id")
+    private Season season;
 }

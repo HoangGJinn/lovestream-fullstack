@@ -3,6 +3,7 @@ package com.hcmute.lovestream.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -22,8 +23,13 @@ public class Season {
     @JoinColumn(name = "tv_series_id")
     private TVSeries tvSeries;
 
-    @OneToMany(mappedBy = "season", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "season", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private List<Episode> episodes;
+    private List<Episode> episodes = new ArrayList<>();
+
+    @OneToMany(mappedBy = "season", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<MediaAsset> mediaAssets = new ArrayList<>();
 }

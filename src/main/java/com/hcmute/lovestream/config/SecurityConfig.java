@@ -47,6 +47,24 @@ public class SecurityConfig {
                         .requestMatchers("/videocontents", "/videocontents/**").permitAll()
 //                        .requestMatchers(HttpMethod.GET, "/api/video/**").permitAll()
 
+                        // 3. Admin entrypoint + content modules: ADMIN or CONTENT_MANAGER
+                        //    Phải khai báo explicit TRƯỚC wildcard /admin/** để không bị match sai
+                        .requestMatchers(
+                                "/admin",
+                                "/admin/dashboard",
+                                "/admin/movies",
+                                "/admin/movies/**",
+                                "/admin/series",
+                                "/admin/series/**"
+                        ).hasAnyAuthority("ROLE_ADMIN", "ROLE_CONTENT_MANAGER", "ADMIN", "CONTENT_MANAGER")
+
+                        // 4. Admin-restricted modules: ADMIN only
+                        .requestMatchers("/admin/users/**", "/admin/plans/**", "/admin/vouchers/**").hasAnyAuthority("ROLE_ADMIN", "ADMIN")
+
+                        // 5. Phần còn lại của admin: ADMIN only (safety net)
+                        .requestMatchers("/admin/**").hasAnyAuthority("ROLE_ADMIN", "ADMIN")
+
+
                         // CÁC TRANG CÒN LẠI BẮT BUỘC PHẢI ĐĂNG NHẬP
                         .anyRequest().authenticated()
                 )

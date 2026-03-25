@@ -21,14 +21,18 @@ public interface AdminMovieManagementService {
 
     // -- 2. CRUD Operations --
     Movie createMovie(MovieUpsertRequest request);
+
     Movie updateMovie(String id, MovieUpsertRequest request);
 
-    // -- 3. Status Management (Gộp thành 1 hàm duy nhất cho đồng bộ với User/Voucher) --
+    // -- 3. Status Management (Gộp thành 1 hàm duy nhất cho đồng bộ với
+    // User/Voucher) --
     void toggleMovieStatus(String id);
 
     // -- 4. Media Asset Management (URL-based) --
     MediaAsset addAsset(String movieId, AssetType assetType, String assetUrl);
+
     MediaAsset addAssetFromUrl(String movieId, AssetType assetType, String assetUrl);
+
     void removeAsset(String movieId, String assetId);
 
     // -- 5. Upload Media Asset (Lưu file vật lý/Cloud + addAsset) --

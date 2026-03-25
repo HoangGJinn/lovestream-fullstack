@@ -11,9 +11,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/video-contents")
+@lombok.RequiredArgsConstructor
 public class VideoContentListController {
 
-    private MovieService movieService;
+    private final MovieService movieService;
 
     @GetMapping("/movies")
     public List<MovieResponse> getAllMovies() {
