@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -26,11 +27,22 @@ public class VideoContentDetailService {
     RatingRepository ratingRepository;
 
     @Transactional(readOnly = true)
-    public VideoContentDetail getMovieDetail(String movieId, String userEmail, boolean isVip) {
-        Movie movie = movieRepository.findDetailedByIdAndStatus(movieId, ContentStatus.ACTIVE)
-                .orElseThrow(() -> new IllegalArgumentException("Phim không tồn tại hoặc đã bị gỡ khỏi hệ thống."));
+    public VideoContentDetail getMovieDetail(String slugOrId, String userEmail, boolean isVip) {
+        // Phát hiện sớm UUID để tránh double-query:
+        //   - Nếu input là UUID (36 ký tự dạng xxxxxxxx-xxxx-...) → tìm thẳng bằng id
+        //   - Ngược lại → tìm bằng slug
+        // Điều này đảm bảo mỗi request chỉ cần đúng 1 query DB.
+        final boolean isUuid = slugOrId != null
+                && slugOrId.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
 
-        Double avg = ratingRepository.calculateAverageScoreByVideoId(movieId);
+        Optional<Movie> movieOpt = isUuid
+                ? movieRepository.findDetailedByIdAndStatus(slugOrId, ContentStatus.ACTIVE)
+                : movieRepository.findDetailedBySlugAndStatus(slugOrId, ContentStatus.ACTIVE);
+
+        Movie movie = movieOpt.orElseThrow(() ->
+                new IllegalArgumentException("Phim không tồn tại hoặc đã bị gỡ khỏi hệ thống."));
+
+        Double avg = ratingRepository.calculateAverageScoreByVideoId(movie.getId());
         double rating = avg == null ? 0.0 : avg;
 
         String director = extractDirector(movie.getContentCredits());
@@ -53,6 +65,7 @@ public class VideoContentDetailService {
 
         return VideoContentDetail.builder()
                 .id(movie.getId())
+                .slug(movie.getSlug())
                 .title(movie.getTitle())
                 .description(movie.getDescription())
                 .genres(genres)
@@ -128,4 +141,3 @@ public class VideoContentDetailService {
         }
     }
 }
-

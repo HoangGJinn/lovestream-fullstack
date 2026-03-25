@@ -13,6 +13,7 @@ import java.util.List;
 @Builder
 public class VideoContentDetail {
     private String id;
+    private String slug;        // SEO-friendly URL slug (e.g. "avengers-endgame")
     private String title;
     private String description;
 
@@ -34,4 +35,3 @@ public class VideoContentDetail {
     private String watchAction;
     private boolean isFavorited;
 }
-

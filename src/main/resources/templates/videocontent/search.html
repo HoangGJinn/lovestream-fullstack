@@ -99,7 +99,7 @@
                 <h2 class="row-title">Danh sách nội dung</h2>
                 <div class="search-results-grid">
                     <a class="movie-card" th:each="item : ${searchResponse.data}"
-                        th:href="${item.type == 'series'} ? @{/videocontents/{id}(id=${item.id})} : @{/movies/{id}(id=${item.id})}">
+                        th:href="${item.type == 'series'} ? @{/videocontents/{id}(id=${item.id})} : @{/movies/{slug}(slug=${item.slugOrId ?: item.id})}">
                         <img th:src="${item.posterUrl}" class="row-poster" th:alt="${item.title}">
                         <div class="movie-title-overlay">
                             <div class="search-card-title" th:text="${item.title}">Tên phim</div>

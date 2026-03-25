@@ -63,7 +63,7 @@
         <div class="categories-container" th:if="${not #lists.isEmpty(actionMovies)}">
             <h2 class="row-title">Hành Động Kịch Tính</h2>
             <div class="row-posters">
-                <a class="movie-card" th:each="movie : ${actionMovies}" th:href="@{/movies/{id}(id=${movie.id})}">
+                <a class="movie-card" th:each="movie : ${actionMovies}" th:href="@{/movies/{slug}(slug=${movie.slugOrId})}">
                     <img th:src="${movie.getPosterUrl()}" class="row-poster" th:alt="${movie.title}">
                     <div class="movie-title-overlay" th:text="${movie.title}"></div>
                 </a>
@@ -73,7 +73,7 @@
         <div class="categories-container" th:if="${not #lists.isEmpty(dramaMovies)}">
             <h2 class="row-title">Tâm Lý &amp; Tình Cảm</h2>
             <div class="row-posters">
-                <a class="movie-card" th:each="movie : ${dramaMovies}" th:href="@{/movies/{id}(id=${movie.id})}">
+                <a class="movie-card" th:each="movie : ${dramaMovies}" th:href="@{/movies/{slug}(slug=${movie.slugOrId})}">
                     <img th:src="${movie.getPosterUrl()}" class="row-poster" th:alt="${movie.title}">
                     <div class="movie-title-overlay" th:text="${movie.title}"></div>
                 </a>
@@ -83,7 +83,7 @@
         <div class="categories-container" th:if="${not #lists.isEmpty(comedyMovies)}">
             <h2 class="row-title">Hài Hước Giải Trí</h2>
             <div class="row-posters">
-                <a class="movie-card" th:each="movie : ${comedyMovies}" th:href="@{/movies/{id}(id=${movie.id})}">
+                <a class="movie-card" th:each="movie : ${comedyMovies}" th:href="@{/movies/{slug}(slug=${movie.slugOrId})}">
                     <img th:src="${movie.getPosterUrl()}" class="row-poster" th:alt="${movie.title}">
                     <div class="movie-title-overlay" th:text="${movie.title}"></div>
                 </a>
@@ -93,7 +93,7 @@
         <div class="categories-container" th:if="${not #lists.isEmpty(sciFiMovies)}">
             <h2 class="row-title">Khoa Học Viễn Tưởng</h2>
             <div class="row-posters">
-                <a class="movie-card" th:each="movie : ${sciFiMovies}" th:href="@{/movies/{id}(id=${movie.id})}">
+                <a class="movie-card" th:each="movie : ${sciFiMovies}" th:href="@{/movies/{slug}(slug=${movie.slugOrId})}">
                     <img th:src="${movie.getPosterUrl()}" class="row-poster" th:alt="${movie.title}">
                     <div class="movie-title-overlay" th:text="${movie.title}"></div>
                 </a>

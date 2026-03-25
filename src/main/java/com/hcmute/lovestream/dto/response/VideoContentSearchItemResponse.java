@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 public class VideoContentSearchItemResponse {
 
     private final String id;
+    private final String slug;          // SEO-friendly URL slug
     private final String title;
     private final int releaseYear;
     private final String country;
@@ -21,6 +22,7 @@ public class VideoContentSearchItemResponse {
 
     public VideoContentSearchItemResponse(VideoContent videoContent, double score) {
         this.id = videoContent.getId();
+        this.slug = videoContent.getSlug();
         this.title = videoContent.getTitle();
         this.releaseYear = videoContent.getReleaseYear();
         this.country = videoContent.getCountry();
@@ -32,5 +34,12 @@ public class VideoContentSearchItemResponse {
         this.description = videoContent.getDescription();
         this.score = score;
     }
-}
 
+    /**
+     * Trả về slug nếu có, fallback về id.
+     * Dùng trong Thymeleaf: ${item.slugOrId}
+     */
+    public String getSlugOrId() {
+        return (slug != null && !slug.isBlank()) ? slug : id;
+    }
+}
