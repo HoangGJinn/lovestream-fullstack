@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class AuthWebController {
 
-    // Kiểm tra xem user đã đăng nhập chưa
+    // Kiểm tra xem user đã đăng nhập chưa (Sử dụng logic chuẩn bảo mật nhất)
     private boolean isAuthenticated() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         return auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken);

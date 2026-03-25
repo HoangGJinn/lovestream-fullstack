@@ -30,16 +30,7 @@
 </div>
 
 <div class="profile-container">
-    <div class="sidebar">
-        <a href="/home" class="logo-link"><i class="fa-solid fa-arrow-left"></i> Quay lại LoveStream</a>
-        <ul class="menu-list">
-            <li><a href="/account" class="menu-item"><i class="fa-solid fa-house"></i> Tổng quan</a></li>
-            <li><a href="/account/membership" class="menu-item active"><i class="fa-regular fa-credit-card"></i> Tư cách thành viên</a></li>
-            <li><a href="#" class="menu-item"><i class="fa-solid fa-shield-halved"></i> Bảo mật</a></li>
-            <li><a href="#" class="menu-item"><i class="fa-solid fa-laptop-mobile"></i> Thiết bị</a></li>
-            <li><a href="/profile" class="menu-item"><i class="fa-solid fa-users"></i> Hồ sơ</a></li>
-        </ul>
-    </div>
+    <div th:replace="~{fragments/account-sidebar :: sidebar('membership')}"></div>
 
     <div class="main-content membership-wrap">
         <div>
