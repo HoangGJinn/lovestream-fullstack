@@ -67,10 +67,7 @@ public class AdminSeriesWebController {
         return ContentStatus.values();
     }
 
-    @ModelAttribute("seriesAssetTypes")
-    public AssetType[] populateSeriesAssetTypes() {
-        return new AssetType[]{AssetType.POSTER, AssetType.TRAILER};
-    }
+    // @ModelAttribute("seriesAssetTypes") is removed as it's no longer used in the unified UI
 
     // =====================================================================
     //  TV Series endpoints
@@ -232,47 +229,45 @@ public class AdminSeriesWebController {
         return "redirect:/admin/series";
     }
 
-    // Asset endpoints for series
-    @PostMapping("/{id}/assets/url")
-    public String addSeriesAssetFromUrl(
+    // Asset endpoints for series (Streamlined)
+    @PostMapping("/{id}/trailer/url")
+    public String addSeriesTrailerFromUrl(
             @PathVariable String id,
-            @RequestParam("assetType") AssetType assetType,
             @RequestParam("assetUrl") String assetUrl,
             RedirectAttributes redirectAttributes) {
         try {
-            seriesService.addSeriesAssetFromUrl(id, assetType, assetUrl);
-            redirectAttributes.addFlashAttribute("successMessage",
-                    "Th\u00eam t\u00e0i nguy\u00ean " + assetType.name() + " th\u00e0nh c\u00f4ng!");
+            seriesService.addSeriesTrailerFromUrl(id, assetUrl);
+            redirectAttributes.addFlashAttribute("successMessage", "Gắn trailer Cloudinary thành công!");
         } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         } catch (Exception e) {
-            log.error("L\u1ED7i th\u00eam asset series: ", e);
-            redirectAttributes.addFlashAttribute("errorMessage", "Th\u00eam th\u1EA5t b\u1EA1i: " + e.getMessage());
+            log.error("Lỗi gắn trailer series: ", e);
+            redirectAttributes.addFlashAttribute("errorMessage", "Gắn trailer thất bại: " + e.getMessage());
         }
         return "redirect:/admin/series/" + id + "/edit";
     }
 
-    @PostMapping("/{id}/assets/upload")
-    public String uploadSeriesAsset(
+    @PostMapping("/{id}/poster/upload")
+    public String uploadSeriesPoster(
             @PathVariable String id,
-            @RequestParam("assetType") AssetType assetType,
             @RequestParam("file") MultipartFile file,
             RedirectAttributes redirectAttributes) {
         try {
-            seriesService.uploadSeriesAsset(id, assetType, file);
-            redirectAttributes.addFlashAttribute("successMessage",
-                    "T\u1EA3i l\u00ean t\u00e0i nguy\u00ean " + assetType.name() + " th\u00e0nh c\u00f4ng!");
+            seriesService.uploadSeriesPoster(id, file);
+            redirectAttributes.addFlashAttribute("successMessage", "Tải lên poster thành công!");
         } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         } catch (IOException e) {
-            log.error("L\u1ED7i upload asset series: ", e);
-            redirectAttributes.addFlashAttribute("errorMessage", "T\u1EA3i l\u00ean th\u1EA5t b\u1EA1i do l\u1ED7i h\u1EC7 th\u1ED1ng l\u01B0u tr\u1EEF.");
+            log.error("Lỗi upload poster series: ", e);
+            redirectAttributes.addFlashAttribute("errorMessage", "Tải lên thất bại do lỗi hệ thống lưu trữ.");
         } catch (Exception e) {
-            log.error("L\u1ED7i kh\u00f4ng x\u00e1c \u0111\u1ecbnh khi upload asset series: ", e);
-            redirectAttributes.addFlashAttribute("errorMessage", "T\u1EA3i l\u00ean th\u1EA5t b\u1EA1i: " + e.getMessage());
+            log.error("Lỗi khi upload poster series: ", e);
+            redirectAttributes.addFlashAttribute("errorMessage", "Tải lên thất bại: " + e.getMessage());
         }
         return "redirect:/admin/series/" + id + "/edit";
     }
+
+    // Season assets removed per business rule
 
     // =====================================================================
     //  Season endpoints
@@ -398,42 +393,7 @@ public class AdminSeriesWebController {
         return "redirect:/admin/series/" + seriesId + "/edit";
     }
 
-    @PostMapping("/seasons/{seasonId}/assets/url")
-    public String addSeasonAssetFromUrl(
-            @PathVariable String seasonId,
-            @RequestParam("assetUrl") String assetUrl,
-            RedirectAttributes redirectAttributes) {
-        try {
-            seriesService.addSeasonAssetFromUrl(seasonId, assetUrl);
-            redirectAttributes.addFlashAttribute("successMessage", "Th\u00eam poster m\u00f9a th\u00e0nh c\u00f4ng!");
-        } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        } catch (Exception e) {
-            log.error("L\u1ED7i th\u00eam asset season: ", e);
-            redirectAttributes.addFlashAttribute("errorMessage", "Th\u00eam th\u1EA5t b\u1EA1i: " + e.getMessage());
-        }
-        return "redirect:/admin/series/seasons/" + seasonId + "/edit";
-    }
-
-    @PostMapping("/seasons/{seasonId}/assets/upload")
-    public String uploadSeasonAsset(
-            @PathVariable String seasonId,
-            @RequestParam("file") MultipartFile file,
-            RedirectAttributes redirectAttributes) {
-        try {
-            seriesService.uploadSeasonAsset(seasonId, file);
-            redirectAttributes.addFlashAttribute("successMessage", "T\u1EA3i l\u00ean poster m\u00f9a th\u00e0nh c\u00f4ng!");
-        } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        } catch (IOException e) {
-            log.error("L\u1ED7i upload asset season: ", e);
-            redirectAttributes.addFlashAttribute("errorMessage", "T\u1EA3i l\u00ean th\u1EA5t b\u1EA1i do l\u1ED7i h\u1EC7 th\u1ED1ng l\u01B0u tr\u1EEF.");
-        } catch (Exception e) {
-            log.error("L\u1ED7i kh\u00f4ng x\u00e1c \u0111\u1ecbnh khi upload asset season: ", e);
-            redirectAttributes.addFlashAttribute("errorMessage", "T\u1EA3i l\u00ean th\u1EA5t b\u1EA1i: " + e.getMessage());
-        }
-        return "redirect:/admin/series/seasons/" + seasonId + "/edit";
-    }
+    // Season assets removed per business rule
 
     // =====================================================================
     //  Episode endpoints
@@ -565,39 +525,19 @@ public class AdminSeriesWebController {
         return "redirect:/admin/series/seasons/" + seasonId + "/edit";
     }
 
-    @PostMapping("/episodes/{episodeId}/assets/url")
-    public String addEpisodeAssetFromUrl(
+    @PostMapping("/episodes/{episodeId}/video/url")
+    public String addEpisodeVideoFromUrl(
             @PathVariable String episodeId,
             @RequestParam("assetUrl") String assetUrl,
             RedirectAttributes redirectAttributes) {
         try {
-            seriesService.addEpisodeAssetFromUrl(episodeId, assetUrl);
-            redirectAttributes.addFlashAttribute("successMessage", "Th\u00eam video t\u1EADp phim th\u00e0nh c\u00f4ng!");
+            seriesService.addEpisodeVideoFromUrl(episodeId, assetUrl);
+            redirectAttributes.addFlashAttribute("successMessage", "Gắn video tập phim thành công!");
         } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         } catch (Exception e) {
-            log.error("L\u1ED7i th\u00eam asset episode: ", e);
-            redirectAttributes.addFlashAttribute("errorMessage", "Th\u00eam th\u1EA5t b\u1EA1i: " + e.getMessage());
-        }
-        return "redirect:/admin/series/episodes/" + episodeId + "/edit";
-    }
-
-    @PostMapping("/episodes/{episodeId}/assets/upload")
-    public String uploadEpisodeAsset(
-            @PathVariable String episodeId,
-            @RequestParam("file") MultipartFile file,
-            RedirectAttributes redirectAttributes) {
-        try {
-            seriesService.uploadEpisodeAsset(episodeId, file);
-            redirectAttributes.addFlashAttribute("successMessage", "T\u1EA3i l\u00ean video t\u1EADp phim th\u00e0nh c\u00f4ng!");
-        } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        } catch (IOException e) {
-            log.error("L\u1ED7i upload asset episode: ", e);
-            redirectAttributes.addFlashAttribute("errorMessage", "T\u1EA3i l\u00ean th\u1EA5t b\u1EA1i do l\u1ED7i h\u1EC7 th\u1ED1ng l\u01B0u tr\u1EEF.");
-        } catch (Exception e) {
-            log.error("L\u1ED7i kh\u00f4ng x\u00e1c \u0111\u1ecbnh khi upload asset episode: ", e);
-            redirectAttributes.addFlashAttribute("errorMessage", "T\u1EA3i l\u00ean th\u1EA5t b\u1EA1i: " + e.getMessage());
+            log.error("Lỗi gắn video tập phim: ", e);
+            redirectAttributes.addFlashAttribute("errorMessage", "Gắn video thất bại: " + e.getMessage());
         }
         return "redirect:/admin/series/episodes/" + episodeId + "/edit";
     }
