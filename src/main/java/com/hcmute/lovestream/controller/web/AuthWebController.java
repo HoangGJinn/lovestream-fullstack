@@ -21,10 +21,16 @@ public class AuthWebController {
     private String getRedirectUrlBasedOnRole() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getAuthorities() != null) {
-            boolean isAdminOrManager = auth.getAuthorities().stream()
-                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_CONTENT_MANAGER"));
-            if (isAdminOrManager) {
+            boolean isAdmin = auth.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+            if (isAdmin) {
                 return "redirect:/admin/dashboard";
+            }
+
+            boolean isContentManager = auth.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_CONTENT_MANAGER"));
+            if (isContentManager) {
+                return "redirect:/admin/movies";
             }
         }
         return "redirect:/home";

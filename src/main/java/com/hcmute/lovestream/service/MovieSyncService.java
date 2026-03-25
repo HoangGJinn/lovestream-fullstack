@@ -60,7 +60,7 @@ public class MovieSyncService {
                     movie.setDurationMinutes(dto.getRuntime() != null ? dto.getRuntime() : 45);
 
                     if (dto.getImage() != null && dto.getImage().getOriginal() != null) {
-                        MediaAsset poster = new MediaAsset(null, AssetType.POSTER, dto.getImage().getOriginal(), movie, null);
+                        MediaAsset poster = new MediaAsset(null, AssetType.POSTER, dto.getImage().getOriginal(), movie, null, null);
                         List<MediaAsset> assets = new ArrayList<>();
                         assets.add(poster);
                         movie.setMediaAssets(assets);

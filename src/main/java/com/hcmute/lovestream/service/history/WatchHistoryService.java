@@ -5,6 +5,7 @@ import com.hcmute.lovestream.dto.response.WatchHistoryItemResponse;
 import com.hcmute.lovestream.entity.User;
 import com.hcmute.lovestream.entity.VideoContent;
 import com.hcmute.lovestream.entity.WatchHistory;
+import com.hcmute.lovestream.entity.enums.ContentStatus;
 import com.hcmute.lovestream.repository.UserRepository;
 import com.hcmute.lovestream.repository.VideoContentRepository;
 import com.hcmute.lovestream.repository.WatchHistoryRepository;
@@ -30,8 +31,10 @@ public class WatchHistoryService {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
 
-        VideoContent videoContent = videoContentRepository.findById(request.getVideoContentId())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy phim"));
+        // Guard: chỉ ghi lịch sử cho phim ACTIVE
+        VideoContent videoContent = videoContentRepository
+                .findByIdAndStatus(request.getVideoContentId(), ContentStatus.ACTIVE)
+                .orElseThrow(() -> new RuntimeException("Nội dung không tồn tại hoặc đã bị ẩn"));
 
         double progressSeconds = sanitizeNonNegative(request.getCurrentTimeSeconds());
         double durationSeconds = sanitizeDuration(request.getDurationSeconds(), progressSeconds);
@@ -73,6 +76,10 @@ public class WatchHistoryService {
         int percent = calculateProgressPercent(history.getProgressSeconds(), history.getDurationSeconds());
         VideoContent video = history.getVideoContent();
 
+        // Kiểm tra phim còn ACTIVE không — nếu bị ẩn thì không cho click xem tiếp
+        boolean available = video.getStatus() == ContentStatus.ACTIVE;
+        String watchUrl = available ? ("/watch-movie?id=" + video.getId()) : null;
+
         return WatchHistoryItemResponse.builder()
                 .videoContentId(video.getId())
                 .title(video.getTitle())
@@ -83,7 +90,7 @@ public class WatchHistoryService {
                 .progressPercent(percent)
                 .completed(history.isCompleted())
                 .lastWatchedAt(history.getLastWatchedAt())
-                .watchUrl("/watch-movie?id=" + video.getId())
+                .watchUrl(watchUrl)
                 .build();
     }
 
@@ -117,4 +124,3 @@ public class WatchHistoryService {
         return Math.max(normalizedDuration, progress);
     }
 }
-

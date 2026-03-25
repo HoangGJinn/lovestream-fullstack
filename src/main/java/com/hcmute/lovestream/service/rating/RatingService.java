@@ -2,6 +2,8 @@ package com.hcmute.lovestream.service.rating;
 
 import com.hcmute.lovestream.dto.request.RatingRequest;
 import com.hcmute.lovestream.entity.Rating;
+import com.hcmute.lovestream.entity.enums.ContentStatus;
+
 import com.hcmute.lovestream.entity.User;
 import com.hcmute.lovestream.entity.VideoContent;
 import com.hcmute.lovestream.repository.RatingRepository;
@@ -29,6 +31,11 @@ public class RatingService {
 
         VideoContent video = videoRepository.findById(request.getVideoContentId())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy phim"));
+
+        if (video.getStatus() != ContentStatus.ACTIVE) {
+            throw new RuntimeException("Nội dung không tồn tại hoặc đã bị ẩn");
+        }
+
 
         Optional<Rating> existingRatingOpt = ratingRepository.findByUserIdAndVideoContentId(user.getId(), video.getId());
 

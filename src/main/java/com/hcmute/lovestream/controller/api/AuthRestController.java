@@ -82,8 +82,10 @@ public class AuthRestController {
             }
 
             // Nếu là Admin hoặc Content Manager thì cho vào Dashboard
-            if ("ROLE_ADMIN".equals(role) || "ROLE_CONTENT_MANAGER".equals(role)) {
+            if ("ROLE_ADMIN".equals(role)) {
                 redirectUrl = "/admin/dashboard";
+            } else if ("ROLE_CONTENT_MANAGER".equals(role)) {
+                redirectUrl = "/admin/movies";
             }
 
             return ResponseEntity.ok(Map.of(
