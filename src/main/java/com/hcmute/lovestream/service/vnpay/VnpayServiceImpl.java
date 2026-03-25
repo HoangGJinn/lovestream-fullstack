@@ -9,6 +9,7 @@ import com.hcmute.lovestream.entity.enums.SubscriptionStatus;
 import com.hcmute.lovestream.entity.enums.TransactionStatus;
 import com.hcmute.lovestream.repository.PaymentRepository;
 import com.hcmute.lovestream.repository.SubscriptionRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Service
+@Slf4j
 public class VnpayServiceImpl implements VnpayService {
 
     @Autowired
@@ -43,8 +45,7 @@ public class VnpayServiceImpl implements VnpayService {
     }
 
     @Override
-    public String createPaymentWithOrderCode(Vnpay paymentRequest, String orderCode, HttpServletRequest request)
-            throws UnsupportedEncodingException {
+    public String createPaymentWithOrderCode(Vnpay paymentRequest, String orderCode, HttpServletRequest request) throws UnsupportedEncodingException {
 
         // Lấy giá trị trực tiếp trong hàm để đảm bảo Config đã được load
         String vnp_Version = vnpayConfig.getVnp_Version();
@@ -91,8 +92,7 @@ public class VnpayServiceImpl implements VnpayService {
         vnp_Params.put("vnp_CurrCode", "VND");
         // vnp_Params.put("vnp_BankCode", "NCB");
         vnp_Params.put("vnp_TxnRef", orderCode); // Gửi orderCode nhưng key vẫn là vnp_TxnRef
-        vnp_Params.put("vnp_OrderInfo", paymentRequest.getOrderInfo() != null ? paymentRequest.getOrderInfo()
-                : "Thanh toan don hang:" + orderCode);
+        vnp_Params.put("vnp_OrderInfo", paymentRequest.getOrderInfo() != null ? paymentRequest.getOrderInfo() : "Thanh toan don hang:" + orderCode);
         vnp_Params.put("vnp_OrderType", vnp_OrderType);
         vnp_Params.put("vnp_Locale", "vn");
         vnp_Params.put("vnp_ReturnUrl", vnp_ReturnUrl);
@@ -112,17 +112,17 @@ public class VnpayServiceImpl implements VnpayService {
 
         StringBuilder hashData = new StringBuilder();
         StringBuilder query = new StringBuilder();
-        for (Iterator<String> itr = fieldNames.iterator(); itr.hasNext();) {
+        for (Iterator<String> itr = fieldNames.iterator(); itr.hasNext(); ) {
             String fieldName = itr.next();
             String fieldValue = vnp_Params.get(fieldName);
-            if ((fieldValue != null) && (fieldValue.length() > 0)) {
+            if (fieldValue != null && !fieldValue.isEmpty()) {
                 // Build hash data
                 hashData.append(fieldName).append('=')
-                        .append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
+                        .append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
                 // Build query
-                query.append(URLEncoder.encode(fieldName, StandardCharsets.US_ASCII.toString()))
+                query.append(URLEncoder.encode(fieldName, StandardCharsets.US_ASCII))
                         .append('=')
-                        .append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
+                        .append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
 
                 if (itr.hasNext()) {
                     query.append('&');
@@ -132,7 +132,7 @@ public class VnpayServiceImpl implements VnpayService {
         }
         String vnp_SecureHash = VnpayUtil.hmacSHA512(vnpayConfig.getSecretKey(), hashData.toString());
         query.append("&vnp_SecureHash=").append(vnp_SecureHash);
-        return vnpayConfig.getVnp_PayUrl() + "?" + query.toString();
+        return vnpayConfig.getVnp_PayUrl() + "?" + query;
     }
 
     @Override
@@ -161,30 +161,40 @@ public class VnpayServiceImpl implements VnpayService {
             vnpParams.remove("vnp_SecureHashType");
 
             // Verify signature
-            if (!verifySignature(vnpParams, vnp_SecureHash)) {
+            if (isBlank(vnp_SecureHash) || !verifySignature(vnpParams, vnp_SecureHash)) {
+                log.warn("VNPay callback signature invalid. txnRef={} transactionNo={}", vnp_TxnRef, vnp_TransactionNo);
                 return null; // Signature không hợp lệ
             }
 
-            // Tìm Payment theo mã tham chiếu merchant đã gửi đi
-            Payment payment = paymentRepository.findByTransactionCode(vnp_TxnRef)
-                    .orElseGet(() -> paymentRepository.findById(vnp_TxnRef).orElse(null));
+            // Tìm Payment theo mã tham chiếu merchant đã gửi đi hoặc mã giao dịch VNPay
+            Payment payment = findPaymentForCallback(vnp_TxnRef, vnp_TransactionNo);
             if (payment == null) {
+                log.warn("VNPay callback payment not found. txnRef={} transactionNo={}", vnp_TxnRef, vnp_TransactionNo);
                 return null;
             }
 
             boolean isSuccess = "00".equals(vnp_ResponseCode);
-            payment.setTransactionCode(vnp_TransactionNo);
+
+            if (payment.getStatus() == TransactionStatus.SUCCESS) {
+                return payment.getId();
+            }
+
             payment.setStatus(isSuccess ? TransactionStatus.SUCCESS : TransactionStatus.FAILED);
-            paymentRepository.save(payment);
+            if (isSuccess) {
+                assignGatewayTransactionCode(payment, vnp_TransactionNo);
+            }
+
+            paymentRepository.saveAndFlush(payment);
 
             if (isSuccess) {
-                // Chỉ tạo Subscription ACTIVE nếu chưa có
-                boolean hasActiveSub = subscriptionRepository.existsByUserAndStatus(
-                        payment.getUser(), SubscriptionStatus.ACTIVE);
-                if (!hasActiveSub) {
-                    LocalDateTime startDate = LocalDateTime.now();
-                    LocalDateTime endDate = startDate.plusDays(payment.getServicePlan().getDurationDays());
+                Subscription activeSubscription = subscriptionRepository
+                        .findTopByUserAndStatusOrderByEndDateDesc(payment.getUser(), SubscriptionStatus.ACTIVE)
+                        .orElse(null);
 
+                LocalDateTime startDate = LocalDateTime.now();
+                LocalDateTime endDate = startDate.plusDays(payment.getServicePlan().getDurationDays());
+
+                if (activeSubscription == null) {
                     Subscription subscription = Subscription.builder()
                             .user(payment.getUser())
                             .plan(payment.getServicePlan())
@@ -194,6 +204,26 @@ public class VnpayServiceImpl implements VnpayService {
                             .autoRenew(false)
                             .build();
                     subscriptionRepository.save(subscription);
+                } else {
+                    int comparePlanPrice = payment.getServicePlan().getPrice()
+                            .compareTo(activeSubscription.getPlan().getPrice());
+
+                    // Thanh toán nâng cấp: đóng gói cũ và kích hoạt gói mới ngay.
+                    if (comparePlanPrice > 0) {
+                        activeSubscription.setStatus(SubscriptionStatus.CANCELED);
+                        activeSubscription.setEndDate(startDate);
+                        subscriptionRepository.save(activeSubscription);
+
+                        Subscription upgradedSubscription = Subscription.builder()
+                                .user(payment.getUser())
+                                .plan(payment.getServicePlan())
+                                .startDate(startDate)
+                                .endDate(endDate)
+                                .status(SubscriptionStatus.ACTIVE)
+                                .autoRenew(false)
+                                .build();
+                        subscriptionRepository.save(upgradedSubscription);
+                    }
                 }
             }
 
@@ -201,9 +231,42 @@ public class VnpayServiceImpl implements VnpayService {
             return isSuccess ? payment.getId() : null;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("VNPay callback processing failed", e);
             return null;
         }
+    }
+
+    private Payment findPaymentForCallback(String txnRef, String transactionNo) {
+        if (!isBlank(txnRef)) {
+            Payment paymentByRef = paymentRepository.findByTransactionCode(txnRef)
+                    .orElseGet(() -> paymentRepository.findById(txnRef).orElse(null));
+            if (paymentByRef != null) {
+                return paymentByRef;
+            }
+        }
+
+        if (!isBlank(transactionNo) && !"0".equals(transactionNo)) {
+            return paymentRepository.findByTransactionCode(transactionNo).orElse(null);
+        }
+
+        return null;
+    }
+
+    private void assignGatewayTransactionCode(Payment payment, String transactionNo) {
+        if (isBlank(transactionNo) || "0".equals(transactionNo)) {
+            return;
+        }
+
+        if (transactionNo.equals(payment.getTransactionCode())) {
+            return;
+        }
+
+        if (paymentRepository.existsByTransactionCode(transactionNo)) {
+            log.warn("Skip duplicate VNPay transactionCode update. paymentId={} transactionNo={}", payment.getId(), transactionNo);
+            return;
+        }
+
+        payment.setTransactionCode(transactionNo);
     }
 
     private boolean verifySignature(Map<String, String> vnpParams, String vnp_SecureHash) {
@@ -217,11 +280,11 @@ public class VnpayServiceImpl implements VnpayService {
                 String fieldValue = vnpParams.get(fieldName);
                 if (fieldValue != null && !fieldValue.isEmpty()) {
                     hashData.append(fieldName).append('=')
-                            .append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
+                            .append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
                     hashData.append('&');
                 }
             }
-            if (hashData.length() > 0) {
+            if (!hashData.isEmpty()) {
                 hashData.setLength(hashData.length() - 1);
             }
 
@@ -231,7 +294,7 @@ public class VnpayServiceImpl implements VnpayService {
             // So sánh với hash từ VNPAY
             return calculatedHash.equals(vnp_SecureHash);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("VNPay signature verification failed", e);
             return false;
         }
     }

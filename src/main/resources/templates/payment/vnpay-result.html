@@ -7,47 +7,59 @@
         Kết quả thanh toán VNPay - LoveStream
     </title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/css/packages.css">
 </head>
 <body>
-<div class="plans-container" style="max-width: 860px; margin: 40px auto;">
-    <div style="padding: 24px; border: 1px solid #e5e7eb; border-radius: 12px;">
-        <h1 style="margin-top: 0;"
-            th:text="${success ? 'Thanh toán thành công' : 'Thanh toán thất bại'}">
-            Thanh toán
-        </h1>
-
-        <p th:text="${message}"
-           style="margin: 12px 0 18px 0; color: #374151;">
-            Nội dung
-        </p>
-
-        <div th:if="${success}">
-            <h3 style="margin: 18px 0 10px 0;">Thông tin giao dịch</h3>
-            <div style="display: grid; grid-template-columns: 220px 1fr; gap: 10px 18px;">
-                <div style="font-weight: 600; color: #111827;">Payment ID</div>
-                <div th:text="${paymentId}">paymentId</div>
-
-                <div style="font-weight: 600; color: #111827;">Mã giao dịch</div>
-                <div th:text="${transactionCode}">transactionCode</div>
-
-                <div style="font-weight: 600; color: #111827;">Gói</div>
-                <div th:text="${planName}">planName</div>
-
-                <div style="font-weight: 600; color: #111827;">Thời hạn (ngày)</div>
-                <div th:text="${durationDays}">durationDays</div>
-
-                <div style="font-weight: 600; color: #111827;">Số tiền</div>
-                <div th:text="${amount}">amount</div>
+<div class="payment-result">
+    <div class="payment-result__card">
+        <div class="payment-result__status">
+            <span th:if="${success}" class="payment-result__icon payment-result__icon--success">
+                <i class="fa-solid fa-circle-check"></i>
+            </span>
+            <span th:if="${!success}" class="payment-result__icon payment-result__icon--fail">
+                <i class="fa-solid fa-circle-xmark"></i>
+            </span>
+            <div>
+                <h1 class="payment-result__title"
+                    th:text="${resultType == 'SUCCESS' ? 'Thanh toán thành công' : (resultType == 'CANCEL' ? 'Bạn đã hủy giao dịch' : 'Thanh toán thất bại')}">
+                    Thanh toán
+                </h1>
+                <p class="payment-result__message" th:text="${message}">
+                    Nội dung kết quả thanh toán
+                </p>
             </div>
         </div>
 
-        <div style="margin-top: 22px; display: flex; gap: 12px; flex-wrap: wrap;">
-            <a class="btn-purchase" th:href="@{/packages}">
-                Quay lại gói dịch vụ
+        <div th:if="${success}" class="payment-result__grid">
+            <div class="payment-result__label">Payment ID</div>
+            <div th:text="${paymentId}">paymentId</div>
+
+            <div class="payment-result__label">Mã giao dịch</div>
+            <div th:text="${transactionCode}">transactionCode</div>
+
+            <div class="payment-result__label">Gói dịch vụ</div>
+            <div th:text="${planName}">planName</div>
+
+            <div class="payment-result__label">Thời hạn</div>
+            <div th:text="${durationDays + ' ngày'}">durationDays</div>
+
+            <div class="payment-result__label">Số tiền</div>
+            <div th:text="${#numbers.formatDecimal(amount, 0, 'COMMA', 0, 'POINT') + ' ₫'}">amount</div>
+        </div>
+
+        <div class="payment-result__actions">
+            <a th:if="${success}" class="btn-purchase" th:href="@{/home}">
+                <i class="fa-solid fa-play"></i> Xem phim ngay
             </a>
-            <a class="btn-purchase btn-purchase--guest" th:href="@{/account}">
-                Về trang tài khoản
+            <a th:if="${!success}" class="btn-purchase" th:href="@{/packages}">
+                <i class="fa-solid fa-rotate-right"></i> Thử lại
+            </a>
+            <a class="btn-secondary" th:href="@{/home}">
+                Quay về trang chủ
+            </a>
+            <a class="btn-secondary" th:href="@{/account/membership}">
+                Tới trang thành viên
             </a>
         </div>
     </div>

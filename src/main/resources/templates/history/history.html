@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lich su xem - LoveStream</title>
+  <style>
+    /* Toàn bộ CSS phong cách Netflix */
+    :root {
+      --netflix-red: #e50914;
+      --netflix-black: #141414;
+      --netflix-grey: #808080;
+      --text-white: #ffffff;
+      --card-hover: #2f2f2f;
+    }
+
+    body {
+      background-color: var(--netflix-black);
+      color: var(--text-white);
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      padding: 20px 4%;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.7) 10%, transparent);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    h1 {
+      color: var(--text-white);
+      font-size: 2rem;
+      margin-bottom: 20px;
+    }
+
+    .history-container {
+      padding: 0 4% 50px 4%;
+    }
+
+    .history-section {
+      margin-bottom: 40px;
+    }
+
+    .section-title {
+      font-size: 1.2rem;
+      color: var(--netflix-grey);
+      margin-bottom: 15px;
+      border-bottom: 1px solid #333;
+      padding-bottom: 10px;
+    }
+
+    /* Danh sách video */
+    .video-list {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    /* Thẻ video phong cách kết hợp */
+    .video-item {
+      display: flex;
+      background: transparent;
+      border-radius: 4px;
+      overflow: hidden;
+      transition: background 0.3s ease;
+      cursor: pointer;
+      padding: 10px;
+      position: relative;
+    }
+
+    .video-item:hover {
+      background-color: var(--card-hover);
+    }
+
+    /* Thumbnail với thanh tiến trình */
+    .thumbnail-container {
+      position: relative;
+      min-width: 240px;
+      width: 240px;
+      height: 135px;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .thumbnail-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .progress-bar-container {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: rgba(255,255,255,0.3);
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--netflix-red);
+      width: 70%; /* Giả lập % đã xem */
+    }
+
+    /* Chi tiết video */
+    .video-details {
+      padding-left: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .video-title {
+      font-size: 1.1rem;
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: var(--text-white);
+    }
+
+    .resume-timeline {
+      margin: 6px 0 10px;
+      width: min(560px, 90%);
+    }
+
+    .resume-track {
+      width: 100%;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.2);
+      overflow: hidden;
+    }
+
+    .resume-fill {
+      height: 100%;
+      background: var(--netflix-red);
+      border-radius: 999px;
+    }
+
+    .resume-time {
+      margin-top: 5px;
+      font-size: 0.82rem;
+      color: #c6c6c6;
+    }
+
+    .video-description {
+      font-size: 0.85rem;
+      color: #b3b3b3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      max-width: 600px;
+    }
+
+    /* Item phim đã bị ẩn */
+    .video-item.unavailable {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .video-item.unavailable:hover {
+      background-color: transparent;
+    }
+
+    .unavailable-badge {
+      display: inline-block;
+      background: #555;
+      color: #ccc;
+      font-size: 0.76rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-top: 6px;
+    }
+
+    /* Nút xóa lịch sử (đặc trưng YouTube) */
+    .remove-btn {
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--netflix-grey);
+      font-size: 1.5rem;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .video-item:hover .remove-btn {
+      opacity: 1;
+    }
+
+    .remove-btn:hover {
+      color: var(--text-white);
+    }
+
+    @media (max-width: 768px) {
+      .thumbnail-container {
+        min-width: 160px;
+        width: 160px;
+        height: 90px;
+      }
+      .video-description {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Lịch sử xem</h1>
+</header>
+
+<div class="history-container">
+
+  <div class="history-section">
+    <div class="section-title">Gan day</div>
+    <div class="video-list" id="historyList"></div>
+  </div>
+
+</div>
+
+<script>
+  const historyList = document.getElementById('historyList');
+
+  function formatDuration(seconds) {
+    const safe = Number.isFinite(seconds) && seconds > 0 ? Math.floor(seconds) : 0;
+    const h = Math.floor(safe / 3600);
+    const m = Math.floor((safe % 3600) / 60);
+    const s = safe % 60;
+    if (h > 0) {
+      return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
+
+  function escapeHtml(text) {
+    if (!text) return '';
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function renderHistory(items) {
+    if (!Array.isArray(items) || items.length === 0) {
+      historyList.innerHTML = '<p>Ban chua co lich su xem.</p>';
+      return;
+    }
+
+    historyList.innerHTML = items.map(item => {
+      const percent = Number.isFinite(item.progressPercent) ? item.progressPercent : 0;
+      const progressSeconds = Number.isFinite(item.progressSeconds) ? Math.max(0, item.progressSeconds) : 0;
+      const durationSeconds = Number.isFinite(item.durationSeconds) ? Math.max(progressSeconds, item.durationSeconds) : progressSeconds;
+      const rawVideoId = String(item.videoContentId || '');
+      const safeVideoId = encodeURIComponent(rawVideoId);
+      const title = escapeHtml(item.title || 'Khong co tieu de');
+      const description = escapeHtml(item.description || '');
+      const posterUrl = escapeHtml(item.posterUrl || 'https://via.placeholder.com/300x169?text=No+Poster');
+      const startSeconds = Math.floor(progressSeconds);
+      // available=false khi phim đã bị ẩn (backend trả watchUrl=null)
+      const available = item.available !== false; // true by default nếu không có field
+      const baseWatchUrl = available && item.watchUrl ? item.watchUrl : null;
+      const watchUrl = baseWatchUrl ? `${baseWatchUrl}${baseWatchUrl.includes('?') ? '&' : '?'}start=${startSeconds}` : null;
+      const watchedDuration = formatDuration(progressSeconds);
+      const totalDuration = formatDuration(durationSeconds);
+
+      return `
+        <div class="video-item${available ? '' : ' unavailable'}" data-video-id="${escapeHtml(rawVideoId)}"${watchUrl ? ` data-watch-url="${escapeHtml(watchUrl)}"` : ''}>
+          <div class="thumbnail-container">
+            <img src="${posterUrl}" alt="${title}">
+            <div class="progress-bar-container">
+              <div class="progress-fill" style="width: ${percent}%;"></div>
+            </div>
+          </div>
+          <div class="video-details">
+            <div class="video-title">${title}</div>
+            ${!available ? '<span class="unavailable-badge">Nội dung đã bị ẩn</span>' : ''}
+            <div class="resume-timeline">
+              <div class="resume-track">
+                <div class="resume-fill" style="width: ${percent}%;"></div>
+              </div>
+              <div class="resume-time">${watchedDuration} / ${totalDuration}</div>
+            </div>
+            <div class="video-description">${description}</div>
+          </div>
+          <button class="remove-btn" title="Xoa khoi lich su" onclick="removeHistoryItem(event, '${escapeHtml(rawVideoId)}')">&times;</button>
+        </div>
+      `;
+    }).join('');
+
+    historyList.querySelectorAll('.video-item:not(.unavailable)').forEach((card) => {
+      card.addEventListener('click', (event) => {
+        if (event.target.closest('.remove-btn')) {
+          return;
+        }
+        const watchUrl = card.getAttribute('data-watch-url');
+        if (watchUrl) {
+          window.location.href = watchUrl;
+        }
+      });
+    });
+  }
+
+  async function loadHistory() {
+    try {
+      const response = await fetch('/api/v1/history');
+      if (!response.ok) {
+        throw new Error('Khong the tai lich su');
+      }
+      const data = await response.json();
+      renderHistory(data);
+    } catch (error) {
+      historyList.innerHTML = '<p>Khong the tai lich su. Vui long thu lai.</p>';
+      console.error(error);
+    }
+  }
+
+  async function removeHistoryItem(event, videoContentId) {
+    event.stopPropagation();
+    try {
+      const response = await fetch(`/api/v1/history/${videoContentId}`, { method: 'DELETE' });
+      if (!response.ok && response.status !== 204) {
+        throw new Error('Khong the xoa lich su');
+      }
+      await loadHistory();
+    } catch (error) {
+      console.error(error);
+      alert('Xoa lich su that bai');
+    }
+  }
+
+  loadHistory();
+</script>
+
+</body>
+</html>

@@ -10,12 +10,13 @@ import com.hcmute.lovestream.repository.GenreRepository;
 import com.hcmute.lovestream.repository.MediaAssetRepository;
 import com.hcmute.lovestream.repository.MovieRepository;
 import com.hcmute.lovestream.service.admin.movie.AdminMovieManagementService;
+import com.hcmute.lovestream.service.storage.MediaStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import com.hcmute.lovestream.service.storage.MediaStorageService;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -32,42 +33,20 @@ public class AdminMovieManagementServiceImpl implements AdminMovieManagementServ
     private final MediaAssetRepository mediaAssetRepository;
     private final MediaStorageService mediaStorageService;
 
+    // -- 1. Queries (Giữ code gộp hàm của BẠN) --
     @Override
     @Transactional(readOnly = true)
-    public List<Movie> getAllMovies() {
-        return movieRepository.findAllByOrderByTitleAsc();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<Movie> getMoviesByStatus(ContentStatus status) {
-        return movieRepository.findAllByStatusOrderByTitleAsc(status);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<Movie> searchMoviesByTitle(String keyword) {
-        if (keyword == null || keyword.trim().isEmpty()) {
-            return getAllMovies();
+    public Page<Movie> getMovies(String keyword, ContentStatus status, Pageable pageable) {
+        if (keyword != null && !keyword.isBlank() && status != null) {
+            return movieRepository.findByTitleContainingIgnoreCaseAndStatus(keyword.trim(), status, pageable);
         }
-        return movieRepository.findByTitleContainingIgnoreCaseOrderByTitleAsc(keyword);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<Movie> filterMovies(ContentStatus status, String keyword) {
-        boolean hasKeyword = keyword != null && !keyword.trim().isEmpty();
-
-        if (!hasKeyword && status == null) {
-            return getAllMovies();
+        if (status != null) {
+            return movieRepository.findByStatus(status, pageable);
         }
-        if (!hasKeyword) {
-            return getMoviesByStatus(status);
+        if (keyword != null && !keyword.isBlank()) {
+            return movieRepository.findByTitleContainingIgnoreCase(keyword.trim(), pageable);
         }
-        if (status == null) {
-            return searchMoviesByTitle(keyword);
-        }
-        return movieRepository.findByStatusAndTitleContainingIgnoreCaseOrderByTitleAsc(status, keyword);
+        return movieRepository.findAll(pageable);
     }
 
     @Override
@@ -77,15 +56,13 @@ public class AdminMovieManagementServiceImpl implements AdminMovieManagementServ
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy phim lẻ với ID: " + id));
     }
 
+    // -- 2. CRUD Operations --
     @Override
     @Transactional
     public Movie createMovie(MovieUpsertRequest request) {
         Movie movie = new Movie();
         mapRequestToMovie(request, movie);
-
-        // Đảm bảo không ghi đè ID (ID sẽ do Spring Data/JPA tự sinh UUID)
         movie.setId(null);
-
         log.info("Creating new Movie: {}", request.getTitle());
         return movieRepository.save(movie);
     }
@@ -94,59 +71,67 @@ public class AdminMovieManagementServiceImpl implements AdminMovieManagementServ
     @Transactional
     public Movie updateMovie(String id, MovieUpsertRequest request) {
         Movie targetMovie = getMovieById(id);
-        
         mapRequestToMovie(request, targetMovie);
-        
         log.info("Updating Movie ID: {}", id);
         return movieRepository.save(targetMovie);
     }
 
+    // -- 3. Status Management --
     @Override
     @Transactional
-    public void hideMovie(String id) {
+    public void toggleMovieStatus(String id) {
         Movie movie = getMovieById(id);
-        movie.setStatus(ContentStatus.HIDDEN);
-        movieRepository.save(movie);
-        log.info("Hidden Movie ID: {}", id);
+        if (movie.getStatus() == ContentStatus.ACTIVE) {
+            movie.setStatus(ContentStatus.HIDDEN);
+            log.info("Hidden Movie ID: {}", id);
+        } else {
+            movie.setStatus(ContentStatus.ACTIVE);
+            log.info("Restored Movie ID: {}", id);
+        }
     }
 
+    // -- 4. Media Asset Management --
     @Override
     @Transactional
-    public void restoreMovie(String id) {
-        Movie movie = getMovieById(id);
-        movie.setStatus(ContentStatus.ACTIVE);
-        movieRepository.save(movie);
-        log.info("Restored Movie ID: {}", id);
+    public MediaAsset addAssetFromUrl(String movieId, AssetType assetType, String assetUrl) {
+        if (assetUrl == null || assetUrl.isBlank()) {
+            throw new IllegalArgumentException("URL không hợp lệ. Đường dẫn không được để trống!");
+        }
+        if (!assetUrl.contains("res.cloudinary.com")) {
+            throw new IllegalArgumentException("URL không hợp lệ. Chỉ chấp nhận link public từ nền tảng Cloudinary.");
+        }
+        return addAsset(movieId, assetType, assetUrl);
     }
 
+    // Giữ code ghi đè tài nguyên xuất sắc của DEV
     @Override
     @Transactional
     public MediaAsset addAsset(String movieId, AssetType assetType, String assetUrl) {
         Movie movie = getMovieById(movieId);
-        
-        MediaAsset asset = new MediaAsset();
+
+        MediaAsset asset = movie.getMediaAssets().stream()
+                .filter(a -> a.getAssetType() == assetType)
+                .findFirst()
+                .orElse(new MediaAsset());
+
         asset.setAssetType(assetType);
         asset.setAssetUrl(assetUrl);
         asset.setVideoContent(movie);
-        
-        log.info("Adding {} to Movie ID: {}", assetType, movieId);
+
+        log.info("Saving {} to Movie ID: {}", assetType, movieId);
         return mediaAssetRepository.save(asset);
     }
 
     @Override
     @Transactional
     public void removeAsset(String movieId, String assetId) {
-        // Kiểm tra xem Movie có tồn tại không
-        getMovieById(movieId); 
-        
+        getMovieById(movieId);
         MediaAsset asset = mediaAssetRepository.findById(assetId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy Asset với ID: " + assetId));
-                
-        // Xác nhận Asset này thực sự thuộc về bộ phim vừa cung cấp chứ không phải chọc nhầm ID
+
         if (asset.getVideoContent() == null || !asset.getVideoContent().getId().equals(movieId)) {
             throw new RuntimeException("Tài nguyên không thuộc về bộ phim này!");
         }
-
         log.info("Removing Asset {} from Movie ID: {}", assetId, movieId);
         mediaAssetRepository.delete(asset);
     }
@@ -157,11 +142,7 @@ public class AdminMovieManagementServiceImpl implements AdminMovieManagementServ
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("File upload không được để trống!");
         }
-
-        // 1. Upload lên Cloudinary → lấy URL
         String publicUrl = mediaStorageService.upload(file, assetType);
-
-        // 2. Tạo MediaAsset và gắn vào Movie
         return addAsset(movieId, assetType, publicUrl);
     }
 
@@ -170,27 +151,24 @@ public class AdminMovieManagementServiceImpl implements AdminMovieManagementServ
         target.setTitle(request.getTitle());
         target.setDescription(request.getDescription());
         target.setReleaseYear(request.getReleaseYear());
-        
+
         if (request.getReleaseDate() != null) {
             target.setReleaseDate(java.sql.Date.valueOf(request.getReleaseDate()));
         }
-        
+
         target.setDurationMinutes(request.getDurationMinutes());
         target.setAgeRating(request.getAgeRating());
         target.setQuality(request.getQuality());
         target.setStatus(request.getStatus());
 
-        // Xử lý Genres
         List<String> genreIds = request.getGenreIds();
         if (genreIds != null && !genreIds.isEmpty()) {
             List<Genre> selectedGenres = genreRepository.findAllById(genreIds);
-            
-            // Nếu gửi danh sách ID lên nhưng DB tìm mảng ra rỗng hoàn toàn 
-            // có nghĩa là User đang hack DOM HTML thay đổi ID lung tung
+
             if (selectedGenres.isEmpty() || selectedGenres.size() != genreIds.size()) {
-                throw new RuntimeException("Có ít nhất một thể loại không tồn tại trong hệ thống. Vui lòng tải lại trang!");
+                throw new RuntimeException(
+                        "Có ít nhất một thể loại không tồn tại trong hệ thống. Vui lòng tải lại trang!");
             }
-            
             target.setGenres(new HashSet<>(selectedGenres));
         } else {
             target.setGenres(new HashSet<>());
