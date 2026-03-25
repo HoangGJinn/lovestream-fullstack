@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">Quản lý Gói dịch vụ</title>
+
+    <style>
+        :root {
+            --netflix-red: #E50914;
+            --netflix-black: #141414;
+            --netflix-dark-grey: #2f2f2f;
+            --netflix-light-grey: #b3b3b3;
+            --text-white: #ffffff;
+            --success-green: #46d369;
+        }
+
+        body { margin: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: var(--netflix-black); color: var(--text-white); display: flex; }
+
+        /* Sidebar & Layout */
+        .admin-sidebar { width: 250px; height: 100vh; background-color: rgba(0, 0, 0, 0.9); padding: 20px 0; position: fixed; border-right: 1px solid var(--netflix-dark-grey); }
+        .admin-content { margin-left: 250px; padding: 30px; width: calc(100% - 250px); }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+
+        /* ĐÃ BỔ SUNG CSS CHO SIDEBAR Ở ĐÂY */
+        .admin-logo { color: var(--netflix-red); font-size: 28px; font-weight: bold; text-align: center; margin-bottom: 40px; letter-spacing: 2px; }
+        .admin-menu a { display: block; padding: 15px 25px; color: var(--netflix-light-grey); text-decoration: none; font-size: 16px; transition: all 0.3s; }
+        .admin-menu a:hover, .admin-menu a.active { color: var(--text-white); background-color: var(--netflix-dark-grey); border-left: 4px solid var(--netflix-red); }
+
+        /* Plan Cards Layout (Thẻ gói dịch vụ) */
+        .plans-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+
+        .plan-card {
+            background: linear-gradient(145deg, #1e1e1e 0%, #141414 100%);
+            border: 1px solid #404040;
+            border-radius: 12px;
+            padding: 25px;
+            transition: transform 0.3s;
+            position: relative;
+        }
+        .plan-card:hover { transform: translateY(-5px); border-color: var(--netflix-red); box-shadow: 0 10px 20px rgba(229, 9, 20, 0.1); }
+
+        .plan-name { font-size: 24px; font-weight: bold; margin-bottom: 10px; color: var(--netflix-red); }
+        .plan-price { font-size: 36px; font-weight: bold; margin-bottom: 5px; }
+        .plan-duration { color: var(--netflix-light-grey); font-size: 14px; margin-bottom: 25px; }
+
+        .btn-edit { background-color: transparent; color: white; border: 1px solid white; padding: 10px 0; width: 100%; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-edit:hover { background-color: white; color: black; }
+
+        /* Error Banner */
+        .global-error { background-color: rgba(229, 9, 20, 0.2); border-left: 4px solid var(--netflix-red); padding: 15px; margin-bottom: 20px; display: none; }
+
+        /* Modal (Biểu mẫu chỉnh sửa) */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background-color: var(--netflix-dark-grey); padding: 30px; border-radius: 8px; width: 400px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: var(--netflix-light-grey); font-size: 14px;}
+        .form-group input { width: 100%; padding: 10px; box-sizing: border-box; background: #000; border: 1px solid #404040; color: white; border-radius: 4px; }
+
+        /* Highlight lỗi */
+        .input-error { border-color: var(--netflix-red) !important; background-color: rgba(229, 9, 20, 0.05) !important; }
+        .error-message { color: #E50914; font-size: 13px; margin-top: 5px; display: none; }
+
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px; }
+        .btn-secondary { background: transparent; color: white; border: 1px solid #b3b3b3; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+        .btn-primary { background-color: var(--netflix-red); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{admin/fragments/sidebar :: sidebar(activeMenu='plans')}"></div>
+
+<div class="admin-content">
+    <div class="admin-header">
+        <h2>Quản lý Gói dịch vụ</h2>
+        <div>Xin chào, <b>Admin</b></div>
+    </div>
+
+    <div class="global-error" id="loadErrorMsg">Không thể tải dữ liệu gói dịch vụ lúc này.</div>
+
+    <div class="plans-container" id="plansContainer">
+        <p style="color: var(--netflix-light-grey);">Đang tải dữ liệu...</p>
+    </div>
+</div>
+
+<div class="modal-overlay" id="editPlanModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="margin: 0;">Chỉnh sửa gói dịch vụ</h3>
+        </div>
+
+        <div class="error-message" id="formErrorMsg" style="margin-bottom: 15px; padding: 10px; background: rgba(229, 9, 20, 0.1); border-radius: 4px;"></div>
+
+        <input type="hidden" id="editPlanId">
+
+        <div class="form-group">
+            <label>Tên gói</label>
+            <input type="text" id="editPlanName" placeholder="Nhập tên gói">
+        </div>
+
+        <div class="form-group">
+            <label>Giá tiền (VNĐ)</label>
+            <input type="number" id="editPlanPrice" placeholder="Nhập giá tiền">
+            <div class="error-message" id="priceErrorMsg">Giá tiền không hợp lệ.</div>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="closeModal()">Hủy</button>
+            <button class="btn-primary" onclick="submitUpdatePlan()">Cập nhật</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => loadPlans());
+
+    function loadPlans() {
+        fetch('/api/v1/admin/plans')
+            .then(res => {
+                if (!res.ok) throw new Error('Network error');
+                return res.json();
+            })
+            .then(data => renderPlans(data))
+            .catch(err => {
+                console.error("Lỗi:", err);
+                document.getElementById('plansContainer').innerHTML = '';
+                document.getElementById('loadErrorMsg').style.display = 'block';
+            });
+    }
+
+    function renderPlans(plans) {
+        const container = document.getElementById('plansContainer');
+        container.innerHTML = '';
+
+        plans.forEach(plan => {
+            const formattedPrice = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(plan.price);
+
+            container.innerHTML += `
+                <div class="plan-card">
+                    <div class="plan-name">${plan.name}</div>
+                    <div class="plan-price">${formattedPrice}</div>
+
+                    <div class="plan-duration">Thời hạn: ${plan.durationDays} ngày</div>
+
+                    <button class="btn-edit" onclick="openModal('${plan.id}', '${plan.name}', ${plan.price})">Chỉnh sửa</button>
+                </div>
+            `;
+        });
+    }
+
+    function openModal(id, name, price) {
+        document.getElementById('editPlanId').value = id;
+        document.getElementById('editPlanName').value = name;
+        document.getElementById('editPlanPrice').value = price;
+
+        clearErrors();
+        document.getElementById('editPlanModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('editPlanModal').style.display = 'none';
+        clearErrors();
+    }
+
+    function clearErrors() {
+        document.getElementById('formErrorMsg').style.display = 'none';
+        document.getElementById('priceErrorMsg').style.display = 'none';
+        document.getElementById('editPlanPrice').classList.remove('input-error');
+        document.getElementById('editPlanName').classList.remove('input-error');
+    }
+
+    function submitUpdatePlan() {
+        clearErrors();
+
+        const id = document.getElementById('editPlanId').value;
+        const name = document.getElementById('editPlanName').value.trim();
+        const priceVal = document.getElementById('editPlanPrice').value;
+
+        if (!name || priceVal === '') {
+            document.getElementById('formErrorMsg').innerText = "Vui lòng điền đầy đủ thông tin bắt buộc";
+            document.getElementById('formErrorMsg').style.display = 'block';
+            if(!name) document.getElementById('editPlanName').classList.add('input-error');
+            if(priceVal === '') document.getElementById('editPlanPrice').classList.add('input-error');
+            return;
+        }
+
+        const price = Number(priceVal);
+
+        if (isNaN(price) || price < 0) {
+            document.getElementById('editPlanPrice').classList.add('input-error');
+            document.getElementById('priceErrorMsg').innerText = "Giá tiền không hợp lệ";
+            document.getElementById('priceErrorMsg').style.display = 'block';
+            return;
+        }
+
+        const payload = {
+            name: name,
+            price: price
+        };
+
+        fetch(`/api/v1/admin/plans/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                document.getElementById('formErrorMsg').innerText = data.error;
+                document.getElementById('formErrorMsg').style.display = 'block';
+            } else {
+                alert('✅ ' + data.message);
+                closeModal();
+                loadPlans();
+            }
+        })
+        .catch(err => {
+            console.error('Lỗi kết nối:', err);
+            alert("Lỗi kết nối đến máy chủ!");
+        });
+    }
+</script>
+</body>
+</html>
