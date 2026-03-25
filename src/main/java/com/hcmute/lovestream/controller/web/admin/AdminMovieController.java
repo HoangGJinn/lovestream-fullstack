@@ -1,11 +1,13 @@
 package com.hcmute.lovestream.controller.web.admin;
 
 import com.hcmute.lovestream.dto.request.admin.movie.MovieUpsertRequest;
+import com.hcmute.lovestream.entity.ContentCredit;
 import com.hcmute.lovestream.entity.Genre;
 import com.hcmute.lovestream.entity.Movie;
 import com.hcmute.lovestream.entity.enums.AgeRating;
 import com.hcmute.lovestream.entity.enums.AssetType;
 import com.hcmute.lovestream.entity.enums.ContentStatus;
+import com.hcmute.lovestream.entity.enums.CreditType;
 import com.hcmute.lovestream.entity.enums.Quality;
 import com.hcmute.lovestream.repository.GenreRepository;
 import com.hcmute.lovestream.service.admin.movie.AdminMovieManagementService;
@@ -140,6 +142,17 @@ public class AdminMovieController {
                         .quality(movie.getQuality())
                         .status(movie.getStatus())
                         .genreIds(movie.getGenres().stream().map(Genre::getId).toList())
+                        .country(movie.getCountry())
+                        .directorNames(movie.getContentCredits() == null ? ""
+                                : movie.getContentCredits().stream()
+                                        .filter(c -> c.getCreditType() == CreditType.DIRECTOR)
+                                        .map(c -> c.getPerson().getFullName())
+                                        .collect(java.util.stream.Collectors.joining(", ")))
+                        .castNames(movie.getContentCredits() == null ? ""
+                                : movie.getContentCredits().stream()
+                                        .filter(c -> c.getCreditType() == CreditType.CAST)
+                                        .map(c -> c.getPerson().getFullName())
+                                        .collect(java.util.stream.Collectors.joining(", ")))
                         .build();
 
                 model.addAttribute("movieUpsertRequest", request);

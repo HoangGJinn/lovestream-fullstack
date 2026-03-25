@@ -160,10 +160,10 @@
         <div class="form-card" th:if="${tvSeriesUpsertRequest.id != null}">
             <form th:action="@{/admin/series/{id}/assets/upload(id=${tvSeriesUpsertRequest.id})}"
                   method="post" enctype="multipart/form-data" class="upload-section">
-                <div class="form-section-title">Tải lên t\u00e0i nguy\u00ean Series (POSTER, TRAILER)</div>
+                <div class="form-section-title">Tải lên tài nguyên Series (POSTER, TRAILER)</div>
                 <div class="form-row two-col">
                     <div class="form-group">
-                        <label for="seriesAssetTypeUpload">Loại t\u00e0i nguy\u00ean <span class="required">*</span></label>
+                        <label for="seriesAssetTypeUpload">Loại tài nguyên <span class="required">*</span></label>
                         <select id="seriesAssetTypeUpload" name="assetType" class="form-control" required>
                             <option value="">-- Chọn loại --</option>
                             <option th:each="at : ${seriesAssetTypes}" th:value="${at}" th:text="${at}"></option>
