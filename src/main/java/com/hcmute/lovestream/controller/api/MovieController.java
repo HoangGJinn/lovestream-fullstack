@@ -39,11 +39,19 @@ public class MovieController {
     }
 
     private boolean extractVip(Authentication authentication) {
-        Object details = authentication.getDetails();
-        if (!(details instanceof java.util.Map<?, ?> detailMap)) {
-            return false;
+        // isVip đang được đặt trong principal ở JwtAuthenticationFilter.
+        // authentication.getDetails() mặc định là WebAuthenticationDetails nên sẽ không chứa isVip.
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof java.util.Map<?, ?> principalMap) {
+            return Boolean.TRUE.equals(principalMap.get("isVip"));
         }
-        return Boolean.TRUE.equals(detailMap.get("isVip"));
+
+        // Fallback (nếu nơi khác có set details là Map)
+        Object details = authentication.getDetails();
+        if (details instanceof java.util.Map<?, ?> detailMap) {
+            return Boolean.TRUE.equals(detailMap.get("isVip"));
+        }
+        return false;
     }
 }
 

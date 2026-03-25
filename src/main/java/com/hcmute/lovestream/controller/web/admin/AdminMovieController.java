@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -30,11 +31,9 @@ import java.util.List;
 public class AdminMovieController {
 
     private final AdminMovieManagementService movieManagementService;
-    private final GenreRepository genreRepository; // Tiêm vào để load Option cho UI thẻ Select
+    private final GenreRepository genreRepository;
 
     // --- GLOBAL MODEL ATTRIBUTES ---
-    // Các Helper Method này sẽ được gọi tự động để nạp Data vào Model
-    // (nhờ đó không cần gõ Model.addAttribute nhiều lần ở các hàm Render Form)
     @ModelAttribute("allGenres")
     public List<Genre> populateGenres() {
         return genreRepository.findAll();
@@ -55,9 +54,15 @@ public class AdminMovieController {
         return ContentStatus.values();
     }
 
+    // ĐÃ SỬA LỖI Ở ĐÂY: Thay BACKGROUND và MOVIE_VIDEO bằng FULL_VIDEO
+    @ModelAttribute("allAssetTypes")
+    public AssetType[] populateAssetTypes() {
+        return new AssetType[]{AssetType.POSTER, AssetType.TRAILER, AssetType.FULL_VIDEO};
+    }
+
     // --- ROUTES Thực Thi ---
 
-    // 1. Mở trang Danh Sách (Gồm Lọc + Core List)
+    // 1. Mở trang Danh Sách
     @GetMapping
     public String listMovies(
             @RequestParam(required = false) ContentStatus status,
@@ -65,21 +70,21 @@ public class AdminMovieController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             Model model) {
+
         int safePage = Math.max(page, 0);
         int safeSize = Math.min(Math.max(size, 1), 100);
+        Pageable pageable = PageRequest.of(safePage, safeSize);
 
-        Page<Movie> moviePage = movieManagementService.filterMovies(
-                status,
-                keyword,
-                PageRequest.of(safePage, safeSize)
-        );
+        Page<Movie> moviePage = movieManagementService.getMovies(keyword, status, pageable);
 
         model.addAttribute("movies", moviePage.getContent());
         model.addAttribute("moviePage", moviePage);
         model.addAttribute("currentPage", safePage);
         model.addAttribute("pageSize", safeSize);
+        model.addAttribute("totalPages", moviePage.getTotalPages());
         model.addAttribute("currentStatus", status);
         model.addAttribute("currentKeyword", keyword);
+
         return "admin/movies/list";
     }
 
@@ -89,7 +94,7 @@ public class AdminMovieController {
         if (!model.containsAttribute("movieUpsertRequest")) {
             model.addAttribute("movieUpsertRequest", new MovieUpsertRequest());
         }
-        return "admin/movies/form"; 
+        return "admin/movies/form";
     }
 
     // 3. Xử lý lưu Tạo Mới
@@ -119,11 +124,8 @@ public class AdminMovieController {
     @GetMapping("/{id}/edit")
     public String showEditForm(@PathVariable String id, Model model, RedirectAttributes redirectAttributes) {
         try {
-            // Lấy thông tin phim cũ
             Movie movie = movieManagementService.getMovieById(id);
-            
-            // Map thủ công thông tin entity sang DTO cho view 
-            // Nếu model chưa mang theo movieUpsertRequest do redirect fail
+
             if (!model.containsAttribute("movieUpsertRequest")) {
                 MovieUpsertRequest request = MovieUpsertRequest.builder()
                         .id(movie.getId())
@@ -135,7 +137,6 @@ public class AdminMovieController {
                         .ageRating(movie.getAgeRating())
                         .quality(movie.getQuality())
                         .status(movie.getStatus())
-                        // Convert cấu trúc Set<Genre> thành List<String> 
                         .genreIds(movie.getGenres().stream().map(Genre::getId).toList())
                         .build();
 
@@ -176,29 +177,23 @@ public class AdminMovieController {
     @PostMapping("/{id}/hide")
     public String hideMovie(@PathVariable String id, RedirectAttributes redirectAttributes) {
         try {
-            movieManagementService.hideMovie(id);
-            redirectAttributes.addFlashAttribute("successMessage", "Đã ẩn phim.");
+            movieManagementService.toggleMovieStatus(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Đã thay đổi trạng thái phim.");
         } catch (RuntimeException e) {
-            log.error("Lỗi ẩn phim: ", e);
+            log.error("Lỗi thay đổi trạng thái phim: ", e);
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
         return "redirect:/admin/movies";
-    }
-
-    @ModelAttribute("allAssetTypes")
-    public AssetType[] populateAssetTypes() {
-        // Only offer asset types relevant to a Movie (exclude EPISODE_VIDEO)
-        return new AssetType[]{AssetType.POSTER, AssetType.TRAILER, AssetType.FULL_VIDEO};
     }
 
     // 7. Action: Khôi phục phim nhanh
     @PostMapping("/{id}/restore")
     public String restoreMovie(@PathVariable String id, RedirectAttributes redirectAttributes) {
         try {
-            movieManagementService.restoreMovie(id);
-            redirectAttributes.addFlashAttribute("successMessage", "Đã khôi phục trạng thái phim.");
+            movieManagementService.toggleMovieStatus(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Đã thay đổi trạng thái phim.");
         } catch (RuntimeException e) {
-            log.error("Lỗi khôi phục phim: ", e);
+            log.error("Lỗi thay đổi trạng thái phim: ", e);
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
         return "redirect:/admin/movies";
@@ -248,4 +243,3 @@ public class AdminMovieController {
         return "redirect:/admin/movies/" + id + "/edit";
     }
 }
-
