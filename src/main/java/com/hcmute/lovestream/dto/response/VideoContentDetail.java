@@ -32,5 +32,6 @@ public class VideoContentDetail {
 
     private boolean canWatch;
     private String watchAction;
+    private boolean isFavorited;
 }
 

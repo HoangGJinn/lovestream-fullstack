@@ -36,4 +36,6 @@ public interface VideoContentRepository extends JpaRepository<VideoContent, Stri
     @Override
     @EntityGraph(attributePaths = {"mediaAssets"})
     Optional<VideoContent> findById(String id);
+
+    Optional<VideoContent> findByIdAndStatus(String id, ContentStatus status);
 }

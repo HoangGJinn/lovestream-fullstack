@@ -154,6 +154,26 @@
       max-width: 600px;
     }
 
+    /* Item phim đã bị ẩn */
+    .video-item.unavailable {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .video-item.unavailable:hover {
+      background-color: transparent;
+    }
+
+    .unavailable-badge {
+      display: inline-block;
+      background: #555;
+      color: #ccc;
+      font-size: 0.76rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-top: 6px;
+    }
+
     /* Nút xóa lịch sử (đặc trưng YouTube) */
     .remove-btn {
       position: absolute;
@@ -244,14 +264,15 @@
       const description = escapeHtml(item.description || '');
       const posterUrl = escapeHtml(item.posterUrl || 'https://via.placeholder.com/300x169?text=No+Poster');
       const startSeconds = Math.floor(progressSeconds);
-      const baseWatchUrl = item.watchUrl || `/watch-movie?id=${safeVideoId}`;
-      const joiner = baseWatchUrl.includes('?') ? '&' : '?';
-      const watchUrl = `${baseWatchUrl}${joiner}start=${startSeconds}`;
+      // available=false khi phim đã bị ẩn (backend trả watchUrl=null)
+      const available = item.available !== false; // true by default nếu không có field
+      const baseWatchUrl = available && item.watchUrl ? item.watchUrl : null;
+      const watchUrl = baseWatchUrl ? `${baseWatchUrl}${baseWatchUrl.includes('?') ? '&' : '?'}start=${startSeconds}` : null;
       const watchedDuration = formatDuration(progressSeconds);
       const totalDuration = formatDuration(durationSeconds);
 
       return `
-        <div class="video-item" data-video-id="${escapeHtml(rawVideoId)}" data-watch-url="${escapeHtml(watchUrl)}">
+        <div class="video-item${available ? '' : ' unavailable'}" data-video-id="${escapeHtml(rawVideoId)}"${watchUrl ? ` data-watch-url="${escapeHtml(watchUrl)}"` : ''}>
           <div class="thumbnail-container">
             <img src="${posterUrl}" alt="${title}">
             <div class="progress-bar-container">
@@ -260,6 +281,7 @@
           </div>
           <div class="video-details">
             <div class="video-title">${title}</div>
+            ${!available ? '<span class="unavailable-badge">Nội dung đã bị ẩn</span>' : ''}
             <div class="resume-timeline">
               <div class="resume-track">
                 <div class="resume-fill" style="width: ${percent}%;"></div>
@@ -273,7 +295,7 @@
       `;
     }).join('');
 
-    historyList.querySelectorAll('.video-item').forEach((card) => {
+    historyList.querySelectorAll('.video-item:not(.unavailable)').forEach((card) => {
       card.addEventListener('click', (event) => {
         if (event.target.closest('.remove-btn')) {
           return;

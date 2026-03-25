@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phim Yêu Thích - LoveStream</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/profile.css">
+    <link rel="stylesheet" href="/css/user-menu.css">
+</head>
+<body>
+
+<div style="height: 70px; display: flex; align-items: center; padding: 0 40px; border-bottom: 1px solid #e5e5e5; background: #fff;">
+    <a href="/home" style="color: #e50914; font-size: 28px; font-weight: 900; text-decoration: none; letter-spacing: -1px;">LoveStream</a>
+    
+    <div style="margin-left: auto;" th:insert="~{fragments/user-menu :: userMenu(${currentUser}, 'light')}"></div>
+</div>
+
+<div class="profile-container">
+    
+    <div th:replace="~{fragments/account-sidebar :: sidebar('favorites')}"></div>
+
+    <div class="main-content">
+        <h1 class="page-title">Phim Yêu Thích Của Tôi</h1>
+        <p class="page-subtitle">Danh sách những cực phẩm bạn đã lưu lại</p>
+
+        <div id="favorite-movies-container" style="display: flex; flex-wrap: wrap; gap: 17px; margin-top: 30px;">
+            <p style="color: #666; font-size: 14px;">Đang tải danh sách phim...</p>
+        </div>
+    </div>
+    
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", async function() {
+    const container = document.getElementById("favorite-movies-container");
+    
+    try {
+        const response = await fetch('/api/favorites', {
+            method: 'GET'
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+        
+            if (result.status === 'empty') {
+                container.innerHTML = `
+                    <div style="width: 100%; text-align: center; padding: 50px; border: 2px dashed #e6e6e6; border-radius: 8px;">
+                        <i class="fa-regular fa-folder-open" style="font-size: 55px; color: #ccc; margin-bottom: 15px;"></i>
+                        <p style="color: #666; font-size: 16px;">${result.message}</p>
+                        <a href="/movies" style="display: inline-block; margin-top: 15px; color: #e50914; font-weight: bold; text-decoration: none; border: 1px solid #e50914; padding: 10px 20px; border-radius: 5px;">Khám phá phim ngay &rarr;</a>
+                    </div>`;
+            } 
+            
+            else {
+                let html = '';
+                result.data.forEach(movie => {
+                    const detailUrl = `/movies/${movie.videoId}`; 
+                    
+                    html += `
+                        <div style="width: 185px; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: transform 0.2s;" 
+                             onmouseover="this.style.transform='translateY(-5px)'" 
+                             onmouseout="this.style.transform='translateY(0)'">
+                             
+                            <a href="${detailUrl}" style="text-decoration: none; color: inherit; display: block;">
+                                <img src="${movie.posterUrl}" alt="${movie.title}" style="width: 100%; height: 260px; object-fit: cover;">
+                                <div style="padding: 12px;">
+                                    <h4 style="margin: 0 0 5px 0; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${movie.title}">${movie.title}</h4>
+                                    <p style="margin: 0; font-size: 13px; color: #666;">${movie.releaseYear} • ⭐ ${(movie.rating || 0).toFixed(1)}</p>
+                                </div>
+                            </a>
+                            
+                            <div style="padding: 0 12px 12px 12px;">
+                                <button onclick="removeFav('${movie.videoId}')" style="width: 100%; padding: 8px; background: #fcebeb; color: #d90000; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; transition: background 0.2s;" onmouseover="this.style.background='#f6d6d6'" onmouseout="this.style.background='#fcebeb'">
+                                    <i class="fa-solid fa-trash"></i> Bỏ yêu thích
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            }
+            
+        } else {
+            container.innerHTML = `
+                <div style="background-color: #fff3cd; color: #856404; padding: 25px; border-radius: 8px; border: 1px solid #ffeeba; width: 100%;">
+                    <h3 style="margin-top:0;">🔒 Tính năng dành riêng cho Hội Viên</h3>
+                    <p>${result.message || 'Hãy nạp tiền gia hạn Gói dịch vụ LoveStream để tận hưởng tất cả kho tàng phim yêu thích nhé!'}</p>
+                    <a href="/account/membership" style="display: inline-block; background: #e50914; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight:bold; margin-top: 10px;">
+                        Đăng ký gói ngay
+                    </a>
+                </div>
+            `;
+        }
+    } catch (error) {
+        container.innerHTML = `<p style="color: red;">Lỗi kết nối máy chủ! Đang khắc phục!</p>`;
+    }
+});
+
+async function removeFav(videoId) {
+    if(!confirm("Bạn có chắc chắn muốn bỏ bộ phim này khỏi danh sách cực phẩm không?")) return;
+    
+    try {
+        const response = await fetch(`/api/favorites/${videoId}`, { method: 'DELETE' });
+        if(response.ok) {
+            alert("Đã xóa xong!");
+            location.reload(); 
+        } else {
+            alert("Đã có lỗi xảy ra khi xóa phim!");
+        }
+    } catch(err) {
+        alert("Lỗi tín hiệu mạng!");
+    }
+}
+</script>
+
+</body>
+</html>

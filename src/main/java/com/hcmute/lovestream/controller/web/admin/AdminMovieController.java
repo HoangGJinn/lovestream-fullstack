@@ -1,11 +1,13 @@
 package com.hcmute.lovestream.controller.web.admin;
 
 import com.hcmute.lovestream.dto.request.admin.movie.MovieUpsertRequest;
+import com.hcmute.lovestream.entity.ContentCredit;
 import com.hcmute.lovestream.entity.Genre;
 import com.hcmute.lovestream.entity.Movie;
 import com.hcmute.lovestream.entity.enums.AgeRating;
 import com.hcmute.lovestream.entity.enums.AssetType;
 import com.hcmute.lovestream.entity.enums.ContentStatus;
+import com.hcmute.lovestream.entity.enums.CreditType;
 import com.hcmute.lovestream.entity.enums.Quality;
 import com.hcmute.lovestream.repository.GenreRepository;
 import com.hcmute.lovestream.service.admin.movie.AdminMovieManagementService;
@@ -57,7 +59,7 @@ public class AdminMovieController {
     // ĐÃ SỬA LỖI Ở ĐÂY: Thay BACKGROUND và MOVIE_VIDEO bằng FULL_VIDEO
     @ModelAttribute("allAssetTypes")
     public AssetType[] populateAssetTypes() {
-        return new AssetType[]{AssetType.POSTER, AssetType.TRAILER, AssetType.FULL_VIDEO};
+        return new AssetType[] { AssetType.POSTER, AssetType.TRAILER, AssetType.FULL_VIDEO };
     }
 
     // --- ROUTES Thực Thi ---
@@ -132,12 +134,25 @@ public class AdminMovieController {
                         .title(movie.getTitle())
                         .description(movie.getDescription())
                         .releaseYear(movie.getReleaseYear())
-                        .releaseDate(movie.getReleaseDate() != null ? new java.sql.Date(movie.getReleaseDate().getTime()).toLocalDate() : null)
+                        .releaseDate(movie.getReleaseDate() != null
+                                ? new java.sql.Date(movie.getReleaseDate().getTime()).toLocalDate()
+                                : null)
                         .durationMinutes(movie.getDurationMinutes())
                         .ageRating(movie.getAgeRating())
                         .quality(movie.getQuality())
                         .status(movie.getStatus())
                         .genreIds(movie.getGenres().stream().map(Genre::getId).toList())
+                        .country(movie.getCountry())
+                        .directorNames(movie.getContentCredits() == null ? ""
+                                : movie.getContentCredits().stream()
+                                        .filter(c -> c.getCreditType() == CreditType.DIRECTOR)
+                                        .map(c -> c.getPerson().getFullName())
+                                        .collect(java.util.stream.Collectors.joining(", ")))
+                        .castNames(movie.getContentCredits() == null ? ""
+                                : movie.getContentCredits().stream()
+                                        .filter(c -> c.getCreditType() == CreditType.CAST)
+                                        .map(c -> c.getPerson().getFullName())
+                                        .collect(java.util.stream.Collectors.joining(", ")))
                         .build();
 
                 model.addAttribute("movieUpsertRequest", request);

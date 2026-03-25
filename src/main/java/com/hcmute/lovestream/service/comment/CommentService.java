@@ -4,7 +4,9 @@ import com.hcmute.lovestream.dto.request.CommentRequest;
 import com.hcmute.lovestream.entity.Comment;
 import com.hcmute.lovestream.entity.User;
 import com.hcmute.lovestream.entity.VideoContent;
+import com.hcmute.lovestream.entity.enums.ContentStatus;
 import com.hcmute.lovestream.entity.enums.UserStatus;
+
 import com.hcmute.lovestream.repository.CommentRepository;
 import com.hcmute.lovestream.repository.UserRepository;
 import com.hcmute.lovestream.repository.VideoContentRepository;
@@ -40,6 +42,9 @@ public class CommentService {
 
         if(request.getVideoContentId() != null){
             VideoContent videoContent = videoContentRepository.findById(request.getVideoContentId()).orElseThrow();
+            if (videoContent.getStatus() != ContentStatus.ACTIVE) {
+                throw new RuntimeException("Nội dung không tồn tại hoặc đã bị ẩn");
+            }
             comment.setVideo(videoContent);
         }
 

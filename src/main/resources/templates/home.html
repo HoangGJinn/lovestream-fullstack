@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LoveStream - Trang chủ</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans:wght@400;600;700;800;900&display=swap">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans:wght@400;600;700;800;900&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/css/home.css">
     <link rel="stylesheet" href="/css/user-menu.css">
     <link rel="stylesheet" href="/css/packages.css">
 </head>
+
 <body>
 
 <div class="navbar" id="navbar">
@@ -39,118 +42,120 @@
     </div>
 </div>
 
-<div class="hero">
-    <div class="hero-gradient"></div>
-    <div class="hero-content">
-        <h1 class="movie-title">The Witcher</h1>
-        <p class="movie-desc">
-            Geralt xứ Rivia, một thợ săn quái vật đột biến, dấn thân vào hành trình đi tìm định mệnh của mình trong một thế giới hỗn loạn, nơi mà con người đôi khi còn độc ác hơn cả quái thú.
-        </p>
-        <div th:replace="~{plans/banner :: packageCta(${hasActiveSub}, ${isAuthenticated}, false)}"></div>
-        <div class="btn-group">
-            <button class="btn btn-play"><i class="fa-solid fa-play"></i> Phát</button>
-            <button class="btn btn-info"><i class="fa-solid fa-circle-info"></i> Thông tin khác</button>
-        </div>
-    </div>
-</div>
-
-<div class="main-content">
-
-    <div class="categories-container" th:if="${not #lists.isEmpty(actionMovies)}">
-        <h2 class="row-title">Hành Động Kịch Tính</h2>
-        <div class="row-posters">
-            <a class="movie-card" th:each="movie : ${actionMovies}" th:href="@{/movies/{id}(id=${movie.id})}">
-                <img th:src="${movie.getPosterUrl()}" class="row-poster" th:alt="${movie.title}">
-                <div class="movie-title-overlay" th:text="${movie.title}"></div>
-            </a>
+    <div class="hero">
+        <div class="hero-gradient"></div>
+        <div class="hero-content">
+            <h1 class="movie-title">The Witcher</h1>
+            <p class="movie-desc">
+                Geralt xứ Rivia, một thợ săn quái vật đột biến, dấn thân vào hành trình đi tìm định mệnh của mình trong
+                một thế giới hỗn loạn, nơi mà con người đôi khi còn độc ác hơn cả quái thú.
+            </p>
+            <div th:replace="~{plans/banner :: packageCta(${hasActiveSub}, ${isAuthenticated}, false)}"></div>
+            <div class="btn-group">
+                <button class="btn btn-play"><i class="fa-solid fa-play"></i> Phát</button>
+                <button class="btn btn-info"><i class="fa-solid fa-circle-info"></i> Thông tin khác</button>
+            </div>
         </div>
     </div>
 
-    <div class="categories-container" th:if="${not #lists.isEmpty(dramaMovies)}">
-        <h2 class="row-title">Tâm Lý & Tình Cảm</h2>
-        <div class="row-posters">
-            <a class="movie-card" th:each="movie : ${dramaMovies}" th:href="@{/movies/{id}(id=${movie.id})}">
-                <img th:src="${movie.getPosterUrl()}" class="row-poster" th:alt="${movie.title}">
-                <div class="movie-title-overlay" th:text="${movie.title}"></div>
-            </a>
+    <div class="main-content">
+
+        <div class="categories-container" th:if="${not #lists.isEmpty(actionMovies)}">
+            <h2 class="row-title">Hành Động Kịch Tính</h2>
+            <div class="row-posters">
+                <a class="movie-card" th:each="movie : ${actionMovies}" th:href="@{/movies/{id}(id=${movie.id})}">
+                    <img th:src="${movie.getPosterUrl()}" class="row-poster" th:alt="${movie.title}">
+                    <div class="movie-title-overlay" th:text="${movie.title}"></div>
+                </a>
+            </div>
         </div>
+
+        <div class="categories-container" th:if="${not #lists.isEmpty(dramaMovies)}">
+            <h2 class="row-title">Tâm Lý & Tình Cảm</h2>
+            <div class="row-posters">
+                <a class="movie-card" th:each="movie : ${dramaMovies}" th:href="@{/movies/{id}(id=${movie.id})}">
+                    <img th:src="${movie.getPosterUrl()}" class="row-poster" th:alt="${movie.title}">
+                    <div class="movie-title-overlay" th:text="${movie.title}"></div>
+                </a>
+            </div>
+        </div>
+
+        <div class="categories-container" th:if="${not #lists.isEmpty(comedyMovies)}">
+            <h2 class="row-title">Hài Hước Giải Trí</h2>
+            <div class="row-posters">
+                <a class="movie-card" th:each="movie : ${comedyMovies}" th:href="@{/movies/{id}(id=${movie.id})}">
+                    <img th:src="${movie.getPosterUrl()}" class="row-poster" th:alt="${movie.title}">
+                    <div class="movie-title-overlay" th:text="${movie.title}"></div>
+                </a>
+            </div>
+        </div>
+
+        <div class="categories-container" th:if="${not #lists.isEmpty(sciFiMovies)}">
+            <h2 class="row-title">Khoa Học Viễn Tưởng</h2>
+            <div class="row-posters">
+                <a class="movie-card" th:each="movie : ${sciFiMovies}" th:href="@{/movies/{id}(id=${movie.id})}">
+                    <img th:src="${movie.getPosterUrl()}" class="row-poster" th:alt="${movie.title}">
+                    <div class="movie-title-overlay" th:text="${movie.title}"></div>
+                </a>
+            </div>
+        </div>
+
     </div>
 
-    <div class="categories-container" th:if="${not #lists.isEmpty(comedyMovies)}">
-        <h2 class="row-title">Hài Hước Giải Trí</h2>
-        <div class="row-posters">
-            <a class="movie-card" th:each="movie : ${comedyMovies}" th:href="@{/movies/{id}(id=${movie.id})}">
-                <img th:src="${movie.getPosterUrl()}" class="row-poster" th:alt="${movie.title}">
-                <div class="movie-title-overlay" th:text="${movie.title}"></div>
-            </a>
-        </div>
-    </div>
+    <!-- Floating button already included in packageCta -->
 
-    <div class="categories-container" th:if="${not #lists.isEmpty(sciFiMovies)}">
-        <h2 class="row-title">Khoa Học Viễn Tưởng</h2>
-        <div class="row-posters">
-            <a class="movie-card" th:each="movie : ${sciFiMovies}" th:href="@{/movies/{id}(id=${movie.id})}">
-                <img th:src="${movie.getPosterUrl()}" class="row-poster" th:alt="${movie.title}">
-                <div class="movie-title-overlay" th:text="${movie.title}"></div>
-            </a>
-        </div>
-    </div>
+    <script>
+        // Hiệu ứng đổi màu Navbar khi cuộn trang
+        window.addEventListener('scroll', () => {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) navbar.classList.add('scrolled');
+            else navbar.classList.remove('scrolled');
+        });
 
-</div>
+        (function () {
+            const form = document.getElementById('homeSearchForm');
+            const toggle = document.getElementById('homeSearchToggle');
+            const input = document.getElementById('homeSearchInput');
 
-<!-- Floating button already included in packageCta -->
+            toggle.addEventListener('click', function () {
+                if (!form.classList.contains('is-open')) {
+                    form.classList.add('is-open');
+                    input.focus();
+                    return;
+                }
 
-<script>
-    // Hiệu ứng đổi màu Navbar khi cuộn trang
-    window.addEventListener('scroll', () => {
-        const navbar = document.getElementById('navbar');
-        if (window.scrollY > 50) navbar.classList.add('scrolled');
-        else navbar.classList.remove('scrolled');
-    });
+                if (input.value.trim().length > 0) {
+                    form.submit();
+                } else {
+                    input.focus();
+                }
+            });
 
-    (function () {
-        const form = document.getElementById('homeSearchForm');
-        const toggle = document.getElementById('homeSearchToggle');
-        const input = document.getElementById('homeSearchInput');
+            input.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    form.submit();
+                    return;
+                }
 
-        toggle.addEventListener('click', function () {
-            if (!form.classList.contains('is-open')) {
+                if (event.key === 'Escape') {
+                    form.classList.remove('is-open');
+                    input.value = '';
+                    toggle.focus();
+                }
+            });
+
+            form.addEventListener('submit', function () {
                 form.classList.add('is-open');
-                input.focus();
-                return;
-            }
+            });
 
-            if (input.value.trim().length > 0) {
-                form.submit();
-            } else {
-                input.focus();
-            }
-        });
-
-        input.addEventListener('keydown', function (event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                form.submit();
-                return;
-            }
-
-            if (event.key === 'Escape') {
-                form.classList.remove('is-open');
-                input.value = '';
-                toggle.focus();
-            }
-        });
-
-        form.addEventListener('submit', function () {
-            form.classList.add('is-open');
-        });
-
-        document.addEventListener('click', function (event) {
-            if (!form.contains(event.target)) {
-                form.classList.remove('is-open');
-            }
-        });
-    })();
-</script>
+            document.addEventListener('click', function (event) {
+                if (!form.contains(event.target)) {
+                    form.classList.remove('is-open');
+                }
+            });
+        })();
+    </script>
 </body>
+
 </html>
