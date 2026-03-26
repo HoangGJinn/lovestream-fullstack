@@ -22,7 +22,7 @@
         .series-poster img {
             width: 220px;
             border-radius: 8px;
-            box-shadow: 0 8px 30px rgba(0,0,0,.6);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, .6);
         }
 
         .series-info { flex: 1; min-width: 280px; }
@@ -47,31 +47,48 @@
 
         .tag {
             display: inline-block;
-            background: rgba(255,255,255,.1);
+            background: rgba(255, 255, 255, .1);
             border-radius: 4px;
             padding: 3px 10px;
             margin: 3px 4px 3px 0;
             font-size: 0.82rem;
         }
 
+        .series-trailer-wrap {
+            margin: 18px 0 14px;
+        }
+
+        .series-trailer-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 18px;
+            border-radius: 999px;
+            text-decoration: none;
+            color: #fff;
+            font-weight: 700;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.06));
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+            transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
+        }
+
+        .series-trailer-btn i {
+            color: #ff6b74;
+            font-size: 16px;
+        }
+
+        .series-trailer-btn:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 107, 116, 0.42);
+            background: linear-gradient(135deg, rgba(255, 107, 116, 0.18), rgba(255, 255, 255, 0.08));
+            box-shadow: 0 16px 28px rgba(0, 0, 0, 0.24);
+        }
+
         .watch-cta {
             margin-top: 20px;
         }
 
-        .btn-watch {
-            display: inline-block;
-            background: #e50914;
-            color: #fff;
-            padding: 10px 28px;
-            border-radius: 6px;
-            text-decoration: none;
-            font-weight: 700;
-            font-size: 1rem;
-        }
-
-        .btn-watch:hover { background: #f40612; }
-
-        /* Season accordion */
         .seasons { margin-top: 10px; }
 
         .season-block { margin-bottom: 24px; }
@@ -81,7 +98,7 @@
             font-weight: 700;
             margin: 0 0 12px;
             padding-bottom: 8px;
-            border-bottom: 1px solid rgba(255,255,255,.15);
+            border-bottom: 1px solid rgba(255, 255, 255, .15);
         }
 
         .episode-list { list-style: none; padding: 0; margin: 0; }
@@ -93,11 +110,11 @@
             padding: 10px 14px;
             border-radius: 6px;
             margin-bottom: 6px;
-            background: rgba(255,255,255,.06);
+            background: rgba(255, 255, 255, .06);
             transition: background .2s;
         }
 
-        .episode-item:hover { background: rgba(255,255,255,.12); }
+        .episode-item:hover { background: rgba(255, 255, 255, .12); }
 
         .ep-info { flex: 1; }
 
@@ -128,7 +145,6 @@
 </head>
 <body>
 
-<!-- Navbar -->
 <div class="navbar" id="navbar">
     <div class="nav-left">
         <a href="/" class="logo">LoveStream</a>
@@ -144,8 +160,6 @@
 </div>
 
 <div class="series-detail">
-
-    <!-- Hero section -->
     <div class="series-hero">
         <div class="series-poster">
             <img th:src="${series.posterUrl}" th:alt="${series.title}" />
@@ -159,12 +173,10 @@
                 <span th:if="${series.director != null}"> • Đạo diễn: <strong th:text="${series.director}"></strong></span>
             </div>
 
-            <!-- Genres -->
             <div style="margin-bottom:14px;">
                 <span class="tag" th:each="g : ${series.genres}" th:text="${g}">Thể loại</span>
             </div>
 
-            <!-- Cast -->
             <div th:if="${series.cast != null and !series.cast.isEmpty()}" style="margin-bottom:14px;color:#ccc;font-size:0.9rem;">
                 <strong>Diễn viên: </strong>
                 <span th:text="${#strings.listJoin(series.cast, ', ')}"></span>
@@ -172,7 +184,13 @@
 
             <p class="series-description" th:text="${series.description}">Mô tả</p>
 
-            <!-- Watch CTA based on action -->
+            <div class="series-trailer-wrap" th:if="${series.trailerUrl != null}">
+                <a class="series-trailer-btn" th:href="${series.trailerUrl}" target="_blank" rel="noopener">
+                    <i class="fa-regular fa-circle-play"></i>
+                    <span>Xem trailer</span>
+                </a>
+            </div>
+
             <div class="watch-cta">
                 <p th:if="${series.watchAction == 'LOGIN_REQUIRED'}" style="color:#f5a623;">
                     Bạn cần <a href="/login" style="color:#e50914;font-weight:700;">đăng nhập</a> để xem series này.
@@ -187,7 +205,6 @@
         </div>
     </div>
 
-    <!-- Season / Episode list -->
     <div class="seasons">
         <h2 style="font-size:1.5rem;margin-bottom:20px;">Danh sách tập</h2>
 
@@ -218,19 +235,16 @@
                              th:text="${ep.durationInMinutes} + ' phút'">45 phút</div>
                     </div>
                     <div>
-                        <!-- WATCH -->
                         <a th:if="${series.watchAction == 'WATCH'}"
                            th:href="@{/watch-episode(episodeId=${ep.id})}"
                            class="btn-ep btn-ep-watch">
                             <i class="fas fa-play"></i> Xem
                         </a>
-                        <!-- LOGIN REQUIRED -->
                         <a th:if="${series.watchAction == 'LOGIN_REQUIRED'}"
                            href="/login"
                            class="btn-ep btn-ep-login">
                             Đăng nhập để xem
                         </a>
-                        <!-- BUY PACKAGE -->
                         <a th:if="${series.watchAction == 'BUY_PACKAGE'}"
                            href="/packages"
                            class="btn-ep btn-ep-buy">
@@ -241,7 +255,6 @@
             </ul>
         </div>
     </div>
-
 </div>
 
 <script>

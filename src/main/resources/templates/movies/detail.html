@@ -46,28 +46,32 @@
                 Lượt xem: <span th:text="${movie.views}">0</span>
             </p>
 
-            <div class="vc-meta" th:if="${movie.trailerUrl != null}">
-                <a class="vc-back-link" th:href="${movie.trailerUrl}" target="_blank" rel="noopener">Xem trailer</a>
+            <div class="vc-trailer-wrap" th:if="${movie.trailerUrl != null}">
+                <a class="vc-trailer-btn" th:href="${movie.trailerUrl}" target="_blank" rel="noopener">
+                    <i class="fa-regular fa-circle-play"></i>
+                    <span>Xem trailer</span>
+                </a>
             </div>
 
-            <a class="vc-buy-btn"
-               th:if="${movie.watchAction == 'WATCH'}"
-               th:href="@{/watch-movie(id=${movie.id})}">
-                Xem phim
-            </a>
-            <a class="vc-buy-btn" th:if="${movie.watchAction == 'LOGIN_REQUIRED'}" href="/login">Đăng nhập để xem</a>
-            <a class="vc-buy-btn" th:if="${movie.watchAction == 'BUY_PACKAGE'}" href="/packages">Mua gói để xem</a>
-            <!-- Nút thêm yêu thích -->
-            <button id="btn-favorite" class="vc-buy-btn" style="background-color: transparent; border: 1px solid #fff; margin-left: 10px; cursor: pointer;"
-                    th:data-video-id="${movie.id}">
-                <span th:if="${movie.isFavorited}">
-                    <i class="fa-solid fa-check"></i> Đã yêu thích
-                </span>
-                <span th:unless="${movie.isFavorited}">
-                    <i class="fa-solid fa-plus"></i> Thêm vào yêu thích
-                </span>
-            </button>
+            <div class="vc-primary-actions">
+                <a class="vc-buy-btn"
+                   th:if="${movie.watchAction == 'WATCH'}"
+                   th:href="@{/watch-movie(id=${movie.id})}">
+                    Xem phim
+                </a>
+                <a class="vc-buy-btn" th:if="${movie.watchAction == 'LOGIN_REQUIRED'}" href="/login">Đăng nhập để xem</a>
+                <a class="vc-buy-btn" th:if="${movie.watchAction == 'BUY_PACKAGE'}" href="/packages">Mua gói để xem</a>
 
+                <button id="btn-favorite" class="vc-buy-btn vc-buy-btn--ghost"
+                        th:data-video-id="${movie.id}">
+                    <span th:if="${movie.isFavorited}">
+                        <i class="fa-solid fa-check"></i> Đã yêu thích
+                    </span>
+                    <span th:unless="${movie.isFavorited}">
+                        <i class="fa-solid fa-plus"></i> Thêm vào yêu thích
+                    </span>
+                </button>
+            </div>
         </div>
     </article>
 </main>
@@ -80,17 +84,14 @@
             btnFavorite.addEventListener("click", async function(e) {
                 e.preventDefault();
 
-                // Lấy ID phim
                 const videoId = this.getAttribute("data-video-id");
 
                 try {
-                    // Gọi API
                     const response = await fetch(`/api/favorites/${videoId}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' }
                     });
 
-                    // Chuyển đổi response
                     const data = await response.json();
 
                     if (response.ok && data.status === 'success') {
@@ -98,12 +99,9 @@
                             btnFavorite.innerHTML = '<i class="fa-solid fa-check"></i> Đã yêu thích';
                             btnFavorite.style.opacity = '1';
                         } else {
-
                             btnFavorite.innerHTML = '<i class="fa-solid fa-plus"></i> Thêm vào yêu thích';
                             btnFavorite.style.opacity = '1';
                         }
-
-
                     } else if (response.status === 401) {
                         alert("Bạn cần đăng nhập để thao tác.");
                         window.location.href = '/login';
@@ -119,7 +117,5 @@
     });
 </script>
 
-
 </body>
 </html>
-
