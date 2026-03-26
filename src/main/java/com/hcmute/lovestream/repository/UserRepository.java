@@ -9,14 +9,18 @@ import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, String> {
     Optional<User> findByEmail(String email);
-    boolean existsByEmail(String email);
-    boolean existsByPhone(String phone);
-    boolean existsByPhoneAndIdNot(String phone, String id);
 
+    boolean existsByEmail(String email);
+
+    boolean existsByPhone(String phone);
+
+    boolean existsByPhoneAndIdNot(String phone, String id);
 
     // Queries phục vụ cho Admin / Quản lý User
     List<User> findAllByRole(Role role);
+
     Optional<User> findByIdAndRole(String id, Role role);
+
     Optional<User> findByEmailAndRole(String email, Role role);
 
     List<User> findByEmailContainingIgnoreCase(String email);

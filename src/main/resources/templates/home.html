@@ -9,6 +9,7 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans:wght@400;600;700;800;900&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/css/home.css">
+    <link rel="stylesheet" href="/css/home/web-content-banner-slider.css">
     <link rel="stylesheet" href="/css/user-menu.css">
     <link rel="stylesheet" href="/css/packages.css">
     <meta name="google-site-verification" content="FV7_gpltw5BbDYiNsJhEKOdUdkxnZAZcCqylL9avfqw" />
@@ -16,33 +17,79 @@
 
 <body>
 
-<div class="navbar" id="navbar">
-    <div class="nav-left">
-        <a href="/" class="logo">LoveStream</a>
-        <ul class="nav-links">
-            <li><a href="#" class="active">Trang chủ</a></li>
-            <li><a href="/series">Series</a></li>
-            <li><a href="/movies">Phim</a></li>
-            <li><a href="#">Mới &amp; Phổ biến</a></li>
-            <li th:if="${currentUser != null}"><a href="#">Danh sách của tôi</a></li>
-            <li th:if="${currentUser != null}"><a href="/history">Lịch sử xem phim</a></li>
-            <li><a href="/packages">Gói dịch vụ</a></li>
-            <li th:if="${currentUser != null}"><a href="/watch-together">Xem chung</a></li>
-        </ul>
+    <div class="navbar" id="navbar">
+        <div class="nav-left">
+            <a href="/" class="logo">LoveStream</a>
+            <ul class="nav-links">
+                <li><a href="#" class="active">Trang chủ</a></li>
+                <li><a href="/series">Series</a></li>
+                <li><a href="/movies">Phim</a></li>
+                <li><a href="#">Mới &amp; Phổ biến</a></li>
+                <li th:if="${currentUser != null}"><a href="#">Danh sách của tôi</a></li>
+                <li th:if="${currentUser != null}"><a href="/history">Lịch sử xem phim</a></li>
+                <li><a href="/packages">Gói dịch vụ</a></li>
+                <li th:if="${currentUser != null}"><a href="/watch-together">Xem chung</a></li>
+            </ul>
+        </div>
+        <div class="nav-right">
+            <form id="homeSearchForm" class="nav-search" th:action="@{/videocontents/search}" method="get">
+                <button id="homeSearchToggle" class="nav-icon nav-search-toggle" type="button" aria-label="Tìm kiếm">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+                <input id="homeSearchInput" class="nav-search-input" name="keyword" type="text"
+                    placeholder="Tìm phim, series..." autocomplete="off">
+            </form>
+            <a th:if="${currentUser != null}" href="/notifications" class="nav-icon" aria-label="Thông báo"><i
+                    class="fa-regular fa-bell"></i></a>
+            <div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>
+        </div>
     </div>
-    <div class="nav-right">
-        <form id="homeSearchForm" class="nav-search" th:action="@{/videocontents/search}" method="get">
-            <button id="homeSearchToggle" class="nav-icon nav-search-toggle" type="button" aria-label="Tìm kiếm">
-                <i class="fa-solid fa-magnifying-glass"></i>
-            </button>
-            <input id="homeSearchInput" class="nav-search-input" name="keyword" type="text" placeholder="Tìm phim, series..." autocomplete="off">
-        </form>
-        <a th:if="${currentUser != null}" href="/notifications" class="nav-icon" aria-label="Thông báo"><i class="fa-regular fa-bell"></i></a>
-        <div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>
-    </div>
-</div>
 
-    <div class="hero">
+    <!-- Home hero: slider banner (CONTENT_MANAGER) -->
+    <div th:if="${hasDisplayedBanners}" class="hero hero--banner-slider" id="homeBannerHero">
+        <div class="hero-gradient"></div>
+
+        <div class="banner-slider" id="homeBannerSlider" th:attr="data-autoplay-ms=${6000}">
+            <div class="banner-slides">
+                <div th:each="banner, iter : ${displayedBanners}"
+                     class="banner-slide"
+                     th:classappend="${iter.index == 0} ? ' is-active'">
+
+                    <div class="banner-slide-media">
+                        <img th:src="@{/uploads/{path}(path=${banner.imagePath})}" th:alt="${banner.title}"
+                             class="banner-slide-img"/>
+                    </div>
+
+                    <th:block th:if="${banner.navigationLink != null and !#strings.isEmpty(banner.navigationLink)}">
+                        <a th:href="${banner.navigationLink}" class="banner-slide-link"
+                           th:aria-label="'Đi tới: ' + ${banner.title}"></a>
+                    </th:block>
+
+                    <div class="banner-slide-overlay">
+                        <h1 class="movie-title" th:text="${banner.title}">Tiêu đề banner</h1>
+                        <div th:if="${banner.navigationLink != null and !#strings.isEmpty(banner.navigationLink)}"
+                             class="banner-cta-row">
+                            <a th:href="${banner.navigationLink}" class="banner-cta">Xem ngay</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" class="banner-nav banner-prev" aria-label="Slide trước">‹</button>
+            <button type="button" class="banner-nav banner-next" aria-label="Slide tiếp">›</button>
+
+            <div class="banner-dots" aria-label="Chọn slide">
+                <button th:each="banner, iter : ${displayedBanners}"
+                        type="button"
+                        class="banner-dot"
+                        th:classappend="${iter.index == 0} ? ' is-active' "
+                        th:data-index="${iter.index}"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fallback hero (hard-code hiện tại) -->
+    <div th:unless="${hasDisplayedBanners}" class="hero">
         <div class="hero-gradient"></div>
         <div class="hero-content">
             <h1 class="movie-title">The Witcher</h1>
@@ -58,12 +105,13 @@
         </div>
     </div>
 
-    <div class="main-content">
+    <div class="main-content" th:classappend="${hasDisplayedBanners} ? ' home-with-slider' : ''">
 
         <div class="categories-container" th:if="${not #lists.isEmpty(actionMovies)}">
             <h2 class="row-title">Hành Động Kịch Tính</h2>
             <div class="row-posters">
-                <a class="movie-card" th:each="movie : ${actionMovies}" th:href="@{/movies/{slug}(slug=${movie.slugOrId})}">
+                <a class="movie-card" th:each="movie : ${actionMovies}"
+                    th:href="@{/movies/{slug}(slug=${movie.slugOrId})}">
                     <img th:src="${movie.getPosterUrl()}" class="row-poster" th:alt="${movie.title}">
                     <div class="movie-title-overlay" th:text="${movie.title}"></div>
                 </a>
@@ -73,7 +121,8 @@
         <div class="categories-container" th:if="${not #lists.isEmpty(dramaMovies)}">
             <h2 class="row-title">Tâm Lý &amp; Tình Cảm</h2>
             <div class="row-posters">
-                <a class="movie-card" th:each="movie : ${dramaMovies}" th:href="@{/movies/{slug}(slug=${movie.slugOrId})}">
+                <a class="movie-card" th:each="movie : ${dramaMovies}"
+                    th:href="@{/movies/{slug}(slug=${movie.slugOrId})}">
                     <img th:src="${movie.getPosterUrl()}" class="row-poster" th:alt="${movie.title}">
                     <div class="movie-title-overlay" th:text="${movie.title}"></div>
                 </a>
@@ -83,7 +132,8 @@
         <div class="categories-container" th:if="${not #lists.isEmpty(comedyMovies)}">
             <h2 class="row-title">Hài Hước Giải Trí</h2>
             <div class="row-posters">
-                <a class="movie-card" th:each="movie : ${comedyMovies}" th:href="@{/movies/{slug}(slug=${movie.slugOrId})}">
+                <a class="movie-card" th:each="movie : ${comedyMovies}"
+                    th:href="@{/movies/{slug}(slug=${movie.slugOrId})}">
                     <img th:src="${movie.getPosterUrl()}" class="row-poster" th:alt="${movie.title}">
                     <div class="movie-title-overlay" th:text="${movie.title}"></div>
                 </a>
@@ -93,7 +143,8 @@
         <div class="categories-container" th:if="${not #lists.isEmpty(sciFiMovies)}">
             <h2 class="row-title">Khoa Học Viễn Tưởng</h2>
             <div class="row-posters">
-                <a class="movie-card" th:each="movie : ${sciFiMovies}" th:href="@{/movies/{slug}(slug=${movie.slugOrId})}">
+                <a class="movie-card" th:each="movie : ${sciFiMovies}"
+                    th:href="@{/movies/{slug}(slug=${movie.slugOrId})}">
                     <img th:src="${movie.getPosterUrl()}" class="row-poster" th:alt="${movie.title}">
                     <div class="movie-title-overlay" th:text="${movie.title}"></div>
                 </a>
@@ -101,6 +152,8 @@
         </div>
 
     </div>
+
+    <div th:replace="~{fragments/site-footer :: siteFooter}"></div>
 
     <!-- Floating button already included in packageCta -->
 
@@ -154,6 +207,82 @@
                     form.classList.remove('is-open');
                 }
             });
+        })();
+
+        // Home banner slider (CONTENT_MANAGER)
+        (function () {
+            const slider = document.getElementById('homeBannerSlider');
+            if (!slider) return;
+
+            const slides = Array.from(slider.querySelectorAll('.banner-slide'));
+            const prevBtn = slider.querySelector('.banner-prev');
+            const nextBtn = slider.querySelector('.banner-next');
+            const dots = Array.from(slider.querySelectorAll('.banner-dot'));
+            const autoplayMs = parseInt(slider.getAttribute('data-autoplay-ms') || '6000', 10);
+
+            if (slides.length <= 1) return;
+
+            let activeIndex = 0;
+            let timerId = null;
+
+            function setActive(index) {
+                activeIndex = index;
+                slides.forEach((el, i) => {
+                    el.classList.toggle('is-active', i === activeIndex);
+                });
+                dots.forEach((d, i) => {
+                    d.classList.toggle('is-active', i === activeIndex);
+                });
+            }
+
+            function next() {
+                const nextIndex = (activeIndex + 1) % slides.length;
+                setActive(nextIndex);
+            }
+
+            function prev() {
+                const prevIndex = (activeIndex - 1 + slides.length) % slides.length;
+                setActive(prevIndex);
+            }
+
+            function startAuto() {
+                stopAuto();
+                timerId = window.setInterval(next, autoplayMs);
+            }
+
+            function stopAuto() {
+                if (timerId) {
+                    window.clearInterval(timerId);
+                    timerId = null;
+                }
+            }
+
+            prevBtn && prevBtn.addEventListener('click', function () {
+                stopAuto();
+                prev();
+                startAuto();
+            });
+            nextBtn && nextBtn.addEventListener('click', function () {
+                stopAuto();
+                next();
+                startAuto();
+            });
+
+            dots.forEach((dot) => {
+                dot.addEventListener('click', function () {
+                    const index = parseInt(dot.getAttribute('data-index'), 10);
+                    if (!Number.isNaN(index)) {
+                        stopAuto();
+                        setActive(index);
+                        startAuto();
+                    }
+                });
+            });
+
+            slider.addEventListener('mouseenter', stopAuto);
+            slider.addEventListener('mouseleave', startAuto);
+
+            startAuto();
         })();
     </script>
 </body>

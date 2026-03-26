@@ -34,13 +34,17 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // 1. Auth pages + Static resources + SEO files
-                        .requestMatchers("/api/v1/auth/**", "/login", "/register", "/forgot-password", "/verify-email", "/css/**", "/js/**", "/images/**", "/error", "/sitemap.xml", "/robots.txt").permitAll()
+                        .requestMatchers("/api/v1/auth/**", "/login", "/register", "/forgot-password", "/verify-email",
+                                "/css/**", "/js/**", "/images/**", "/uploads/**", "/error", "/sitemap.xml", "/robots.txt")
+                        .permitAll()
                         .requestMatchers(HttpMethod.GET, "/account/change-password/backup").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/password/backup-change").permitAll()
 
                         // 2. Trang công khai cho khách chưa đăng nhập (SEO)
                         // Trang chủ
                         .requestMatchers(HttpMethod.GET, "/", "/home").permitAll()
+                        // Trang tĩnh cho public
+                        .requestMatchers(HttpMethod.GET, "/about", "/privacy-policy", "/terms").permitAll()
                         // Trang danh sách phim, chi tiết phim
                         .requestMatchers(HttpMethod.GET, "/movies", "/movies/**").permitAll()
                         // Trang series
@@ -54,36 +58,46 @@ public class SecurityConfig {
                         // VNPay callback
                         .requestMatchers(HttpMethod.GET, "/v1/api/vnpay/payment-callback").permitAll()
 
-                        // 3. Admin entrypoint + content modules: ADMIN or CONTENT_MANAGER
+
+                        // 3. Admin entrypoint: ADMIN or CONTENT_MANAGER
+                        .requestMatchers("/admin", "/admin/dashboard")
+                        .hasAnyAuthority("ROLE_ADMIN", "ROLE_CONTENT_MANAGER", "ADMIN", "CONTENT_MANAGER")
+
+                        // 4. Content management modules: CONTENT_MANAGER only
                         .requestMatchers(
-                                "/admin",
-                                "/admin/dashboard",
                                 "/admin/movies",
                                 "/admin/movies/**",
                                 "/admin/series",
                                 "/admin/series/**",
                                 "/admin/genres",
-                                "/admin/genres/**"
-                        ).hasAnyAuthority("ROLE_ADMIN", "ROLE_CONTENT_MANAGER", "ADMIN", "CONTENT_MANAGER")
+                                "/admin/genres/**",
+                                "/admin/web-content",
+                                "/admin/web-content/**")
+                        .hasAnyAuthority("ROLE_CONTENT_MANAGER", "CONTENT_MANAGER")
 
-                        // 4. Admin-restricted modules: ADMIN only
-                        .requestMatchers("/admin/users/**", "/admin/plans/**", "/admin/vouchers/**").hasAnyAuthority("ROLE_ADMIN", "ADMIN")
+                        // 5. Admin-restricted modules: ADMIN only
+                        .requestMatchers(
+                                "/admin/users/**",
+                                "/admin/plans/**",
+                                "/admin/vouchers/**",
+                                "/admin/transactions/**")
+                        .hasAnyAuthority("ROLE_ADMIN", "ADMIN")
 
-                        // 5. Phần còn lại của admin: ADMIN only (safety net)
+                        // 6. Phần còn lại của admin: ADMIN only (safety net)
                         .requestMatchers("/admin/**").hasAnyAuthority("ROLE_ADMIN", "ADMIN")
 
+
                         // CÁC TRANG CÒN LẠI BẮT BUỘC PHẢI ĐĂNG NHẬP
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 // Xử lý khi bị chặn (Chưa đăng nhập)
                 .exceptionHandling(exc -> exc.authenticationEntryPoint((request, response, authException) -> {
-                    //Nếu gọi API -> Báo lỗi 401
-                   if (request.getRequestURI().startsWith("/api/")) {
-                       response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Vui lòng đăng nhập");
-                   } else {
-                       // Nếu là người dùng vào trang Web -> Đá về trang Đăng nhập
-                       response.sendRedirect("/login");
-                   }
+                    // Nếu gọi API -> Báo lỗi 401
+                    if (request.getRequestURI().startsWith("/api/")) {
+                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Vui lòng đăng nhập");
+                    } else {
+                        // Nếu là người dùng vào trang Web -> Đá về trang Đăng nhập
+                        response.sendRedirect("/login");
+                    }
                 }))
                 // Chèn chốt kiểm tra JWT vào trước chốt kiểm tra mặc định của Spring
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

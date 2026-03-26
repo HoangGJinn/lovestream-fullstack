@@ -90,14 +90,12 @@ public class AuthRestController {
 
             return ResponseEntity.ok(Map.of(
                     "message", "Đăng nhập thành công",
-                    "redirectUrl", redirectUrl
-            ));
+                    "redirectUrl", redirectUrl));
         } catch (Exception e) {
             if ("Tài khoản chưa được xác minh email".equals(e.getMessage())) {
                 return ResponseEntity.status(403).body(Map.of(
                         "error", e.getMessage(),
-                        "isUnverified", true
-                ));
+                        "isUnverified", true));
             }
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -167,7 +165,8 @@ public class AuthRestController {
             HttpServletResponse response) {
 
         if (refreshTokenString == null || refreshTokenString.isEmpty()) {
-            return ResponseEntity.status(401).body(Map.of("error", "Không tìm thấy Refresh Token. Vui lòng đăng nhập lại."));
+            return ResponseEntity.status(401)
+                    .body(Map.of("error", "Không tìm thấy Refresh Token. Vui lòng đăng nhập lại."));
         }
 
         try {
