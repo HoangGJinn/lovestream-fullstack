@@ -5,7 +5,9 @@ public record WatchRoomStateResponse(
         String roomName,
         String status,
         boolean host,
-        boolean privateRoom
+        boolean privateRoom,
+        long participantCount,
+        double currentVideoTime
 ) {
 }
 
