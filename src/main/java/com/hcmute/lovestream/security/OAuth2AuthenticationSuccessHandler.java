@@ -1,10 +1,10 @@
 package com.hcmute.lovestream.security;
 
+import com.hcmute.lovestream.security.HttpCookieOAuth2AuthorizationRequestRepository;
 import com.hcmute.lovestream.service.authentication.AuthService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -30,6 +30,7 @@ import java.util.Map;
 public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccessHandler {
 
     private final AuthService authService;
+    private final HttpCookieOAuth2AuthorizationRequestRepository cookieRepository;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -41,7 +42,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         if (email == null || email.isBlank()) {
             log.error("Google OAuth2: không lấy được email từ principal loại {}",
                     authentication.getPrincipal().getClass().getName());
-            invalidateSession(request);
+            cookieRepository.removeAuthorizationRequestCookies(request, response);
             response.sendRedirect("/login?error=Không+lấy+được+email+từ+tài+khoản+Google");
             return;
         }
@@ -49,8 +50,8 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         try {
             Map<String, String> tokens = authService.googleLogin(email);
 
-            // Xóa OAuth2 session SAU KHI lấy được token – tránh xung đột session/JWT
-            invalidateSession(request);
+            // Xóa cookie trạng thái OAuth2 sau khi đăng nhập thành công
+            cookieRepository.removeAuthorizationRequestCookies(request, response);
 
             // Set JWT_TOKEN cookie (Access Token)
             Cookie accessCookie = new Cookie("JWT_TOKEN", tokens.get("accessToken"));
@@ -84,16 +85,8 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
 
         } catch (Exception e) {
             log.error("Google OAuth2 post-login error for email={}: {}", email, e.getMessage(), e);
-            invalidateSession(request);
+            cookieRepository.removeAuthorizationRequestCookies(request, response);
             response.sendRedirect("/login?error=" + java.net.URLEncoder.encode(e.getMessage(), "UTF-8"));
-        }
-    }
-
-    /** Xóa session OAuth2 để tránh session auth tồn tại song song với JWT cookie */
-    private void invalidateSession(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            session.invalidate();
         }
     }
 

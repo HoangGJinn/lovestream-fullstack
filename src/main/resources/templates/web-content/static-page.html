@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'LoveStream - ' + ${pageType}">LoveStream - Trang tĩnh</title>
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans:wght@400;600;700;800;900&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="/css/home.css">
+    <link rel="stylesheet" href="/css/user-menu.css">
+    <link rel="stylesheet" href="/css/web-content/static-page.css">
+
+    <meta name="google-site-verification" content="FV7_gpltw5BbDYiNsJhEKOdUdkxnZAZcCqylL9avfqw" />
+</head>
+
+<body>
+    <div class="navbar" id="navbar">
+        <div class="nav-left">
+            <a href="/" class="logo">LoveStream</a>
+            <ul class="nav-links">
+                <li><a href="/" class="active">Trang chủ</a></li>
+                <li><a href="/series">Series</a></li>
+                <li><a href="/movies">Phim</a></li>
+                <li><a href="#">Mới &amp; Phổ biến</a></li>
+                <li th:if="${currentUser != null}"><a href="#">Danh sách của tôi</a></li>
+                <li th:if="${currentUser != null}"><a href="/history">Lịch sử xem phim</a></li>
+                <li><a href="/packages">Gói dịch vụ</a></li>
+                <li th:if="${currentUser != null}"><a href="/watch-together">Xem chung</a></li>
+            </ul>
+        </div>
+        <div class="nav-right">
+            <a th:if="${currentUser != null}" href="/notifications" class="nav-icon" aria-label="Thông báo"><i
+                    class="fa-regular fa-bell"></i></a>
+            <div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>
+        </div>
+    </div>
+
+    <div class="static-page-wrapper">
+        <div class="static-page-container" th:utext="${htmlContent}">
+            Nội dung trang sẽ được hiển thị tại đây.
+        </div>
+    </div>
+
+    <div th:replace="~{fragments/site-footer :: siteFooter}"></div>
+
+    <script>
+        window.addEventListener('scroll', () => {
+            const navbar = document.getElementById('navbar');
+            if (!navbar) return;
+            if (window.scrollY > 50) navbar.classList.add('scrolled');
+            else navbar.classList.remove('scrolled');
+        });
+    </script>
+</body>
+
+</html>
+

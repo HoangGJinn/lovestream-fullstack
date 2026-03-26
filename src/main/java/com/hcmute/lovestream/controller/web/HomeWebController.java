@@ -2,6 +2,8 @@ package com.hcmute.lovestream.controller.web;
 
 import com.hcmute.lovestream.entity.VideoContent;
 import com.hcmute.lovestream.entity.enums.ContentStatus;
+import com.hcmute.lovestream.entity.WebContentBanner;
+import com.hcmute.lovestream.repository.WebContentBannerRepository;
 import com.hcmute.lovestream.repository.VideoContentRepository;
 import com.hcmute.lovestream.service.user.UserProfileService;
 import lombok.RequiredArgsConstructor;
@@ -19,8 +21,9 @@ public class HomeWebController {
 
     private final VideoContentRepository videoContentRepository;
     private final UserProfileService userProfileService;
+    private final WebContentBannerRepository webContentBannerRepository;
 
-    @GetMapping({"/", "/home"})
+    @GetMapping({ "/", "/home" })
     public String homePage(Authentication authentication, Model model) {
         // Kiểm tra xem người dùng có đang đăng nhập không
         boolean isAuthenticated = authentication != null
@@ -36,6 +39,10 @@ public class HomeWebController {
             } catch (RuntimeException ignored) {
             }
         }
+
+        List<WebContentBanner> displayedBanners = webContentBannerRepository.findByIsDisplayedTrueOrderByDisplayOrderAsc();
+        model.addAttribute("displayedBanners", displayedBanners);
+        model.addAttribute("hasDisplayedBanners", !displayedBanners.isEmpty());
 
         // 1. Phim Hành động
         List<VideoContent> actionMovies = videoContentRepository.findByGenres_Name("Action").stream()

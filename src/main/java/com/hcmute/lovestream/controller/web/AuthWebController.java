@@ -30,7 +30,7 @@ public class AuthWebController {
             boolean isContentManager = auth.getAuthorities().stream()
                     .anyMatch(a -> a.getAuthority().equals("ROLE_CONTENT_MANAGER"));
             if (isContentManager) {
-                return "redirect:/admin/movies";
+                return "redirect:/admin/web-content";
             }
         }
         return "redirect:/home";
@@ -39,28 +39,32 @@ public class AuthWebController {
     // Trả về trang giao diện đăng nhập
     @GetMapping("/login")
     public String loginPage() {
-        if (isAuthenticated()) return getRedirectUrlBasedOnRole();
+        if (isAuthenticated())
+            return getRedirectUrlBasedOnRole();
         return "auth/login";
     }
 
     // Trả về trang giao diện đăng ký
     @GetMapping("/register")
     public String registerPage() {
-        if (isAuthenticated()) return getRedirectUrlBasedOnRole();
+        if (isAuthenticated())
+            return getRedirectUrlBasedOnRole();
         return "auth/register";
     }
 
     // Trả về trang quên mật khẩu
     @GetMapping("/forgot-password")
     public String forgotPasswordPage() {
-        if (isAuthenticated()) return getRedirectUrlBasedOnRole();
+        if (isAuthenticated())
+            return getRedirectUrlBasedOnRole();
         return "auth/forgot-password";
     }
 
     // Trả về trang xác nhận email
     @GetMapping("/verify-email")
     public String verifyEmailPage() {
-        if (isAuthenticated()) return getRedirectUrlBasedOnRole();
+        if (isAuthenticated())
+            return getRedirectUrlBasedOnRole();
         return "auth/verify-email";
     }
 }
