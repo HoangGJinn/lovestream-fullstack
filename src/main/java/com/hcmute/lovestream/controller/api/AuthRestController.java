@@ -4,6 +4,7 @@ import com.hcmute.lovestream.dto.request.*;
 import com.hcmute.lovestream.repository.UserRepository;
 import com.hcmute.lovestream.service.authentication.AuthService;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -127,24 +128,33 @@ public class AuthRestController {
     @PostMapping("/logout")
     public ResponseEntity<?> logout(
             @CookieValue(name = "REFRESH_TOKEN", required = false) String refreshToken,
+            HttpServletRequest request,
             HttpServletResponse response) {
 
         if (refreshToken != null && !refreshToken.isBlank()) {
             authService.logout(refreshToken);
         }
 
-        // Đổi null thành "" để trình duyệt hiểu lệnh xóa
+        // Xóa JWT cookie
         Cookie jwtCookie = new Cookie("JWT_TOKEN", "");
         jwtCookie.setHttpOnly(true);
         jwtCookie.setPath("/");
         jwtCookie.setMaxAge(0);
         response.addCookie(jwtCookie);
 
+        // Xóa Refresh Token cookie
         Cookie refreshCookie = new Cookie("REFRESH_TOKEN", "");
         refreshCookie.setHttpOnly(true);
         refreshCookie.setPath("/");
         refreshCookie.setMaxAge(0);
         response.addCookie(refreshCookie);
+
+        // Xóa OAuth2 state cookie (nếu user đang ở giữa luồng đăng nhập Google)
+        Cookie oauth2Cookie = new Cookie("oauth2_auth_request", "");
+        oauth2Cookie.setHttpOnly(true);
+        oauth2Cookie.setPath("/");
+        oauth2Cookie.setMaxAge(0);
+        response.addCookie(oauth2Cookie);
 
         return ResponseEntity.ok(Map.of("message", "Đăng xuất thành công", "redirectUrl", "/login"));
     }
