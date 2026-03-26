@@ -16,6 +16,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class User {
+    private String lockReason;
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
