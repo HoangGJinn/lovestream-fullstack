@@ -47,6 +47,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/series", "/series/**").permitAll()
                         // Tìm kiếm và lọc nội dung
                         .requestMatchers("/videocontents", "/videocontents/**").permitAll()
+                        // API xem thông tin phim + trang xem phim
+                        .requestMatchers(HttpMethod.GET, "/api/movies/**", "/watch-movie").permitAll()
                         // Trang gói dịch vụ
                         .requestMatchers(HttpMethod.GET, "/plans", "/plans/**", "/packages", "/packages/**").permitAll()
                         // Xem bình luận và đánh giá (chỉ GET, không cần đăng nhập)

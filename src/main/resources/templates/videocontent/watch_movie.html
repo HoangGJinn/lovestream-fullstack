@@ -19,23 +19,24 @@
             margin: 0;
             padding: 0;
             width: 100%;
-            height: 100%;
+            min-height: 100vh;
             background-color: var(--bg-color);
             font-family: 'Roboto', sans-serif;
             color: var(--text-color);
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
         }
 
         /* Container cho toàn bộ trình phát */
         .video-player {
             position: relative;
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 80vh;
             background: #000;
             display: flex;
             justify-content: center;
             align-items: center;
-            cursor: pointer; /* Cho phép click để play/pause */
+            cursor: pointer;
         }
 
         /* Thẻ video (ẩn điều khiển mặc định) */
@@ -289,6 +290,640 @@
             100% { transform: translate(-50%, -50%) rotate(360deg); }
         }
 
+        /* ====== Movie Info Bar ====== */
+        .movie-compact-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 40px;
+            background: linear-gradient(135deg, #0d0d0d 0%, #1a1a2e 100%);
+            border-top: 2px solid var(--primary-color);
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .compact-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .c-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #fff;
+        }
+
+        .compact-right {
+            display: flex;
+            align-items: center;
+        }
+
+        .action-buttons-group {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .action-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            color: #bbb;
+            font-size: 0.8rem;
+            transition: color 0.2s, transform 0.15s;
+            user-select: none;
+        }
+
+        .action-item:hover {
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        .action-item i {
+            font-size: 1.4rem;
+        }
+
+        .rating-badge-blue {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: linear-gradient(135deg, #1a73e8, #4285f4);
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(26,115,232,0.4);
+        }
+
+        .rating-badge-blue i {
+            color: #ffd700;
+            font-size: 1rem;
+        }
+
+        .rating-badge-blue small {
+            font-weight: 400;
+            opacity: 0.85;
+            font-size: 0.75rem;
+        }
+
+        /* ====== Comment Section ====== */
+        .comment-zone {
+            padding: 30px 40px;
+            background: #0d0d0d;
+        }
+
+        .comment-zone h2 {
+            margin: 0 0 16px;
+            font-size: 1.2rem;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .comment-zone h2 i {
+            color: var(--primary-color);
+        }
+
+        .comment-login-notice {
+            color: #888;
+            font-size: 0.9rem;
+            margin-bottom: 14px;
+        }
+
+        .comment-login-notice a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .comment-login-notice a:hover {
+            text-decoration: underline;
+        }
+
+        .comment-input-area {
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .comment-input-area textarea {
+            width: 100%;
+            min-height: 90px;
+            padding: 14px 16px;
+            padding-bottom: 36px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 0.95rem;
+            font-family: 'Roboto', sans-serif;
+            resize: vertical;
+            outline: none;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        .comment-input-area textarea:focus {
+            border-color: var(--primary-color);
+        }
+
+        .comment-input-area textarea::placeholder {
+            color: #666;
+        }
+
+        .comment-input-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: absolute;
+            bottom: 10px;
+            left: 16px;
+            right: 16px;
+        }
+
+        .char-counter {
+            color: #666;
+            font-size: 0.8rem;
+        }
+
+        .btn-send-comment {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: opacity 0.2s;
+        }
+
+        .btn-send-comment:hover {
+            opacity: 0.8;
+        }
+
+        .comment-error {
+            color: #ff4444;
+            font-size: 0.85rem;
+            margin-top: 6px;
+            display: none;
+        }
+
+        .comment-success {
+            color: #4caf50;
+            font-size: 0.85rem;
+            margin-top: 6px;
+            display: none;
+        }
+
+        /* ====== Tabs ====== */
+        .tab-group {
+            display: inline-flex;
+            border: 1px solid #555;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-left: 14px;
+        }
+
+        .tab-btn {
+            padding: 5px 16px;
+            background: transparent;
+            color: #ccc;
+            border: none;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: #fff;
+            color: #000;
+            font-weight: 600;
+        }
+
+        .tab-btn:not(.active):hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* ====== Comment Item ====== */
+        .comment-list {
+            margin-top: 16px;
+        }
+
+        .comment-item {
+            display: flex;
+            gap: 12px;
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .comment-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #8b6914, #c9a84c);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .comment-body {
+            flex: 1;
+        }
+
+        .comment-user-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #eee;
+            margin-bottom: 4px;
+        }
+
+        .comment-text {
+            font-size: 0.9rem;
+            color: #ccc;
+            line-height: 1.4;
+        }
+
+        .comment-date {
+            font-size: 0.75rem;
+            color: #666;
+            margin-top: 6px;
+        }
+
+        .no-data-msg {
+            color: #666;
+            font-size: 0.9rem;
+            padding: 20px 0;
+        }
+
+        /* ====== Reply ====== */
+        .comment-actions {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-top: 6px;
+        }
+
+        .reply-btn {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 0;
+            transition: color 0.2s;
+        }
+
+        .reply-btn:hover {
+            color: var(--primary-color);
+        }
+
+        .reply-btn i {
+            font-size: 0.75rem;
+        }
+
+        .reply-box {
+            display: none;
+            margin-top: 10px;
+        }
+
+        .reply-box.show {
+            display: block;
+        }
+
+        .reply-box textarea {
+            width: 100%;
+            min-height: 60px;
+            padding: 10px 12px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.85rem;
+            font-family: 'Roboto', sans-serif;
+            resize: none;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .reply-box textarea:focus {
+            border-color: var(--primary-color);
+        }
+
+        .reply-box-footer {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 6px;
+            gap: 8px;
+        }
+
+        .btn-send-reply {
+            background: var(--primary-color);
+            color: #000;
+            border: none;
+            padding: 5px 16px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-cancel-reply {
+            background: none;
+            color: #888;
+            border: 1px solid #555;
+            padding: 5px 14px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .reply-list {
+            margin-top: 10px;
+            padding-left: 52px;
+        }
+
+        .reply-item {
+            display: flex;
+            gap: 10px;
+            padding: 8px 0;
+            border-left: 2px solid rgba(255,255,255,0.1);
+            padding-left: 12px;
+            margin-bottom: 4px;
+        }
+
+        .reply-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #555, #777);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.7rem;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .reply-body {
+            flex: 1;
+        }
+
+        .reply-user-name {
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: #ccc;
+        }
+
+        .reply-text {
+            font-size: 0.82rem;
+            color: #aaa;
+            line-height: 1.4;
+            margin-top: 2px;
+        }
+
+        .reply-date {
+            font-size: 0.7rem;
+            color: #555;
+            margin-top: 3px;
+        }
+
+        /* ====== Rating Item ====== */
+        .rating-item {
+            display: flex;
+            gap: 12px;
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            align-items: flex-start;
+        }
+
+        .rating-stars-display {
+            color: #ffd700;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+
+        /* ====== Star Rating Modal ====== */
+        .rating-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .rating-modal-overlay.show {
+            display: flex;
+        }
+
+        .rating-modal {
+            background: linear-gradient(145deg, #1e1e3a, #2a2a50);
+            border-radius: 16px;
+            padding: 32px 36px;
+            width: 440px;
+            max-width: 90vw;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .rating-modal-close {
+            position: absolute;
+            top: 14px; right: 16px;
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 1.4rem;
+            cursor: pointer;
+        }
+
+        .rating-modal-close:hover {
+            color: #fff;
+        }
+
+        .rating-modal h3 {
+            margin: 0 0 8px;
+            font-size: 1.3rem;
+            color: #fff;
+        }
+
+        .rating-modal-avg {
+            color: #aaa;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        .rating-modal-avg i {
+            color: #ffd700;
+        }
+
+        .star-picker {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+            background: rgba(0,0,0,0.25);
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .star-picker-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: transform 0.15s;
+            padding: 8px;
+        }
+
+        .star-picker-item:hover {
+            transform: scale(1.15);
+        }
+
+        .star-picker-item.selected .star-icon {
+            color: #ffd700;
+            text-shadow: 0 0 12px rgba(255,215,0,0.5);
+        }
+
+        .star-icon {
+            font-size: 2rem;
+            color: #555;
+            transition: color 0.2s;
+        }
+
+        .star-label {
+            font-size: 0.7rem;
+            color: #aaa;
+        }
+
+        .rating-modal-btns {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .btn-submit-rating {
+            background: #f5c518;
+            color: #000;
+            border: none;
+            padding: 10px 28px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-submit-rating:hover {
+            background: #e0b415;
+        }
+
+        .btn-close-rating {
+            background: rgba(255,255,255,0.12);
+            color: #fff;
+            border: 1px solid #555;
+            padding: 10px 28px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-close-rating:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .rating-modal-msg {
+            margin-top: 10px;
+            font-size: 0.85rem;
+        }
+
+        .review-textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 12px 14px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid #444;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 0.9rem;
+            font-family: 'Roboto', sans-serif;
+            resize: vertical;
+            outline: none;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+            margin-top: 4px;
+        }
+
+        .review-textarea:focus {
+            border-color: var(--primary-color);
+        }
+
+        .review-textarea::placeholder {
+            color: #666;
+        }
+
+        .review-text {
+            font-size: 0.85rem;
+            color: #bbb;
+            margin-top: 4px;
+            line-height: 1.4;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .movie-compact-bar {
+                padding: 14px 16px;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .c-title {
+                font-size: 1.1rem;
+            }
+            .comment-zone {
+                padding: 20px 16px;
+            }
+            .rating-modal {
+                padding: 24px 18px;
+            }
+            .star-picker {
+                gap: 6px;
+                padding: 14px;
+            }
+            .star-icon {
+                font-size: 1.5rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -365,7 +1000,107 @@
 
     </div>
 </div>
-<div> Đây là phần bình luận </div>
+<!-- ====== THANH THÔNG TIN PHIM ====== -->
+<div class="movie-compact-bar">
+    <div class="compact-left">
+        <h1 class="c-title" id="m-title">Đang tải phim...</h1>
+    </div>
+    <div class="compact-right">
+        <div class="action-buttons-group">
+            <div class="action-item" id="btnRating">
+                <i class="fa-solid fa-star"></i>
+                <span>Đánh giá</span>
+            </div>
+            <div class="action-item" id="btnComment" onclick="scrollToCommentZone()">
+                <i class="fa-solid fa-comment-dots"></i>
+                <span>Bình luận</span>
+            </div>
+            <div class="rating-badge-blue">
+                <i class="fa-solid fa-star"></i>
+                <span id="m-rating" style="margin: 0 5px;">0</span>
+                <small>Đánh giá</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====== KHU VỰC BÌNH LUẬN + ĐÁNH GIÁ (TABS) ====== -->
+<div class="comment-zone" id="commentZone">
+    <h2>
+        <i class="fa-solid fa-comment-dots"></i>
+        <span id="tabTitle">Bình luận (<span id="commentCount">0</span>)</span>
+        <div class="tab-group">
+            <button class="tab-btn active" onclick="switchTab('comment')">Bình luận</button>
+            <button class="tab-btn" onclick="switchTab('rating')">Đánh giá</button>
+        </div>
+    </h2>
+
+    <!-- TAB BÌNH LUẬN -->
+    <div class="tab-content active" id="tabComment">
+        <p class="comment-login-notice">Vui lòng <a href="/login">đăng nhập</a> để tham gia bình luận.</p>
+        <div class="comment-input-area">
+            <textarea id="commentInput" placeholder="Viết bình luận" maxlength="500"></textarea>
+            <div class="comment-input-footer">
+                <span class="char-counter"><span id="charCount">0</span> / 500</span>
+                <button class="btn-send-comment" onclick="sendComment()">
+                    Gửi <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+        <div class="comment-error" id="commentError"></div>
+        <div class="comment-success" id="commentSuccess"></div>
+        <div class="comment-list" id="commentList">
+            <p class="no-data-msg">Đang tải bình luận...</p>
+        </div>
+    </div>
+
+    <!-- TAB ĐÁNH GIÁ -->
+    <div class="tab-content" id="tabRating">
+        <div id="ratingList">
+            <p class="no-data-msg">Đang tải đánh giá...</p>
+        </div>
+    </div>
+</div>
+
+<!-- ====== MODAL ĐÁNH GIÁ SAO ====== -->
+<div class="rating-modal-overlay" id="ratingModalOverlay">
+    <div class="rating-modal">
+        <button class="rating-modal-close" onclick="closeRatingModal()">&times;</button>
+        <h3 id="ratingModalTitle">Đánh giá phim</h3>
+        <div class="rating-modal-avg">
+            <i class="fa-solid fa-star"></i>
+            <span id="ratingModalAvg">0</span> / <span id="ratingModalCount">0</span> lượt đánh giá
+        </div>
+        <div class="star-picker" id="starPicker">
+            <div class="star-picker-item" data-score="1" onclick="pickStar(1)">
+                <i class="fa-solid fa-star star-icon"></i>
+                <span class="star-label">Dở tệ</span>
+            </div>
+            <div class="star-picker-item" data-score="2" onclick="pickStar(2)">
+                <i class="fa-solid fa-star star-icon"></i>
+                <span class="star-label">Phim chán</span>
+            </div>
+            <div class="star-picker-item" data-score="3" onclick="pickStar(3)">
+                <i class="fa-solid fa-star star-icon"></i>
+                <span class="star-label">Khá ổn</span>
+            </div>
+            <div class="star-picker-item" data-score="4" onclick="pickStar(4)">
+                <i class="fa-solid fa-star star-icon"></i>
+                <span class="star-label">Phim hay</span>
+            </div>
+            <div class="star-picker-item" data-score="5" onclick="pickStar(5)">
+                <i class="fa-solid fa-star star-icon"></i>
+                <span class="star-label">Tuyệt vời</span>
+            </div>
+        </div>
+        <textarea class="review-textarea" id="reviewInput" placeholder="Viết nhận xét về phim (tuỳ chọn)" maxlength="500"></textarea>
+        <div class="rating-modal-btns">
+            <button class="btn-submit-rating" onclick="submitRating()">Gửi đánh giá</button>
+            <button class="btn-close-rating" onclick="closeRatingModal()">Đóng</button>
+        </div>
+        <div class="rating-modal-msg" id="ratingModalMsg"></div>
+    </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <script th:inline="javascript">
     const video = document.getElementById('video');
@@ -885,6 +1620,306 @@
     });
 
     loadVideo();
+</script>
+
+<!-- ====== JS: Tabs + Bình luận + Đánh giá + Modal ====== -->
+<script>
+    const _movieId = new URLSearchParams(window.location.search).get('id');
+    let _selectedScore = 0;
+
+    // ========== Tabs ==========
+    function switchTab(tab) {
+        const btns = document.querySelectorAll('.tab-btn');
+        btns[0].classList.toggle('active', tab === 'comment');
+        btns[1].classList.toggle('active', tab === 'rating');
+
+        document.getElementById('tabComment').classList.toggle('active', tab === 'comment');
+        document.getElementById('tabRating').classList.toggle('active', tab === 'rating');
+
+        const title = document.getElementById('tabTitle');
+        if (tab === 'comment') {
+            title.innerHTML = 'Bình luận (<span id="commentCount">' + (document.getElementById('commentCount')?.innerText || '0') + '</span>)';
+        } else {
+            title.innerHTML = 'Đánh giá (<span id="ratingTabCount">0</span>)';
+            loadRatings();
+        }
+    }
+
+    // ========== Cuộn xuống bình luận ==========
+    function scrollToCommentZone() {
+        const zone = document.getElementById('commentZone');
+        if (zone) {
+            zone.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setTimeout(() => document.getElementById('commentInput').focus(), 400);
+        }
+    }
+
+    // ========== Fetch thông tin phim ==========
+    document.addEventListener('DOMContentLoaded', function () {
+        if (_movieId) {
+            fetch('/api/movies/' + _movieId)
+                .then(res => res.ok ? res.json() : Promise.reject(res.status))
+                .then(data => {
+                    document.getElementById('m-title').innerText = data.title || 'Không có tên';
+                    document.getElementById('m-rating').innerText = data.rating ? data.rating.toFixed(1) : '0';
+                })
+                .catch(() => {
+                    document.getElementById('m-title').innerText = 'Không tải được thông tin phim';
+                });
+
+            loadComments();
+        }
+    });
+
+    // ========== Đếm ký tự ==========
+    const commentInput = document.getElementById('commentInput');
+    const charCount = document.getElementById('charCount');
+    commentInput.addEventListener('input', () => {
+        charCount.innerText = commentInput.value.length;
+    });
+
+    // ========== Load bình luận ==========
+    async function loadComments() {
+        if (!_movieId) return;
+        try {
+            const res = await fetch('/api/v1/comments?videoContentId=' + _movieId);
+            const data = await res.json();
+            const container = document.getElementById('commentList');
+            const countEl = document.getElementById('commentCount');
+            if (countEl) countEl.innerText = data.length;
+
+            if (data.length === 0) {
+                container.innerHTML = '<p class="no-data-msg">Chưa có bình luận nào. Hãy là người đầu tiên!</p>';
+                return;
+            }
+
+            container.innerHTML = data.map(c => {
+                const repliesHtml = (c.replies && c.replies.length > 0)
+                    ? '<div class="reply-list">' + c.replies.map(r => `
+                        <div class="reply-item">
+                            <div class="reply-avatar">${(r.userName || 'A').charAt(0).toUpperCase()}</div>
+                            <div class="reply-body">
+                                <div class="reply-user-name">${escHtml(r.userName)}</div>
+                                <div class="reply-text">${escHtml(r.content)}</div>
+                                <div class="reply-date">${formatDate(r.createdAt)}</div>
+                            </div>
+                        </div>
+                    `).join('') + '</div>'
+                    : '';
+
+                return `
+                <div class="comment-item">
+                    <div class="comment-avatar">${(c.userName || 'A').charAt(0).toUpperCase()}</div>
+                    <div class="comment-body">
+                        <div class="comment-user-name">${escHtml(c.userName)}</div>
+                        <div class="comment-text">${escHtml(c.content)}</div>
+                        <div class="comment-actions">
+                            <span class="comment-date">${formatDate(c.createdAt)}</span>
+                            <button class="reply-btn" onclick="toggleReplyBox('${c.id}')">
+                                <i class="fa-solid fa-reply"></i> Trả lời
+                            </button>
+                        </div>
+                        <div class="reply-box" id="replyBox-${c.id}">
+                            <textarea id="replyInput-${c.id}" placeholder="Viết phản hồi..." maxlength="500"></textarea>
+                            <div class="reply-box-footer">
+                                <button class="btn-cancel-reply" onclick="toggleReplyBox('${c.id}')">Hủy</button>
+                                <button class="btn-send-reply" onclick="sendReply('${c.id}')">Gửi</button>
+                            </div>
+                        </div>
+                        ${repliesHtml}
+                    </div>
+                </div>
+                `;
+            }).join('');
+        } catch (e) {
+            console.error('Lỗi load bình luận:', e);
+        }
+    }
+
+    // ========== Gửi bình luận ==========
+    async function sendComment() {
+        const content = commentInput.value.trim();
+        const errorEl = document.getElementById('commentError');
+        const successEl = document.getElementById('commentSuccess');
+        errorEl.style.display = 'none';
+        successEl.style.display = 'none';
+
+        if (!content) {
+            errorEl.innerText = 'Bình luận không được để trống';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/v1/comments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content, videoContentId: _movieId })
+            });
+
+            if (res.ok) {
+                successEl.innerText = 'Gửi bình luận thành công!';
+                successEl.style.display = 'block';
+                commentInput.value = '';
+                charCount.innerText = '0';
+                loadComments();
+            } else {
+                const msg = await res.text();
+                errorEl.innerText = msg || 'Gửi thất bại. Vui lòng đăng nhập.';
+                errorEl.style.display = 'block';
+            }
+        } catch (err) {
+            errorEl.innerText = 'Lỗi kết nối, vui lòng thử lại.';
+            errorEl.style.display = 'block';
+        }
+    }
+
+    // ========== Load đánh giá ==========
+    async function loadRatings() {
+        if (!_movieId) return;
+        try {
+            const res = await fetch('/api/v1/ratings?videoContentId=' + _movieId);
+            const data = await res.json();
+            const container = document.getElementById('ratingList');
+            const tabCount = document.getElementById('ratingTabCount');
+            if (tabCount) tabCount.innerText = data.totalCount || 0;
+
+            // Cập nhật rating badge trên thanh phim
+            document.getElementById('m-rating').innerText = data.averageScore ? data.averageScore.toFixed(1) : '0';
+
+            if (!data.ratings || data.ratings.length === 0) {
+                container.innerHTML = '<p class="no-data-msg">Chưa có đánh giá nào.</p>';
+                return;
+            }
+
+            container.innerHTML = data.ratings.map(r => `
+                <div class="rating-item">
+                    <div class="comment-avatar">${(r.userName || 'A').charAt(0).toUpperCase()}</div>
+                    <div class="comment-body">
+                        <div class="comment-user-name">${escHtml(r.userName)}</div>
+                        <div class="rating-stars-display">${'★'.repeat(r.score)}${'☆'.repeat(5 - r.score)}</div>
+                        ${r.review ? '<div class="review-text">' + escHtml(r.review) + '</div>' : ''}
+                        <div class="comment-date">${formatDate(r.createdAt)}</div>
+                    </div>
+                </div>
+            `).join('');
+        } catch (e) {
+            console.error('Lỗi load đánh giá:', e);
+        }
+    }
+
+    // ========== Modal Đánh giá ==========
+    document.getElementById('btnRating').addEventListener('click', openRatingModal);
+
+    function openRatingModal() {
+        const title = document.getElementById('m-title').innerText;
+        document.getElementById('ratingModalTitle').innerText = title;
+        document.getElementById('ratingModalMsg').innerText = '';
+        document.getElementById('reviewInput').value = '';
+
+        // Lấy avg + count
+        fetch('/api/v1/ratings?videoContentId=' + _movieId)
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('ratingModalAvg').innerText = data.averageScore ? data.averageScore.toFixed(1) : '0';
+                document.getElementById('ratingModalCount').innerText = data.totalCount || 0;
+            }).catch(() => {});
+
+        _selectedScore = 0;
+        document.querySelectorAll('.star-picker-item').forEach(el => el.classList.remove('selected'));
+        document.getElementById('ratingModalOverlay').classList.add('show');
+    }
+
+    function closeRatingModal() {
+        document.getElementById('ratingModalOverlay').classList.remove('show');
+    }
+
+    function pickStar(score) {
+        _selectedScore = score;
+        document.querySelectorAll('.star-picker-item').forEach(el => {
+            const s = Number(el.dataset.score);
+            el.classList.toggle('selected', s <= score);
+        });
+    }
+
+    async function submitRating() {
+        const msgEl = document.getElementById('ratingModalMsg');
+        if (_selectedScore < 1) {
+            msgEl.style.color = '#ff4444';
+            msgEl.innerText = 'Vui lòng chọn số sao!';
+            return;
+        }
+
+        try {
+            const reviewText = document.getElementById('reviewInput').value.trim();
+            const res = await fetch('/api/v1/ratings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ videoContentId: _movieId, score: _selectedScore, review: reviewText || null })
+            });
+
+            if (res.ok) {
+                const msg = await res.text();
+                msgEl.style.color = '#4caf50';
+                msgEl.innerText = msg || 'Đánh giá thành công!';
+                setTimeout(() => {
+                    closeRatingModal();
+                    loadRatings();
+                }, 1000);
+            } else {
+                const msg = await res.text();
+                msgEl.style.color = '#ff4444';
+                msgEl.innerText = msg || 'Đánh giá thất bại. Vui lòng đăng nhập.';
+            }
+        } catch (err) {
+            msgEl.style.color = '#ff4444';
+            msgEl.innerText = 'Lỗi kết nối.';
+        }
+    }
+    // ========== Phản hồi bình luận ==========
+    function toggleReplyBox(commentId) {
+        const box = document.getElementById('replyBox-' + commentId);
+        if (box) box.classList.toggle('show');
+    }
+
+    async function sendReply(parentCommentId) {
+        const input = document.getElementById('replyInput-' + parentCommentId);
+        const content = input.value.trim();
+        if (!content) return;
+
+        try {
+            const res = await fetch('/api/v1/comments/' + parentCommentId + '/replies', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: content, videoContentId: _movieId })
+            });
+
+            if (res.ok) {
+                input.value = '';
+                toggleReplyBox(parentCommentId);
+                loadComments(); // Reload để hiện phản hồi mới
+            } else {
+                const msg = await res.text();
+                alert(msg || 'Gửi phản hồi thất bại. Vui lòng đăng nhập và có gói dịch vụ.');
+            }
+        } catch (err) {
+            alert('Lỗi kết nối, vui lòng thử lại.');
+        }
+    }
+
+    // ========== Utils ==========
+    function escHtml(str) {
+        if (!str) return '';
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function formatDate(isoStr) {
+        if (!isoStr) return '';
+        try {
+            const d = new Date(isoStr);
+            return d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN', {hour:'2-digit',minute:'2-digit'});
+        } catch { return isoStr; }
+    }
 </script>
 </body>
 </html>
