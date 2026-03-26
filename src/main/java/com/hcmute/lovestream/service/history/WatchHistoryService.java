@@ -77,7 +77,7 @@ public class WatchHistoryService {
         VideoContent video = history.getVideoContent();
 
         // Kiểm tra phim còn ACTIVE không — nếu bị ẩn thì không cho click xem tiếp
-        boolean available = video.getStatus() == ContentStatus.ACTIVE;
+        boolean available = video.getStatus() != ContentStatus.HIDDEN;
         String watchUrl = available ? ("/watch-movie?id=" + video.getId()) : null;
 
         return WatchHistoryItemResponse.builder()
@@ -91,6 +91,7 @@ public class WatchHistoryService {
                 .completed(history.isCompleted())
                 .lastWatchedAt(history.getLastWatchedAt())
                 .watchUrl(watchUrl)
+                .available(available)
                 .build();
     }
 

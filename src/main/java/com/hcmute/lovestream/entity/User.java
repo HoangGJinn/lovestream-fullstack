@@ -29,7 +29,7 @@ public class User {
     @Column(unique = true)
     private String phone;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String password;
 
     // Giới tính của người dùng

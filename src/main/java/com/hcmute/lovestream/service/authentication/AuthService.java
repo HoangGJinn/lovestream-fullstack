@@ -13,4 +13,5 @@ public interface AuthService {
     void resendOtp(String email);
     Map<String, String> refreshToken(String refreshToken);
     void logout(String refreshToken);
+    Map<String, String> googleLogin(String email);
 }
