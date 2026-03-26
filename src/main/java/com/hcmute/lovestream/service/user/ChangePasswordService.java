@@ -30,6 +30,9 @@ public class ChangePasswordService {
     @Value("${server.port:8080}")
     private String serverPort;
 
+    @Value("${app.domain:http://localhost:8080}")
+    private String appDomain;
+
     @Transactional
     public void changePasswordByOldPassword(String email, ChangePasswordRequest request) {
         User user = userRepository.findByEmail(email)
@@ -106,7 +109,7 @@ public class ChangePasswordService {
 
         backupTokenRepository.save(backupToken);
 
-        String backupLink = "http://localhost:" + serverPort + "/account/change-password/backup?token=" + token;
+        String backupLink = appDomain + "/account/change-password/backup?token=" + token;
         emailService.sendPasswordChangedEmail(user.getEmail(), backupLink);
     }
 

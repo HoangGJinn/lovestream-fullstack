@@ -49,7 +49,6 @@ public class WatchTogetherService {
                 .getContent();
     }
 
-    // Lấy danh sách các phòng công khai mới nhất, giới hạn 30 phòng
     @Transactional(readOnly = true)
     public List<WatchRoomCardResponse> listPublicRooms() {
         return roomRepository.findLatestPublicRooms().stream().limit(30)
@@ -62,7 +61,7 @@ public class WatchTogetherService {
         if (roomCode == null || roomCode.isBlank()) {
             return Optional.empty();
         }
-        return roomRepository.findByRoomCode(roomCode.trim().toUpperCase(Locale.ROOT)).map(this::toCard);
+        return roomRepository.findByRoomCode(normalizeRoomCode(roomCode)).map(this::toCard);
     }
 
     @Transactional(readOnly = true)
@@ -70,7 +69,7 @@ public class WatchTogetherService {
         if (roomCode == null || roomCode.isBlank()) {
             return Optional.empty();
         }
-        return roomRepository.findByRoomCode(roomCode.trim().toUpperCase(Locale.ROOT));
+        return roomRepository.findByRoomCode(normalizeRoomCode(roomCode));
     }
 
     @Transactional(readOnly = true)
@@ -84,22 +83,13 @@ public class WatchTogetherService {
     public WatchRoomStateResponse getRoomState(String roomCode, String userEmail) {
         assertActiveSubscription(userEmail);
 
-        Room room = roomRepository.findByRoomCode(roomCode)
-                .orElseThrow(() -> new IllegalArgumentException("Phòng không tồn tại"));
-
+        Room room = findRoomByCodeOrThrow(roomCode);
         RoomParticipant participant = roomParticipantRepository.findByRoom_IdAndUser_Email(room.getId(), userEmail)
                 .orElseThrow(() -> new IllegalStateException("Ban chua tham gia phong nay"));
 
-        return new WatchRoomStateResponse(
-                room.getRoomCode(),
-                room.getRoomName(),
-                room.getStatus().name(),
-                participant.getRole() == RoomRole.HOST,
-                room.isPrivate()
-        );
+        return buildRoomState(room, participant);
     }
 
-    // tao phòng
     @Transactional
     public Room createRoom(String userEmail, CreateRoomRequest request) {
         assertActiveSubscription(userEmail);
@@ -114,6 +104,7 @@ public class WatchTogetherService {
         int maxParticipants = request.getMaxParticipants() == null ? 10 : request.getMaxParticipants();
         boolean privateRoom = Boolean.TRUE.equals(request.getPrivateRoom());
         String roomPassword = normalizePassword(request.getPassword(), privateRoom);
+
         Room room = Room.builder()
                 .roomName(normalizeRoomName(request.getRoomName()))
                 .roomCode(roomCode)
@@ -121,6 +112,7 @@ public class WatchTogetherService {
                 .password(roomPassword)
                 .maxParticipants(maxParticipants)
                 .status(RoomStatus.WAITING)
+                .currentVideoTime(0.0)
                 .host(host)
                 .videoContent(video)
                 .build();
@@ -131,7 +123,8 @@ public class WatchTogetherService {
                 .room(savedRoom)
                 .user(host)
                 .role(RoomRole.HOST)
-                .connectionStatus(ConnectionStatus.CONNECTED)
+                // Presence is controlled by WebSocket JOIN/DISCONNECT events.
+                .connectionStatus(ConnectionStatus.DISCONNECTED)
                 .build();
         roomParticipantRepository.save(hostParticipant);
 
@@ -147,17 +140,16 @@ public class WatchTogetherService {
     public Room joinRoom(String roomCode, String userEmail, String rawPassword) {
         assertActiveSubscription(userEmail);
 
-        Room room = roomRepository.findByRoomCode(roomCode)
-                .orElseThrow(() -> new IllegalArgumentException("Phòng không tồn tại"));
-
+        Room room = findRoomByCodeOrThrow(roomCode);
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new IllegalArgumentException("User khong ton tai"));
 
-        if (roomParticipantRepository.existsByRoom_IdAndUser_Id(room.getId(), user.getId())) {
+        Optional<RoomParticipant> existingParticipant = roomParticipantRepository.findByRoom_IdAndUser_Id(room.getId(), user.getId());
+        if (existingParticipant.isPresent()) {
             return room;
         }
 
-        long participantCount = roomParticipantRepository.countByRoom_Id(room.getId());
+        long participantCount = countConnectedParticipantsByRoomId(room.getId());
         if (participantCount >= room.getMaxParticipants()) {
             throw new IllegalStateException("Phong da day");
         }
@@ -170,7 +162,8 @@ public class WatchTogetherService {
                 .room(room)
                 .user(user)
                 .role(RoomRole.VIEWER)
-                .connectionStatus(ConnectionStatus.CONNECTED)
+                // Presence is controlled by WebSocket JOIN/DISCONNECT events.
+                .connectionStatus(ConnectionStatus.DISCONNECTED)
                 .build();
         roomParticipantRepository.save(participant);
 
@@ -179,8 +172,7 @@ public class WatchTogetherService {
 
     @Transactional
     public Room startRoom(String roomCode, String hostEmail) {
-        Room room = roomRepository.findByRoomCode(roomCode)
-                .orElseThrow(() -> new IllegalArgumentException("Phòng không tồn tại"));
+        Room room = findRoomByCodeOrThrow(roomCode);
         validateHost(room, hostEmail);
         room.setStatus(RoomStatus.PLAYING);
         return roomRepository.save(room);
@@ -188,15 +180,118 @@ public class WatchTogetherService {
 
     @Transactional
     public Room stopRoom(String roomCode, String hostEmail) {
-        Room room = roomRepository.findByRoomCode(roomCode)
-                .orElseThrow(() -> new IllegalArgumentException("Phòng không tồn tại"));
+        Room room = findRoomByCodeOrThrow(roomCode);
         validateHost(room, hostEmail);
         room.setStatus(RoomStatus.WAITING);
         return roomRepository.save(room);
     }
 
+    @Transactional
+    public void markParticipantConnected(String roomCode, String userEmail) {
+        Room room = findRoomByCodeOrThrow(roomCode);
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new IllegalArgumentException("User khong ton tai"));
+
+        RoomParticipant participant = roomParticipantRepository.findByRoom_IdAndUser_Id(room.getId(), user.getId())
+                .orElseThrow(() -> new IllegalStateException("Ban chua tham gia phong nay"));
+
+        if (participant.getConnectionStatus() != ConnectionStatus.CONNECTED) {
+            participant.setConnectionStatus(ConnectionStatus.CONNECTED);
+            roomParticipantRepository.save(participant);
+        }
+    }
+
+    @Transactional
+    public void markParticipantDisconnected(String roomCode, String userEmail) {
+        Room room = findRoomByCodeOrThrow(roomCode);
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new IllegalArgumentException("User khong ton tai"));
+
+        RoomParticipant participant = roomParticipantRepository.findByRoom_IdAndUser_Id(room.getId(), user.getId())
+                .orElseThrow(() -> new IllegalStateException("Ban chua tham gia phong nay"));
+
+        if (participant.getConnectionStatus() != ConnectionStatus.DISCONNECTED) {
+            participant.setConnectionStatus(ConnectionStatus.DISCONNECTED);
+            roomParticipantRepository.save(participant);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public long countActiveParticipants(String roomCode) {
+        Room room = findRoomByCodeOrThrow(roomCode);
+        return countConnectedParticipantsByRoomId(room.getId());
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isUserHost(String roomCode, String userEmail) {
+        Room room = findRoomByCodeOrThrow(roomCode);
+        return room.getHost() != null
+                && room.getHost().getEmail() != null
+                && room.getHost().getEmail().equals(userEmail);
+    }
+
+    @Transactional
+    public Room applyHostPlaybackAction(String roomCode, String hostEmail, String action, Double currentTime) {
+        Room room = findRoomByCodeOrThrow(roomCode);
+        validateHost(room, hostEmail);
+
+        String normalizedAction = action == null ? "" : action.trim().toUpperCase(Locale.ROOT);
+        switch (normalizedAction) {
+            case "PLAY" -> room.setStatus(RoomStatus.PLAYING);
+            case "PAUSE" -> room.setStatus(RoomStatus.PAUSED);
+            case "SEEK" -> {
+                // Keep current status, only update time.
+            }
+            case "STOP" -> room.setStatus(RoomStatus.WAITING);
+            default -> throw new IllegalArgumentException("Action khong hop le");
+        }
+
+        room.setCurrentVideoTime(normalizeCurrentTime(currentTime));
+        return roomRepository.save(room);
+    }
+
+    @Transactional
+    public Room updateCurrentVideoTime(String roomCode, String hostEmail, Double currentTime) {
+        Room room = findRoomByCodeOrThrow(roomCode);
+        validateHost(room, hostEmail);
+        room.setCurrentVideoTime(normalizeCurrentTime(currentTime));
+        return roomRepository.save(room);
+    }
+
+    @Transactional
+    public Room forceStopRoom(String roomCode) {
+        Room room = findRoomByCodeOrThrow(roomCode);
+        room.setStatus(RoomStatus.WAITING);
+        return roomRepository.save(room);
+    }
+
+    @Transactional(readOnly = true)
+    public double getCurrentVideoTime(String roomCode) {
+        Room room = findRoomByCodeOrThrow(roomCode);
+        return normalizeCurrentTime(room.getCurrentVideoTime());
+    }
+
+    @Transactional(readOnly = true)
+    public String getRoomStatus(String roomCode) {
+        Room room = findRoomByCodeOrThrow(roomCode);
+        return room.getStatus().name();
+    }
+
+    private WatchRoomStateResponse buildRoomState(Room room, RoomParticipant participant) {
+        long participantCount = countConnectedParticipantsByRoomId(room.getId());
+        return new WatchRoomStateResponse(
+                room.getRoomCode(),
+                room.getRoomName(),
+                room.getStatus().name(),
+                participant.getRole() == RoomRole.HOST,
+                room.isPrivate(),
+                participantCount,
+                normalizeCurrentTime(room.getCurrentVideoTime())
+        );
+    }
+
     private WatchRoomCardResponse toCard(Room room) {
-        long participantCount = roomParticipantRepository.countByRoom_Id(room.getId());
+        long participantCount = countConnectedParticipantsByRoomId(room.getId());
         String rawCategory = room.getVideoContent().getGenres().stream()
                 .map(Genre::getName)
                 .filter(Objects::nonNull)
@@ -230,9 +325,26 @@ public class WatchTogetherService {
 
     private String formatDateTime(LocalDateTime createdAt) {
         if (createdAt == null) {
-            return "Vừa tạo";
+            return "Vua tao";
         }
         return CREATED_AT_FORMAT.format(createdAt);
+    }
+
+    private Room findRoomByCodeOrThrow(String roomCode) {
+        String normalizedRoomCode = normalizeRoomCode(roomCode);
+        return roomRepository.findByRoomCode(normalizedRoomCode)
+                .orElseThrow(() -> new IllegalArgumentException("Phong khong ton tai"));
+    }
+
+    private String normalizeRoomCode(String roomCode) {
+        if (roomCode == null || roomCode.isBlank()) {
+            throw new IllegalArgumentException("Ma phong khong hop le");
+        }
+        return roomCode.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private long countConnectedParticipantsByRoomId(String roomId) {
+        return roomParticipantRepository.countByRoom_IdAndConnectionStatus(roomId, ConnectionStatus.CONNECTED);
     }
 
     private String normalizeRoomName(String value) {
@@ -286,6 +398,13 @@ public class WatchTogetherService {
         }
     }
 
+    private double normalizeCurrentTime(Double currentTime) {
+        if (currentTime == null || currentTime.isNaN() || currentTime < 0) {
+            return 0.0;
+        }
+        return currentTime;
+    }
+
     private String generateUniqueRoomCode() {
         for (int i = 0; i < 10; i++) {
             String code = randomCode(8);
@@ -306,6 +425,3 @@ public class WatchTogetherService {
         return sb.toString();
     }
 }
-
-
-

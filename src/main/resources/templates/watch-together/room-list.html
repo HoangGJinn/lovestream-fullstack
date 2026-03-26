@@ -96,7 +96,7 @@
         }
 
         .page {
-            width: min(1360px, calc(100% - 64px));
+            width: calc(100% - 40px);
             margin: 16px auto 0;
             padding-bottom: 30px;
         }
@@ -141,6 +141,13 @@
             align-items: center;
             gap: 10px;
             white-space: nowrap;
+            cursor: pointer;
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+        }
+
+        .create-btn:hover {
+            border-color: rgba(255, 255, 255, 0.62);
+            background: rgba(255, 255, 255, 0.08);
         }
 
         .action-group {
@@ -162,6 +169,14 @@
             align-items: center;
             gap: 8px;
             white-space: nowrap;
+            cursor: pointer;
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+        }
+
+        .ghost-btn:hover,
+        .ghost-btn:focus-visible {
+            border-color: rgba(255, 255, 255, 0.62);
+            background: rgba(255, 255, 255, 0.08);
         }
 
         .created-room-card {
@@ -509,7 +524,7 @@
 
         @media (max-width: 1400px) {
             .page {
-                width: min(1200px, calc(100% - 40px));
+                width: calc(100% - 32px);
             }
 
             .room-grid {
@@ -594,6 +609,12 @@
     </style>
 </head>
 <body>
+<div class="navbar" id="navbar">
+    <div th:replace="~{fragments/top-navbar :: topNavLeft('watch-together')}"></div>
+    <div class="nav-right">
+        <div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>
+    </div>
+</div>
 <main class="page">
     <section class="headline">
         <div>
@@ -601,6 +622,7 @@
             <p>Tham gia cùng hàng nghìn người khác để cùng xem những bộ phim bom tấn<br>và thảo luận trực tiếp trong thời gian thực.</p>
         </div>
         <div class="action-group">
+            <button id="refreshRoomsBtn" class="ghost-btn" type="button"><i class="fa-solid fa-rotate-right"></i> LAM MOI</button>
             <a href="/watch-together/my-rooms" class="ghost-btn"><i class="fa-solid fa-list"></i> PHÒNG CỦA TÔI</a>
             <a href="/watch-together/creat-room" class="create-btn"><i class="fa-solid fa-video"></i> TẠO PHÒNG</a>
         </div>
@@ -653,7 +675,7 @@
         <h3 class="code-result-title">✓ Kết quả tìm kiếm</h3>
         <article class="room-card" th:attr="data-category=${searchedRoom.category},data-room=${searchedRoom.roomName},data-movie=${searchedRoom.movieTitle},data-room-code=${searchedRoom.roomCode}">
             <div class="poster-wrap">
-                <span class="status-tag" th:classappend="${searchedRoom.live} ? ' live'" th:text="${searchedRoom.statusText}">Dang cho</span>
+                <span class="status-tag js-room-status" th:classappend="${searchedRoom.live} ? ' live'" th:text="${searchedRoom.statusText}">Dang cho</span>
                 <img th:src="${searchedRoom.moviePosterUrl}" th:alt="${searchedRoom.roomName}">
             </div>
             <div class="room-body">
@@ -661,6 +683,7 @@
                 <div class="movie-name"><i class="fa-solid fa-film"></i> <span th:text="${searchedRoom.movieTitle}">Ten phim</span></div>
                 <div class="meta">
                     <span><i class="fa-solid fa-hashtag"></i> <span th:text="${searchedRoom.roomCode}">ROOMCODE</span></span>
+                    <span><i class="fa-solid fa-users"></i> <span class="js-room-participants" th:attr="data-max-participants=${searchedRoom.maxParticipants}" th:text="${searchedRoom.participantCount + ' / ' + searchedRoom.maxParticipants + ' nguoi'}">0 / 0 nguoi</span></span>
                     <span th:text="${searchedRoom.createdAtLabel}">Vua tao</span>
                 </div>
                 <form class="join-form" th:action="@{/watch-together/{roomCode}/join(roomCode=${searchedRoom.roomCode})}" method="post">
@@ -682,10 +705,6 @@
     </section>
 
     <!-- All Public Rooms Section -->
-    <section class="all-rooms-section">
-        <h2 class="all-rooms-title">📺 Danh sách phòng công khai</h2>
-    </section>
-
     <section class="toolbar">
         <div class="chips" id="filterChips">
             <button class="chip active" type="button" data-filter="all">Tất cả</button>
@@ -705,14 +724,14 @@
                  th:each="room : ${rooms}"
                  th:attr="data-category=${room.category},data-room=${room.roomName},data-movie=${room.movieTitle},data-room-code=${room.roomCode}">
             <div class="poster-wrap">
-                <span class="status-tag" th:classappend="${room.live} ? ' live'" th:text="${room.statusText}">Dang cho</span>
+                <span class="status-tag js-room-status" th:classappend="${room.live} ? ' live'" th:text="${room.statusText}">Dang cho</span>
                 <img th:src="${room.moviePosterUrl}" th:alt="${room.roomName}">
             </div>
             <div class="room-body">
                 <h3 class="room-title" th:text="${room.roomName}">Ten phong</h3>
                 <div class="movie-name"><i class="fa-solid fa-film"></i> <span th:text="${room.movieTitle}">Ten phim</span></div>
                 <div class="meta">
-                    <span><i class="fa-solid fa-users"></i> <span th:text="${room.participantCount + ' / ' + room.maxParticipants + ' nguoi'}">0 / 0 nguoi</span></span>
+                    <span><i class="fa-solid fa-users"></i> <span class="js-room-participants" th:attr="data-max-participants=${room.maxParticipants}" th:text="${room.participantCount + ' / ' + room.maxParticipants + ' nguoi'}">0 / 0 nguoi</span></span>
                     <span th:text="${room.createdAtLabel}">Vua tao</span>
                 </div>
                 <form th:action="@{/watch-together/{roomCode}/join(roomCode=${room.roomCode})}" method="post">
@@ -756,6 +775,8 @@
     <p class="copyright">&copy; 1997-2024 Netflix, Inc.</p>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 <script>
     (function () {
         const chips = document.querySelectorAll('.chip');
@@ -767,7 +788,20 @@
         const createdRoomPassword = document.getElementById('createdRoomPassword');
         const togglePasswordBtn = document.getElementById('togglePasswordBtn');
         const copyButtons = document.querySelectorAll('.copy-btn');
+        const refreshRoomsBtn = document.getElementById('refreshRoomsBtn');
+        const roomCardsByCode = new Map();
         let activeFilter = 'all';
+
+        cards.forEach(function (card) {
+            const roomCode = (card.dataset.roomCode || '').trim().toUpperCase();
+            if (!roomCode) {
+                return;
+            }
+            if (!roomCardsByCode.has(roomCode)) {
+                roomCardsByCode.set(roomCode, []);
+            }
+            roomCardsByCode.get(roomCode).push(card);
+        });
 
         if (createdRoomCode && createdRoomLink) {
             const roomCode = (createdRoomCode.value || '').trim();
@@ -810,6 +844,12 @@
             });
         });
 
+        if (refreshRoomsBtn) {
+            refreshRoomsBtn.addEventListener('click', function () {
+                window.location.reload();
+            });
+        }
+
         function applyFilter() {
             const keyword = searchInput.value.trim().toLowerCase();
             let visibleCount = 0;
@@ -831,6 +871,75 @@
             emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
         }
 
+        function toStatusView(status) {
+            const normalized = String(status || '').trim().toUpperCase();
+            if (normalized === 'PLAYING') {
+                return { text: 'Dang chieu', live: true };
+            }
+            if (normalized === 'PAUSED') {
+                return { text: 'Tam dung', live: false };
+            }
+            return { text: 'Dang cho', live: false };
+        }
+
+        function updateRoomCardRealtime(roomCode, message) {
+            const normalizedRoomCode = (roomCode || '').trim().toUpperCase();
+            const roomCards = roomCardsByCode.get(normalizedRoomCode);
+            if (!roomCards || roomCards.length === 0) {
+                return;
+            }
+
+            const hasStatus = !!(message && message.status);
+            const statusView = hasStatus ? toStatusView(message.status) : null;
+            const currentParticipants = Number(message && message.currentParticipants);
+
+            roomCards.forEach(function (card) {
+                const statusTag = card.querySelector('.js-room-status');
+                if (statusTag && statusView) {
+                    statusTag.textContent = statusView.text;
+                    statusTag.classList.toggle('live', statusView.live);
+                }
+
+                const participantLabel = card.querySelector('.js-room-participants');
+                if (participantLabel && Number.isFinite(currentParticipants)) {
+                    const maxParticipants = Number(participantLabel.dataset.maxParticipants || 0);
+                    const online = Math.max(0, Math.floor(currentParticipants));
+                    participantLabel.textContent = maxParticipants > 0
+                        ? online + ' / ' + maxParticipants + ' nguoi'
+                        : online + ' nguoi';
+                }
+            });
+        }
+
+        function connectRoomRealtimeFeed() {
+            if (roomCardsByCode.size === 0) {
+                return;
+            }
+            if (typeof SockJS === 'undefined' || typeof Stomp === 'undefined') {
+                return;
+            }
+
+            const socket = new SockJS('/ws-lovestream');
+            const stompClient = Stomp.over(socket);
+            stompClient.debug = function () {
+            };
+
+            stompClient.connect({}, function () {
+                roomCardsByCode.forEach(function (_cards, roomCode) {
+                    stompClient.subscribe('/topic/room/' + roomCode, function (payload) {
+                        try {
+                            const message = JSON.parse(payload.body || '{}');
+                            updateRoomCardRealtime(roomCode, message);
+                        } catch (error) {
+                            console.warn('Invalid realtime room payload', error);
+                        }
+                    });
+                });
+            }, function (error) {
+                console.warn('Room realtime feed disconnected', error);
+            });
+        }
+
         chips.forEach(function (chip) {
             chip.addEventListener('click', function () {
                 chips.forEach(function (other) {
@@ -844,6 +953,7 @@
 
         searchInput.addEventListener('input', applyFilter);
         applyFilter();
+        connectRoomRealtimeFeed();
     })();
 </script>
 </body>

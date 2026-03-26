@@ -130,15 +130,8 @@
 
 <!-- Navbar -->
 <div class="navbar" id="navbar">
-    <div class="nav-left">
-        <a href="/" class="logo">LoveStream</a>
-        <ul class="nav-links">
-            <li><a href="/home">Trang chủ</a></li>
-            <li><a href="/series" class="active">Series</a></li>
-            <li><a href="/movies">Phim</a></li>
-        </ul>
-    </div>
-    <div class="nav-right">
+            <div th:replace="~{fragments/top-navbar :: topNavLeft('series')}"></div>
+        <div class="nav-right">
         <div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>
     </div>
 </div>
