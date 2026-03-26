@@ -218,7 +218,7 @@
 <div class="history-container">
 
   <div class="history-section">
-    <div class="section-title">Gan day</div>
+    <div class="section-title">Gần đây</div>
     <div class="video-list" id="historyList"></div>
   </div>
 
@@ -250,7 +250,7 @@
 
   function renderHistory(items) {
     if (!Array.isArray(items) || items.length === 0) {
-      historyList.innerHTML = '<p>Ban chua co lich su xem.</p>';
+      historyList.innerHTML = '<p>Bạn chưa có lịch sử phim nào.</p>';
       return;
     }
 
@@ -312,7 +312,7 @@
     try {
       const response = await fetch('/api/v1/history');
       if (!response.ok) {
-        throw new Error('Khong the tai lich su');
+        throw new Error('Không thể tải lịch sử');
       }
       const data = await response.json();
       renderHistory(data);
@@ -327,12 +327,12 @@
     try {
       const response = await fetch(`/api/v1/history/${videoContentId}`, { method: 'DELETE' });
       if (!response.ok && response.status !== 204) {
-        throw new Error('Khong the xoa lich su');
+        throw new Error('Không thể xóa lịch sử');
       }
       await loadHistory();
     } catch (error) {
       console.error(error);
-      alert('Xoa lich su that bai');
+      alert('Xóa lịch sử thất bại. Vui lòng thử lại.');
     }
   }
 
