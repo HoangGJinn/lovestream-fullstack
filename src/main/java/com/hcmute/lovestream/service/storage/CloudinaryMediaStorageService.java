@@ -22,13 +22,15 @@ public class CloudinaryMediaStorageService implements MediaStorageService {
     private final CloudinaryProperties cloudinaryProperties;
 
     /** Asset types that map to Cloudinary's "video" resource_type */
-    private static final Set<AssetType> VIDEO_TYPES = Set.of(AssetType.FULL_VIDEO, AssetType.TRAILER, AssetType.EPISODE_VIDEO);
+    private static final Set<AssetType> VIDEO_TYPES = Set.of(AssetType.FULL_VIDEO, AssetType.TRAILER,
+            AssetType.EPISODE_VIDEO);
 
     @Override
     public String upload(MultipartFile file, AssetType assetType) throws IOException {
         String apiKey = cloudinaryProperties.getApiKey();
         if (apiKey == null || apiKey.isBlank() || apiKey.contains("placeholder")) {
-            throw new IllegalStateException("Cloudinary chưa được cấu hình. Vui lòng cập nhật cấu hình API key để sử dụng tính năng upload.");
+            throw new IllegalStateException(
+                    "Cloudinary chưa được cấu hình. Vui lòng cập nhật cấu hình API key để sử dụng tính năng upload.");
         }
 
         if (file == null || file.isEmpty()) {
@@ -48,9 +50,7 @@ public class CloudinaryMediaStorageService implements MediaStorageService {
                             "resource_type", resourceType,
                             "folder", folder,
                             "use_filename", true,
-                            "unique_filename", true
-                    )
-            );
+                            "unique_filename", true));
 
             String secureUrl = (String) uploadResult.get("secure_url");
             if (secureUrl == null || secureUrl.isBlank()) {
@@ -67,12 +67,12 @@ public class CloudinaryMediaStorageService implements MediaStorageService {
 
     private String buildFolder(AssetType assetType) {
         return switch (assetType) {
-            case POSTER     -> "lovestream/movies/posters";
-            case TRAILER    -> "lovestream/movies/trailers";
+            case POSTER -> "lovestream/movies/posters";
+            case TRAILER -> "lovestream/movies/trailers";
             case FULL_VIDEO -> "lovestream/movies/videos";
             case SEASON_POSTER -> "lovestream/series/posters";
             case EPISODE_VIDEO -> "lovestream/series/videos";
-            default         -> "lovestream/media";
+            default -> "lovestream/media";
         };
     }
 }

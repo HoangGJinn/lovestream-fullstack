@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${bannerRequest.id != null} ? 'Cập nhật banner' : 'Tạo banner mới'">Banner</title>
+    <link rel="stylesheet" th:href="@{/css/admin/admin-theme.css}" />
+    <link rel="stylesheet" th:href="@{/css/admin/web-content/web-content.css}" />
+</head>
+
+<body>
+    <div th:replace="~{admin/fragments/sidebar :: sidebar(activeMenu='web-content')}"></div>
+
+    <div class="admin-content">
+        <header class="admin-header">
+            <h2 th:text="${bannerRequest.id != null} ? 'Cập nhật banner' : 'Tạo banner mới'">Tạo banner</h2>
+            <div class="header-actions">
+                <a th:href="@{/admin/web-content?tab=banners}" class="btn btn-secondary btn-sm">Quay lại</a>
+            </div>
+        </header>
+
+        <div class="webcontent-tabs">
+            <a th:href="@{/admin/web-content(tab='banners')}" class="active">Banner trang chủ</a>
+            <a th:href="@{/admin/web-content(tab='static-pages')}" th:classappend="${bannerRequest.id != null} ? '' : ''"
+                >Trang tĩnh</a>
+        </div>
+
+        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+        <div class="form-card">
+            <form th:action="${bannerRequest.id != null}
+                        ? @{/admin/web-content/banners/{id}(id=${bannerRequest.id})}
+                        : @{/admin/web-content/banners}"
+                  th:object="${bannerRequest}"
+                  method="post"
+                  enctype="multipart/form-data">
+
+                <input type="hidden" th:field="*{id}" />
+                <input type="hidden" th:field="*{existingImagePath}" />
+
+                <div class="form-section">
+                    <div class="form-section-title">Thông tin banner</div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="title">Tiêu đề <span class="required">*</span></label>
+                            <input id="title" type="text" th:field="*{title}" class="form-control"
+                                   th:classappend="${#fields.hasErrors('title')} ? 'is-invalid' : ''"/>
+                            <span class="field-error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="navigationLink">Link điều hướng</label>
+                            <input id="navigationLink" type="text" th:field="*{navigationLink}" class="form-control"
+                                   placeholder="VD: /movies/some-slug hoặc https://example.com" />
+                        </div>
+                    </div>
+
+                    <div class="form-row two-col">
+                        <div class="form-group">
+                            <label for="displayOrder">Thứ tự hiển thị <span class="required">*</span></label>
+                            <input id="displayOrder" type="number" th:field="*{displayOrder}" min="1"
+                                   class="form-control" />
+                        </div>
+                        <div class="form-group">
+                            <label for="isDisplayed">Trạng thái</label>
+                            <select id="isDisplayed" th:field="*{isDisplayed}" class="form-control">
+                                <option th:value="true">Đang hiển thị</option>
+                                <option th:value="false">Đã ẩn</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-section-title">Ảnh banner (local)</div>
+
+                    <div class="form-row two-col">
+                        <div class="form-group">
+                            <label for="bannerImage">Chọn ảnh <span class="required">*</span></label>
+                            <input id="bannerImage" type="file" th:field="*{bannerImage}" class="form-control"
+                                   accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                                   th:required="${bannerRequest.id == null}" />
+                            <div style="color: var(--netflix-light-grey); font-size: 13px; margin-top: 8px;">
+                                Chỉ nhận `jpg`, `jpeg`, `png`, `webp` (tối đa 5MB).
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Preview ảnh hiện tại</label>
+                            <img th:if="${bannerRequest.existingImagePath != null and !#strings.isEmpty(bannerRequest.existingImagePath)}"
+                                 th:src="@{/uploads/{path}(path=${bannerRequest.existingImagePath})}"
+                                 class="banner-thumb" alt="Banner preview"/>
+                            <div th:if="${bannerRequest.existingImagePath == null or #strings.isEmpty(bannerRequest.existingImagePath)}"
+                                 style="color: var(--netflix-light-grey);">Chưa có ảnh</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <a th:href="@{/admin/web-content?tab=banners}" class="btn btn-secondary">Hủy</a>
+                    <button type="submit" class="btn btn-primary"
+                            th:text="${bannerRequest.id != null} ? 'Lưu thay đổi' : 'Tạo banner'">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+
+</html>
+
