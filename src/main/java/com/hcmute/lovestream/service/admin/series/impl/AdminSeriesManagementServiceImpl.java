@@ -16,6 +16,7 @@ import com.hcmute.lovestream.repository.SeasonRepository;
 import com.hcmute.lovestream.repository.TVSeriesRepository;
 import com.hcmute.lovestream.repository.WatchHistoryRepository;
 import com.hcmute.lovestream.service.admin.series.AdminSeriesManagementService;
+import com.hcmute.lovestream.service.storage.CloudinaryFolderTarget;
 import com.hcmute.lovestream.service.storage.MediaStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -242,7 +243,7 @@ public class AdminSeriesManagementServiceImpl implements AdminSeriesManagementSe
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("File upload không được để trống!");
         }
-        String publicUrl = mediaStorageService.upload(file, AssetType.POSTER);
+        String publicUrl = mediaStorageService.upload(file, CloudinaryFolderTarget.SERIES_POSTER);
 
         TVSeries series = getSeriesById(seriesId);
         MediaAsset asset = series.getMediaAssets().stream()

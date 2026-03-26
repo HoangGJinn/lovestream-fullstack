@@ -1,6 +1,5 @@
 package com.hcmute.lovestream.service.storage;
 
-import com.hcmute.lovestream.entity.enums.AssetType;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -14,10 +13,10 @@ public interface MediaStorageService {
     /**
      * Upload a media file to remote storage.
      *
-     * @param file      the file to upload
-     * @param assetType the type of asset (POSTER, TRAILER, FULL_VIDEO, etc.)
+     * @param file         the file to upload
+     * @param folderTarget the Cloudinary folder target to upload into
      * @return the public URL of the uploaded file
      * @throws IOException if the upload fails
      */
-    String upload(MultipartFile file, AssetType assetType) throws IOException;
+    String upload(MultipartFile file, CloudinaryFolderTarget folderTarget) throws IOException;
 }

@@ -135,12 +135,16 @@ public class WatchTogetherWebController {
 
     @GetMapping("/api/rooms/{roomCode}/state")
     @ResponseBody
-    public ResponseEntity<WatchRoomStateResponse> roomState(
+    public ResponseEntity<?> roomState(
             @PathVariable String roomCode,
             Authentication authentication
     ) {
-        WatchRoomStateResponse state = watchTogetherService.getRoomState(roomCode, authentication.getName());
-        return ResponseEntity.ok(state);
+        try {
+            WatchRoomStateResponse state = watchTogetherService.getRoomState(roomCode, authentication.getName());
+            return ResponseEntity.ok(state);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+        }
     }
 
     @PostMapping("/api/rooms/{roomCode}/start")

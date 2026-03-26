@@ -81,17 +81,8 @@
 <body>
 
 <div class="navbar" id="navbar">
-    <div class="nav-left">
-        <a href="/" class="logo">LoveStream</a>
-        <ul class="nav-links">
-            <li><a href="/home">Trang chu</a></li>
-            <li><a href="/series">Series</a></li>
-            <li><a href="/movies" class="active">Phim</a></li>
-            <li><a href="#">Moi & Pho bien</a></li>
-            <li><a href="#">Danh sach cua toi</a></li>
-        </ul>
-    </div>
-    <div class="nav-right">
+            <div th:replace="~{fragments/top-navbar :: topNavLeft('movies')}"></div>
+        <div class="nav-right">
         <i class="fa-solid fa-magnifying-glass nav-icon"></i>
         <a href="/notifications" class="nav-icon" aria-label="Thong bao"><i class="fa-regular fa-bell"></i></a>
         <div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>

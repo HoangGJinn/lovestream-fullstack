@@ -15,6 +15,7 @@ import com.hcmute.lovestream.repository.MediaAssetRepository;
 import com.hcmute.lovestream.repository.MovieRepository;
 import com.hcmute.lovestream.repository.PersonRepository;
 import com.hcmute.lovestream.service.admin.movie.AdminMovieManagementService;
+import com.hcmute.lovestream.service.storage.CloudinaryFolderTarget;
 import com.hcmute.lovestream.service.storage.MediaStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -104,33 +105,24 @@ public class AdminMovieManagementServiceImpl implements AdminMovieManagementServ
     // -- 4. Media Asset Management --
     @Override
     @Transactional
-    public MediaAsset addAssetFromUrl(String movieId, AssetType assetType, String assetUrl) {
-        if (assetUrl == null || assetUrl.isBlank()) {
-            throw new IllegalArgumentException("URL không hợp lệ. Đường dẫn không được để trống!");
-        }
-        if (!assetUrl.contains("res.cloudinary.com")) {
-            throw new IllegalArgumentException("URL không hợp lệ. Chỉ chấp nhận link public từ nền tảng Cloudinary.");
-        }
-        return addAsset(movieId, assetType, assetUrl);
+    public MediaAsset uploadMoviePoster(String movieId, MultipartFile file) throws IOException {
+        validatePosterUpload(file);
+        String publicUrl = mediaStorageService.upload(file, CloudinaryFolderTarget.MOVIE_POSTER);
+        return upsertMovieAsset(movieId, AssetType.POSTER, publicUrl);
     }
 
-    // Giữ code ghi đè tài nguyên xuất sắc của DEV
     @Override
     @Transactional
-    public MediaAsset addAsset(String movieId, AssetType assetType, String assetUrl) {
-        Movie movie = getMovieById(movieId);
+    public MediaAsset addMovieTrailerFromUrl(String movieId, String assetUrl) {
+        validateCloudinaryVideoUrl(assetUrl);
+        return upsertMovieAsset(movieId, AssetType.TRAILER, assetUrl);
+    }
 
-        MediaAsset asset = movie.getMediaAssets().stream()
-                .filter(a -> a.getAssetType() == assetType)
-                .findFirst()
-                .orElse(new MediaAsset());
-
-        asset.setAssetType(assetType);
-        asset.setAssetUrl(assetUrl);
-        asset.setVideoContent(movie);
-
-        log.info("Saving {} to Movie ID: {}", assetType, movieId);
-        return mediaAssetRepository.save(asset);
+    @Override
+    @Transactional
+    public MediaAsset addMovieVideoFromUrl(String movieId, String assetUrl) {
+        validateCloudinaryVideoUrl(assetUrl);
+        return upsertMovieAsset(movieId, AssetType.FULL_VIDEO, assetUrl);
     }
 
     @Override
@@ -145,16 +137,6 @@ public class AdminMovieManagementServiceImpl implements AdminMovieManagementServ
         }
         log.info("Removing Asset {} from Movie ID: {}", assetId, movieId);
         mediaAssetRepository.delete(asset);
-    }
-
-    @Override
-    @Transactional
-    public MediaAsset uploadMovieAsset(String movieId, AssetType assetType, MultipartFile file) throws IOException {
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("File upload không được để trống!");
-        }
-        String publicUrl = mediaStorageService.upload(file, assetType);
-        return addAsset(movieId, assetType, publicUrl);
     }
 
     // --- HELPER METHOD ---
@@ -229,5 +211,45 @@ public class AdminMovieManagementServiceImpl implements AdminMovieManagementServ
                     return credit;
                 })
                 .collect(Collectors.toList());
+    }
+
+    private MediaAsset upsertMovieAsset(String movieId, AssetType assetType, String assetUrl) {
+        Movie movie = getMovieById(movieId);
+
+        List<MediaAsset> assets = movie.getMediaAssets() == null ? List.of() : movie.getMediaAssets();
+        MediaAsset asset = assets.stream()
+                .filter(a -> a.getAssetType() == assetType)
+                .findFirst()
+                .orElse(new MediaAsset());
+
+        asset.setAssetType(assetType);
+        asset.setAssetUrl(assetUrl);
+        asset.setVideoContent(movie);
+
+        log.info("Saving {} to Movie ID: {}", assetType, movieId);
+        return mediaAssetRepository.save(asset);
+    }
+
+    private void validatePosterUpload(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File poster không được để trống!");
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.toLowerCase(Locale.ROOT).startsWith("image/")) {
+            throw new IllegalArgumentException("Poster phải là file ảnh hợp lệ.");
+        }
+    }
+
+    private void validateCloudinaryVideoUrl(String url) {
+        if (url == null || url.isBlank()) {
+            throw new IllegalArgumentException("URL không hợp lệ. Đường dẫn không được để trống!");
+        }
+        if (!url.contains("res.cloudinary.com")) {
+            throw new IllegalArgumentException("URL không hợp lệ. Chỉ chấp nhận link public từ nền tảng Cloudinary.");
+        }
+        if (!url.contains("/video/upload/")) {
+            throw new IllegalArgumentException("URL không hợp lệ. Trailer và full video phải dùng Secure URL video từ Cloudinary.");
+        }
     }
 }

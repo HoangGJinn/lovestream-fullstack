@@ -50,6 +50,11 @@ public class Room {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    // Thời gian hiện tại của video (tính bằng giây) --> Nhớ sua class diagram
+    @Column(name = "current_video_time")
+    @Builder.Default
+    private Double currentVideoTime = 0.0;
+
     // Quan hệ n-1: Chủ phòng (Người tạo)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "host_id", nullable = false)

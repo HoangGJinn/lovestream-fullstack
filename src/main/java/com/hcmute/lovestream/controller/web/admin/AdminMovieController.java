@@ -5,7 +5,6 @@ import com.hcmute.lovestream.entity.ContentCredit;
 import com.hcmute.lovestream.entity.Genre;
 import com.hcmute.lovestream.entity.Movie;
 import com.hcmute.lovestream.entity.enums.AgeRating;
-import com.hcmute.lovestream.entity.enums.AssetType;
 import com.hcmute.lovestream.entity.enums.ContentStatus;
 import com.hcmute.lovestream.entity.enums.CreditType;
 import com.hcmute.lovestream.entity.enums.Quality;
@@ -54,12 +53,6 @@ public class AdminMovieController {
     @ModelAttribute("allStatuses")
     public ContentStatus[] populateStatuses() {
         return ContentStatus.values();
-    }
-
-    // ĐÃ SỬA LỖI Ở ĐÂY: Thay BACKGROUND và MOVIE_VIDEO bằng FULL_VIDEO
-    @ModelAttribute("allAssetTypes")
-    public AssetType[] populateAssetTypes() {
-        return new AssetType[] { AssetType.POSTER, AssetType.TRAILER, AssetType.FULL_VIDEO };
     }
 
     // --- ROUTES Thực Thi ---
@@ -214,46 +207,66 @@ public class AdminMovieController {
         return "redirect:/admin/movies";
     }
 
-    // 8. Upload Media Asset cho Movie
-    @PostMapping("/{id}/assets")
-    public String uploadMovieAsset(
+    // 8. Upload poster cho Movie
+    @PostMapping("/{id}/poster/upload")
+    public String uploadMoviePoster(
             @PathVariable String id,
-            @RequestParam("assetType") AssetType assetType,
             @RequestParam("file") MultipartFile file,
             RedirectAttributes redirectAttributes) {
         try {
-            movieManagementService.uploadMovieAsset(id, assetType, file);
-            redirectAttributes.addFlashAttribute("successMessage",
-                    "Upload tài nguyên " + assetType.name() + " thành công!");
+            movieManagementService.uploadMoviePoster(id, file);
+            redirectAttributes.addFlashAttribute("successMessage", "Tải lên poster thành công!");
         } catch (IllegalArgumentException e) {
-            log.warn("Upload thất bại - dữ liệu không hợp lệ: ", e);
+            log.warn("Upload poster thất bại - dữ liệu không hợp lệ: ", e);
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        } catch (Exception e) {
-            log.error("Upload thất bại: ", e);
+        } catch (java.io.IOException e) {
+            log.error("Upload poster thất bại do lỗi lưu trữ: ", e);
             redirectAttributes.addFlashAttribute("errorMessage",
-                    "Upload thất bại: " + e.getMessage());
+                    "Tải lên poster thất bại do lỗi hệ thống lưu trữ.");
+        } catch (Exception e) {
+            log.error("Upload poster thất bại: ", e);
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Tải lên poster thất bại: " + e.getMessage());
         }
         return "redirect:/admin/movies/" + id + "/edit";
     }
 
-    // 9. Thêm Media Asset bằng URL Cloudinary
-    @PostMapping("/{id}/assets/url")
-    public String addMovieAssetFromUrl(
+    // 9. Gắn trailer bằng URL Cloudinary
+    @PostMapping("/{id}/trailer/url")
+    public String addMovieTrailerFromUrl(
             @PathVariable String id,
-            @RequestParam("assetType") AssetType assetType,
             @RequestParam("assetUrl") String assetUrl,
             RedirectAttributes redirectAttributes) {
         try {
-            movieManagementService.addAssetFromUrl(id, assetType, assetUrl);
-            redirectAttributes.addFlashAttribute("successMessage",
-                    "Thêm tài nguyên " + assetType.name() + " bằng URL thành công!");
+            movieManagementService.addMovieTrailerFromUrl(id, assetUrl);
+            redirectAttributes.addFlashAttribute("successMessage", "Gắn trailer Cloudinary thành công!");
         } catch (IllegalArgumentException e) {
-            log.warn("Thêm tài nguyên URL thất bại - dữ liệu không hợp lệ: ", e);
+            log.warn("Gắn trailer thất bại - dữ liệu không hợp lệ: ", e);
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         } catch (Exception e) {
-            log.error("Thêm tài nguyên URL thất bại: ", e);
+            log.error("Gắn trailer thất bại: ", e);
             redirectAttributes.addFlashAttribute("errorMessage",
-                    "Thêm thất bại: " + e.getMessage());
+                    "Gắn trailer thất bại: " + e.getMessage());
+        }
+        return "redirect:/admin/movies/" + id + "/edit";
+    }
+
+    // 10. Gắn full video bằng URL Cloudinary
+    @PostMapping("/{id}/video/url")
+    public String addMovieVideoFromUrl(
+            @PathVariable String id,
+            @RequestParam("assetUrl") String assetUrl,
+            RedirectAttributes redirectAttributes) {
+        try {
+            movieManagementService.addMovieVideoFromUrl(id, assetUrl);
+            redirectAttributes.addFlashAttribute("successMessage", "Gắn video phim Cloudinary thành công!");
+        } catch (IllegalArgumentException e) {
+            log.warn("Gắn full video thất bại - dữ liệu không hợp lệ: ", e);
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        } catch (Exception e) {
+            log.error("Gắn full video thất bại: ", e);
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Gắn video phim thất bại: " + e.getMessage());
         }
         return "redirect:/admin/movies/" + id + "/edit";
     }
