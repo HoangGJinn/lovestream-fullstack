@@ -151,11 +151,12 @@ public class AuthRestController {
         refreshCookie.setMaxAge(0);
         response.addCookie(refreshCookie);
 
-        // Xóa HTTP session (cần thiết khi user đăng nhập bằng Google - IF_REQUIRED session policy)
-        jakarta.servlet.http.HttpSession session = request.getSession(false);
-        if (session != null) {
-            session.invalidate();
-        }
+        // Xóa OAuth2 state cookie (nếu user đang ở giữa luồng đăng nhập Google)
+        Cookie oauth2Cookie = new Cookie("oauth2_auth_request", "");
+        oauth2Cookie.setHttpOnly(true);
+        oauth2Cookie.setPath("/");
+        oauth2Cookie.setMaxAge(0);
+        response.addCookie(oauth2Cookie);
 
         return ResponseEntity.ok(Map.of("message", "Đăng xuất thành công", "redirectUrl", "/login"));
     }

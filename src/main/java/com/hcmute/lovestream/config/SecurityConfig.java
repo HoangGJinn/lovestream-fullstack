@@ -1,5 +1,6 @@
 package com.hcmute.lovestream.config;
 
+import com.hcmute.lovestream.security.HttpCookieOAuth2AuthorizationRequestRepository;
 import com.hcmute.lovestream.security.JwtAuthenticationFilter;
 import com.hcmute.lovestream.security.OAuth2AuthenticationSuccessHandler;
 import com.hcmute.lovestream.service.authentication.GoogleOAuth2UserService;
@@ -24,14 +25,15 @@ public class SecurityConfig {
     private final GoogleOAuth2UserService googleOAuth2UserService;
     private final OAuth2AuthenticationSuccessHandler oauth2SuccessHandler;
 
-
+    // Lưu trạng thái OAuth2 vào Cookie thay vì Session → tiết kiệm RAM
+    private final HttpCookieOAuth2AuthorizationRequestRepository cookieAuthorizationRequestRepository;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                // STATELESS for API, but OAuth2 redirect flow needs a minimal session
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                // STATELESS hoàn toàn – OAuth2 state nằm ở Cookie phía trình duyệt
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // 1. Auth pages + Static resources + SEO files
                         .requestMatchers("/api/v1/auth/**", "/login", "/register", "/forgot-password", "/verify-email",
@@ -79,6 +81,14 @@ public class SecurityConfig {
                 // Google OAuth2 Login configuration
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("/login")
+                        // Lưu OAuth2 state vào Cookie thay vì Session
+                        .authorizationEndpoint(endpoint -> endpoint
+                                .baseUri("/oauth2/authorization")
+                                .authorizationRequestRepository(cookieAuthorizationRequestRepository)
+                        )
+                        .redirectionEndpoint(endpoint -> endpoint
+                                .baseUri("/login/oauth2/code/*")
+                        )
                         .userInfoEndpoint(userInfo -> userInfo
                                 .oidcUserService(googleOAuth2UserService)
                         )
@@ -87,10 +97,8 @@ public class SecurityConfig {
                             // Log lỗi thực sự để dễ debug
                             org.slf4j.LoggerFactory.getLogger(SecurityConfig.class)
                                     .error("Google OAuth2 login FAILED: {}", exception.getMessage(), exception);
-                            // Xóa session tránh ghost auth
-                            jakarta.servlet.http.HttpSession session = request.getSession(false);
-                            if (session != null) session.invalidate();
-                            // Redirect với message lỗi rõ ràng
+                            // Xóa cookie trạng thái khi có lỗi
+                            cookieAuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
                             String msg = exception.getMessage() != null ? exception.getMessage() : "Đăng nhập Google thất bại";
                             try {
                                 response.sendRedirect("/login?error=" + java.net.URLEncoder.encode(msg, "UTF-8"));
