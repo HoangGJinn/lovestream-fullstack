@@ -13,10 +13,11 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @Configuration
 @EnableWebSecurity
@@ -37,10 +38,20 @@ public class SecurityConfig {
                 // STATELESS hoàn toàn – OAuth2 state nằm ở Cookie phía trình duyệt
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 1. Auth pages + Static resources + SEO files
-                        .requestMatchers("/api/v1/auth/**", "/login", "/register", "/forgot-password", "/verify-email",
-                                "/css/**", "/js/**", "/images/**", "/error", "/sitemap.xml", "/robots.txt").permitAll()
-                        // OAuth2 endpoints must be public
+                        .requestMatchers(
+                                "/api/v1/auth/**",
+                                "/login",
+                                "/register",
+                                "/forgot-password",
+                                "/verify-email",
+                                "/css/**",
+                                "/js/**",
+                                "/images/**",
+                                "/uploads/**",
+                                "/error",
+                                "/sitemap.xml",
+                                "/robots.txt"
+                        ).permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/account/change-password/backup").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/password/backup-change").permitAll()
@@ -71,36 +82,26 @@ public class SecurityConfig {
                                 "/admin/genres",
                                 "/admin/genres/**",
                                 "/admin/web-content",
-                                "/admin/web-content/**")
-                        .hasAnyAuthority("ROLE_CONTENT_MANAGER", "CONTENT_MANAGER")
-
-                        // 5. Admin-restricted modules: ADMIN only
+                                "/admin/web-content/**"
+                        ).hasAnyAuthority("ROLE_CONTENT_MANAGER", "CONTENT_MANAGER")
                         .requestMatchers(
                                 "/admin/users/**",
                                 "/admin/plans/**",
                                 "/admin/vouchers/**",
-                                "/admin/transactions/**")
-                        .hasAnyAuthority("ROLE_ADMIN", "ADMIN")
-
-                        // 6. Phần còn lại của admin: ADMIN only (safety net)
+                                "/admin/transactions/**"
+                        ).hasAnyAuthority("ROLE_ADMIN", "ADMIN")
                         .requestMatchers("/admin/**").hasAnyAuthority("ROLE_ADMIN", "ADMIN")
-
-
-                        // CÁC TRANG CÒN LẠI BẮT BUỘC PHẢI ĐĂNG NHẬP
-                        .anyRequest().authenticated())
-                // Xử lý khi bị chặn (Chưa đăng nhập)
+                        .anyRequest().authenticated()
+                )
                 .exceptionHandling(exc -> exc.authenticationEntryPoint((request, response, authException) -> {
-                    // Nếu gọi API -> Báo lỗi 401
                     if (request.getRequestURI().startsWith("/api/")) {
-                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Vui lòng đăng nhập");
+                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Vui long dang nhap");
                     } else {
                         response.sendRedirect("/login");
                     }
                 }))
-                // Google OAuth2 Login configuration
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("/login")
-                        // Lưu OAuth2 state vào Cookie thay vì Session
                         .authorizationEndpoint(endpoint -> endpoint
                                 .baseUri("/oauth2/authorization")
                                 .authorizationRequestRepository(cookieAuthorizationRequestRepository)
@@ -113,20 +114,18 @@ public class SecurityConfig {
                         )
                         .successHandler(oauth2SuccessHandler)
                         .failureHandler((request, response, exception) -> {
-                            // Log lỗi thực sự để dễ debug
                             org.slf4j.LoggerFactory.getLogger(SecurityConfig.class)
                                     .error("Google OAuth2 login FAILED: {}", exception.getMessage(), exception);
-                            // Xóa cookie trạng thái khi có lỗi
+
                             cookieAuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
-                            String msg = exception.getMessage() != null ? exception.getMessage() : "Đăng nhập Google thất bại";
-                            try {
-                                response.sendRedirect("/login?error=" + java.net.URLEncoder.encode(msg, "UTF-8"));
-                            } catch (Exception e) {
-                                response.sendRedirect("/login?error=google_login_failed");
-                            }
+
+                            String message = exception.getMessage() != null
+                                    ? exception.getMessage()
+                                    : "Dang nhap Google that bai";
+                            String encodedMessage = URLEncoder.encode(message, StandardCharsets.UTF_8);
+                            response.sendRedirect("/login?error=" + encodedMessage);
                         })
                 )
-                // Chèn chốt kiểm tra JWT vào trước chốt kiểm tra mặc định của Spring
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
