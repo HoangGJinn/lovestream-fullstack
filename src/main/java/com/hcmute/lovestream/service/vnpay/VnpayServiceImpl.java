@@ -45,7 +45,8 @@ public class VnpayServiceImpl implements VnpayService {
     }
 
     @Override
-    public String createPaymentWithOrderCode(Vnpay paymentRequest, String orderCode, HttpServletRequest request) throws UnsupportedEncodingException {
+    public String createPaymentWithOrderCode(Vnpay paymentRequest, String orderCode, HttpServletRequest request)
+            throws UnsupportedEncodingException {
 
         // Lấy giá trị trực tiếp trong hàm để đảm bảo Config đã được load
         String vnp_Version = vnpayConfig.getVnp_Version();
@@ -92,14 +93,17 @@ public class VnpayServiceImpl implements VnpayService {
         vnp_Params.put("vnp_CurrCode", "VND");
         // vnp_Params.put("vnp_BankCode", "NCB");
         vnp_Params.put("vnp_TxnRef", orderCode); // Gửi orderCode nhưng key vẫn là vnp_TxnRef
-        vnp_Params.put("vnp_OrderInfo", paymentRequest.getOrderInfo() != null ? paymentRequest.getOrderInfo() : "Thanh toan don hang:" + orderCode);
+        vnp_Params.put("vnp_OrderInfo", paymentRequest.getOrderInfo() != null ? paymentRequest.getOrderInfo()
+                : "Thanh toan don hang:" + orderCode);
         vnp_Params.put("vnp_OrderType", vnp_OrderType);
         vnp_Params.put("vnp_Locale", "vn");
         vnp_Params.put("vnp_ReturnUrl", vnp_ReturnUrl);
         vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
 
-        Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
+        TimeZone tz = TimeZone.getTimeZone("Asia/Ho_Chi_Minh");
+        Calendar cld = Calendar.getInstance(tz);
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+        formatter.setTimeZone(tz);
         String vnp_CreateDate = formatter.format(cld.getTime());
         vnp_Params.put("vnp_CreateDate", vnp_CreateDate);
 
@@ -112,7 +116,7 @@ public class VnpayServiceImpl implements VnpayService {
 
         StringBuilder hashData = new StringBuilder();
         StringBuilder query = new StringBuilder();
-        for (Iterator<String> itr = fieldNames.iterator(); itr.hasNext(); ) {
+        for (Iterator<String> itr = fieldNames.iterator(); itr.hasNext();) {
             String fieldName = itr.next();
             String fieldValue = vnp_Params.get(fieldName);
             if (fieldValue != null && !fieldValue.isEmpty()) {
@@ -262,7 +266,8 @@ public class VnpayServiceImpl implements VnpayService {
         }
 
         if (paymentRepository.existsByTransactionCode(transactionNo)) {
-            log.warn("Skip duplicate VNPay transactionCode update. paymentId={} transactionNo={}", payment.getId(), transactionNo);
+            log.warn("Skip duplicate VNPay transactionCode update. paymentId={} transactionNo={}", payment.getId(),
+                    transactionNo);
             return;
         }
 

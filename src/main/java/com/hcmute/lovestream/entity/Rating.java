@@ -24,6 +24,9 @@ public class Rating {
     @Column(nullable = false)
     private int score; // Thang điểm (ví dụ: 1 đến 5 sao)
 
+    @Column(columnDefinition = "TEXT")
+    private String review; // Nhận xét về phim (tuỳ chọn)
+
     // Người đánh giá
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
