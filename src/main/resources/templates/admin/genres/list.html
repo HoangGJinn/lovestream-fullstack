@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Thể loại - LoveStream Admin</title>
+    <link rel="stylesheet" th:href="@{/css/admin/admin-theme.css}" />
+    <style>
+        .genre-table th:last-child, .genre-table td:last-child {
+            text-align: right;
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{admin/fragments/sidebar :: sidebar(activeMenu='genres')}"></div>
+
+<div class="admin-content">
+    <header class="admin-header">
+        <h1>Quản lý Thể loại</h1>
+        <div class="header-actions" style="display: flex; gap: 15px; align-items: center;">
+            <div class="sort-control">
+                <select id="sortSelect" class="form-control" onchange="handleSortChange(this)" style="min-width: 200px;">
+                    <option value="name-asc" th:selected="${currentSort == 'name-asc'}">Tên (A-Z)</option>
+                    <option value="name-desc" th:selected="${currentSort == 'name-desc'}">Tên (Z-A)</option>
+                    <option value="count-desc" th:selected="${currentSort == 'count-desc'}">Số lượng phim (Nhiều - Ít)</option>
+                    <option value="count-asc" th:selected="${currentSort == 'count-asc'}">Số lượng phim (Ít - Nhiều)</option>
+                </select>
+            </div>
+            <a th:href="@{/admin/genres/new}" class="btn btn-primary">Thêm thể loại mới</a>
+        </div>
+    </header>
+
+    <div class="admin-content-inner" style="padding: 20px;">
+        <!-- Flash Messages -->
+        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}"   class="alert alert-danger"  th:text="${errorMessage}"></div>
+
+        <div class="card">
+            <table class="table genre-table">
+                <thead>
+                    <tr>
+                        <th>Tên thể loại</th>
+                        <th>Số lượng phim/series</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(genres)}">
+                        <td colspan="3" class="empty-state" style="text-align: center; padding: 40px; color: var(--netflix-grey);">
+                            Chưa có thể loại nào. Hãy thêm thể loại đầu tiên!
+                        </td>
+                    </tr>
+                    <tr th:each="genre : ${genres}">
+                        <td th:text="${genre.name}">Hành động</td>
+                        <td th:text="${genre.videoContents != null ? genre.videoContents.size() : 0}">0</td>
+                        <td class="actions">
+                            <a th:href="@{/admin/genres/{id}/edit(id=${genre.id})}" class="btn btn-secondary btn-sm">Sửa</a>
+                            
+                            <form th:action="@{/admin/genres/{id}/delete(id=${genre.id})}" method="post" 
+                                  style="display:inline;"
+                                  th:data-count="${genre.videoContents != null ? genre.videoContents.size() : 0}"
+                                  th:onsubmit="return confirmDelete(this)">
+                                <button class="btn btn-danger btn-sm" type="submit">Xóa</button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function handleSortChange(select) {
+        const sort = select.value;
+        window.location.href = `/admin/genres?sort=${sort}`;
+    }
+
+    function confirmDelete(form) {
+        const count = parseInt(form.getAttribute('data-count'));
+        let message = 'Bạn có chắc chắn muốn xóa thể loại này vĩnh viễn?';
+        if (count > 0) {
+            message = `Thể loại này đang được sử dụng bởi ${count} nội dung. Nếu xóa, thể loại sẽ bị gỡ khỏi tất cả các phim/series này. Bạn vẫn muốn xóa vĩnh viễn?`;
+        }
+        return confirm(message);
+    }
+</script>
+
+</body>
+</html>

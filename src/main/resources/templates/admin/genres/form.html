@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${genreId == null ? 'Thêm Thể loại Mới' : 'Sửa Thể loại'} + ' - LoveStream Admin'"></title>
+    <link rel="stylesheet" th:href="@{/css/admin/admin-theme.css}" />
+    <style>
+        .form-container {
+            max-width: 600px;
+            margin-top: 20px;
+        }
+        .error-message {
+            color: var(--netflix-red);
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{admin/fragments/sidebar :: sidebar(activeMenu='genres')}"></div>
+
+<div class="admin-content">
+    <header class="admin-header">
+        <h1 th:text="${genreId == null ? 'Thêm Thể loại Mới' : 'Sửa Thể loại'}"></h1>
+    </header>
+
+    <div class="admin-content-inner" style="padding: 20px;">
+        <div class="card form-container">
+            <form id="genreForm" th:action="${genreId == null ? '/admin/genres' : '/admin/genres/' + genreId}" 
+                  th:object="${genreRequest}" method="post">
+                
+                <div class="form-group">
+                    <label for="name">Tên thể loại</label>
+                    <input type="text" id="name" th:field="*{name}" class="form-control" 
+                           placeholder="Nhập tên thể loại (ví dụ: Hành động, Kinh dị...)" 
+                           required maxlength="50" autocomplete="off" />
+                    <div class="error-message" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                </div>
+
+                <div class="form-actions" style="margin-top: 30px; display: flex; gap: 10px;">
+                    <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                    <button type="button" class="btn btn-secondary" onclick="handleCancel()">Hủy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const initialName = document.getElementById('name').value;
+    let formSubmitted = false;
+
+    document.getElementById('genreForm').addEventListener('submit', () => {
+        formSubmitted = true;
+    });
+
+    function handleCancel() {
+        const currentName = document.getElementById('name').value;
+        if (currentName !== initialName && !formSubmitted) {
+            if (confirm('Dữ liệu chưa được lưu. Bạn có chắc muốn thoát?')) {
+                window.location.href = '/admin/genres';
+            }
+        } else {
+            window.location.href = '/admin/genres';
+        }
+    }
+
+    // Cảnh báo khi reload hoặc đóng tab nếu có thay đổi
+    window.addEventListener('beforeunload', (e) => {
+        const currentName = document.getElementById('name').value;
+        if (currentName !== initialName && !formSubmitted) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+</script>
+
+</body>
+</html>

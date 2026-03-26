@@ -10,4 +10,5 @@ import java.util.Optional;
 public interface GenreRepository extends JpaRepository<Genre, String> {
     // Thêm hàm này để tìm Thể loại theo tên
     Optional<Genre> findByName(String name);
+    boolean existsByNameIgnoreCase(String name);
 }

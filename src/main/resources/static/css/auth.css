@@ -1,0 +1,190 @@
+/* File: src/main/resources/static/css/auth.css */
+:root {
+    --primary: #e50914;
+    --primary-hover: #c11119;
+    --bg-glass: rgba(0, 0, 0, 0.75);
+    --border-glass: rgba(255, 255, 255, 0.15);
+    --text-muted: rgba(255, 255, 255, 0.6);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #000;
+    background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.9)),
+    url('https://assets.nflxext.com/ffe/siteui/vlv3/ab180a27-b661-44d7-a6d9-940cb32f2f4a/7fb62e44-31fd-4e1c-bba3-1e7412d4d623/VN-en-20231009-popsignuptwoweeks-perspective_alpha_website_large.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.header { padding: 24px 5%; }
+.logo {
+    color: var(--primary);
+    font-size: clamp(2rem, 4vw, 2.5rem);
+    font-weight: 900;
+    text-decoration: none;
+    letter-spacing: -1px;
+    display: inline-block;
+    transition: transform 0.2s;
+}
+.logo:hover { transform: scale(1.02); }
+
+/* Đã gom chung login-wrapper và register-wrapper */
+.auth-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-grow: 1;
+    padding: 20px 16px 60px;
+}
+
+/* Đã gom chung login-box và register-box */
+.auth-box {
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: clamp(32px, 8vw, 52px) clamp(24px, 6vw, 64px);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 420px; /* Form mặc định (Login) */
+    border: 1px solid var(--border-glass);
+    box-shadow: 0 24px 64px rgba(0,0,0,0.8);
+    animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.auth-box.wide {
+    max-width: 460px; /* Form rộng hơn (Register) */
+}
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.auth-box h2 {
+    font-size: clamp(24px, 5vw, 32px);
+    font-weight: 700;
+    margin-bottom: 28px;
+    letter-spacing: -0.5px;
+}
+
+.alert {
+    padding: 14px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 20px;
+    display: none;
+    line-height: 1.5;
+    animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.alert-error  { background: rgba(229,9,20,0.1); color: #ff6b6b; border: 1px solid rgba(229,9,20,0.4); }
+
+.form-group { position: relative; margin-bottom: 16px; }
+.form-control {
+    width: 100%;
+    padding: 16px;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    background: rgba(0,0,0,0.4);
+    color: #fff;
+    font-size: 15px;
+    font-family: inherit;
+    transition: all 0.3s ease;
+    outline: none;
+}
+.form-control::placeholder { color: var(--text-muted); }
+.form-control:focus {
+    border-color: var(--primary);
+    background: rgba(0,0,0,0.6);
+    box-shadow: 0 0 0 3px rgba(229,9,20,0.15);
+}
+
+/* Password Toggle UI */
+.password-wrapper { position: relative; }
+.toggle-password {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    padding: 4px;
+    display: flex;
+    transition: color 0.2s;
+}
+.toggle-password:hover { color: #fff; }
+.form-control.pr-40 { padding-right: 48px; }
+
+.btn {
+    width: 100%;
+    padding: 16px;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: inherit;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+.btn:active { transform: scale(0.98); }
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-primary { background: var(--primary); color: #fff; margin-top: 8px; }
+.btn-primary:hover:not(:disabled) { background: var(--primary-hover); box-shadow: 0 4px 12px rgba(229,9,20,0.3); }
+
+.btn-google {
+    background: #fff;
+    color: #1f1f1f;
+    margin-top: 16px;
+    border: 1px solid transparent;
+}
+.btn-google:hover { background: #f0f0f0; }
+.btn-google img { width: 20px; height: 20px; }
+
+.divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 24px 0;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+.divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-glass);
+}
+
+.forgot-link { text-align: right; margin-top: 12px; }
+.forgot-link a { color: var(--text-muted); font-size: 14px; text-decoration: none; transition: color 0.2s; }
+.forgot-link a:hover { color: #fff; text-decoration: underline; }
+
+.auth-prompt {
+    margin-top: 32px;
+    color: var(--text-muted);
+    font-size: 15px;
+    text-align: center;
+}
+.auth-prompt a { color: #fff; font-weight: 600; text-decoration: none; margin-left: 4px;}
+.auth-prompt a:hover { text-decoration: underline; }
+
+.google-note {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 12px;
+}
