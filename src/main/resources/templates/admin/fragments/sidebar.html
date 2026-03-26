@@ -8,6 +8,7 @@
 
         <a th:href="@{/admin/movies}" th:classappend="${activeMenu == 'movies'} ? 'active'">Quản lý phim lẻ</a>
         <a th:href="@{/admin/series}" th:classappend="${activeMenu == 'series'} ? 'active'">Quản lý TV Series</a>
+        <a th:href="@{/admin/genres}" th:classappend="${activeMenu == 'genres'} ? 'active'">Quản lý Thể loại</a>
 
         <th:block sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ADMIN')">
             <a th:href="@{/admin/users/content-managers}" th:classappend="${activeMenu == 'content-managers'} ? 'active'">Quản lý Content Manager</a>
