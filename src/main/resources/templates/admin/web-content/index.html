@@ -16,22 +16,16 @@
     <div class="admin-content">
         <header class="admin-header">
             <h2>Quản lý nội dung trang web</h2>
-            <div class="header-actions">
-                <a th:href="@{/admin/web-content?tab=banners}" class="btn btn-secondary btn-sm">Về Banner</a>
-            </div>
         </header>
 
         <div class="webcontent-tabs">
             <a th:href="@{/admin/web-content(tab='banners')}"
-                th:classappend="${tab == 'banners'} ? 'active'">Banner trang chủ</a>
+               th:classappend="${tab == 'banners'} ? 'active'">Banner trang chủ</a>
             <a th:href="@{/admin/web-content(tab='static-pages')}"
-                th:classappend="${tab == 'static-pages'} ? 'active'">Trang tĩnh</a>
+               th:classappend="${tab == 'static-pages'} ? 'active'">Trang tĩnh</a>
         </div>
 
-        <!-- Banner -->
         <div th:if="${tab == 'banners'}">
-
-            <!-- Flash Messages -->
             <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
             <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
@@ -113,10 +107,7 @@
             </div>
         </div>
 
-        <!-- Static Pages -->
         <div th:unless="${tab == 'banners'}" th:if="${tab == 'static-pages'}">
-
-            <!-- Flash Messages -->
             <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
             <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
@@ -163,7 +154,6 @@
     </div>
 
     <script>
-        // Drag & Drop reorder for banner table
         (function () {
             const tbody = document.getElementById('bannerTableBody');
             if (!tbody) return;
@@ -171,13 +161,7 @@
             const rows = Array.from(tbody.querySelectorAll('tr.draggable-row'));
             let draggedRow = null;
 
-            function getInputValue(row) {
-                const input = row.querySelector('.order-input');
-                return input ? parseInt(input.value, 10) : null;
-            }
-
             function updateOrderInputsFromDOM() {
-                // Keep manual edit support: drag sets sequential displayOrder values.
                 const currentRows = Array.from(tbody.querySelectorAll('tr.draggable-row'));
                 currentRows.forEach((row, idx) => {
                     const input = row.querySelector('.order-input');
@@ -192,16 +176,19 @@
                     try {
                         e.dataTransfer.effectAllowed = 'move';
                         e.dataTransfer.setData('text/plain', row.getAttribute('data-banner-id'));
-                    } catch (_) { }
+                    } catch (_) {}
                 });
+
                 row.addEventListener('dragend', () => {
                     row.classList.remove('dragging');
                     draggedRow = null;
                 });
+
                 row.addEventListener('dragover', (e) => {
                     e.preventDefault();
                     e.dataTransfer.dropEffect = 'move';
                 });
+
                 row.addEventListener('drop', (e) => {
                     e.preventDefault();
                     if (!draggedRow || draggedRow === row) return;
@@ -258,4 +245,3 @@
 </body>
 
 </html>
-

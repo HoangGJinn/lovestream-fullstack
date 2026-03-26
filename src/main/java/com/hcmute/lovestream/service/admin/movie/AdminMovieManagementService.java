@@ -3,7 +3,6 @@ package com.hcmute.lovestream.service.admin.movie;
 import com.hcmute.lovestream.dto.request.admin.movie.MovieUpsertRequest;
 import com.hcmute.lovestream.entity.MediaAsset;
 import com.hcmute.lovestream.entity.Movie;
-import com.hcmute.lovestream.entity.enums.AssetType;
 import com.hcmute.lovestream.entity.enums.ContentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,13 +27,9 @@ public interface AdminMovieManagementService {
     // User/Voucher) --
     void toggleMovieStatus(String id);
 
-    // -- 4. Media Asset Management (URL-based) --
-    MediaAsset addAsset(String movieId, AssetType assetType, String assetUrl);
-
-    MediaAsset addAssetFromUrl(String movieId, AssetType assetType, String assetUrl);
-
+    // -- 4. Media Asset Management --
+    MediaAsset uploadMoviePoster(String movieId, MultipartFile file) throws IOException;
+    MediaAsset addMovieTrailerFromUrl(String movieId, String assetUrl);
+    MediaAsset addMovieVideoFromUrl(String movieId, String assetUrl);
     void removeAsset(String movieId, String assetId);
-
-    // -- 5. Upload Media Asset (Lưu file vật lý/Cloud + addAsset) --
-    MediaAsset uploadMovieAsset(String movieId, AssetType assetType, MultipartFile file) throws IOException;
 }

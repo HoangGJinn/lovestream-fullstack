@@ -22,27 +22,22 @@
 
         <div class="admin-content">
 
-            <!-- Flash Messages (visible after redirect from create/update) -->
             <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
             <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
-            <!-- ────────────────────────────────────────────────────
-             FORM 1: Create / Update movie metadata
-             ──────────────────────────────────────────────────── -->
             <div class="form-card">
                 <form th:action="${movieUpsertRequest.id != null}
                         ? @{/admin/movies/{id}(id=${movieUpsertRequest.id})}
-                        : @{/admin/movies}" th:object="${movieUpsertRequest}" method="post">
+                        : @{/admin/movies}"
+                      th:object="${movieUpsertRequest}"
+                      method="post">
 
-                    <!-- Global Binding Errors -->
                     <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger">
                         <p th:each="err : ${#fields.globalErrors()}" th:text="${err}"></p>
                     </div>
 
-                    <!-- Hidden ID for Update -->
                     <input type="hidden" th:field="*{id}" />
 
-                    <!-- ── Thông tin cơ bản ──────────────────────── -->
                     <div class="form-section">
                         <div class="form-section-title">Thông tin cơ bản</div>
 
@@ -50,9 +45,9 @@
                             <div class="form-group">
                                 <label for="title">Tên phim <span class="required">*</span></label>
                                 <input id="title" type="text" th:field="*{title}" class="form-control"
-                                    th:classappend="${#fields.hasErrors('title')} ? 'is-invalid'" />
+                                       th:classappend="${#fields.hasErrors('title')} ? 'is-invalid'" />
                                 <span class="field-error" th:if="${#fields.hasErrors('title')}"
-                                    th:errors="*{title}"></span>
+                                      th:errors="*{title}"></span>
                             </div>
                         </div>
 
@@ -60,9 +55,9 @@
                             <div class="form-group">
                                 <label for="description">Mô tả <span class="required">*</span></label>
                                 <textarea id="description" th:field="*{description}" class="form-control" rows="4"
-                                    th:classappend="${#fields.hasErrors('description')} ? 'is-invalid'"></textarea>
+                                          th:classappend="${#fields.hasErrors('description')} ? 'is-invalid'"></textarea>
                                 <span class="field-error" th:if="${#fields.hasErrors('description')}"
-                                    th:errors="*{description}"></span>
+                                      th:errors="*{description}"></span>
                             </div>
                         </div>
 
@@ -70,10 +65,10 @@
                             <div class="form-group">
                                 <label for="country">Quốc gia</label>
                                 <input id="country" type="text" th:field="*{country}" class="form-control"
-                                    placeholder="VD: Mỹ, Việt Nam, Hàn Quốc..."
-                                    th:classappend="${#fields.hasErrors('country')} ? 'is-invalid'" />
+                                       placeholder="VD: Mỹ, Việt Nam, Hàn Quốc..."
+                                       th:classappend="${#fields.hasErrors('country')} ? 'is-invalid'" />
                                 <span class="field-error" th:if="${#fields.hasErrors('country')}"
-                                    th:errors="*{country}"></span>
+                                      th:errors="*{country}"></span>
                             </div>
                         </div>
 
@@ -81,18 +76,18 @@
                             <div class="form-group">
                                 <label for="directorNames">Đạo diễn</label>
                                 <input id="directorNames" type="text" th:field="*{directorNames}" class="form-control"
-                                    placeholder="Tên các đạo diễn, cách nhau bởi dấu phẩy"
-                                    th:classappend="${#fields.hasErrors('directorNames')} ? 'is-invalid'" />
+                                       placeholder="Tên các đạo diễn, cách nhau bởi dấu phẩy"
+                                       th:classappend="${#fields.hasErrors('directorNames')} ? 'is-invalid'" />
                                 <span class="field-error" th:if="${#fields.hasErrors('directorNames')}"
-                                    th:errors="*{directorNames}"></span>
+                                      th:errors="*{directorNames}"></span>
                             </div>
                             <div class="form-group">
                                 <label for="castNames">Diễn viên</label>
                                 <input id="castNames" type="text" th:field="*{castNames}" class="form-control"
-                                    placeholder="Tên các diễn viên, cách nhau bởi dấu phẩy"
-                                    th:classappend="${#fields.hasErrors('castNames')} ? 'is-invalid'" />
+                                       placeholder="Tên các diễn viên, cách nhau bởi dấu phẩy"
+                                       th:classappend="${#fields.hasErrors('castNames')} ? 'is-invalid'" />
                                 <span class="field-error" th:if="${#fields.hasErrors('castNames')}"
-                                    th:errors="*{castNames}"></span>
+                                      th:errors="*{castNames}"></span>
                             </div>
                         </div>
 
@@ -100,32 +95,31 @@
                             <div class="form-group">
                                 <label for="releaseYear">Năm phát hành <span class="required">*</span></label>
                                 <input id="releaseYear" type="number" th:field="*{releaseYear}" class="form-control"
-                                    placeholder="VD: 2024"
-                                    th:classappend="${#fields.hasErrors('releaseYear')} ? 'is-invalid'" />
+                                       placeholder="VD: 2024"
+                                       th:classappend="${#fields.hasErrors('releaseYear')} ? 'is-invalid'" />
                                 <span class="field-error" th:if="${#fields.hasErrors('releaseYear')}"
-                                    th:errors="*{releaseYear}"></span>
+                                      th:errors="*{releaseYear}"></span>
                             </div>
 
                             <div class="form-group">
                                 <label for="releaseDate">Ngày chiếu chính thức <span class="required">*</span></label>
                                 <input id="releaseDate" type="date" th:field="*{releaseDate}" class="form-control"
-                                    th:classappend="${#fields.hasErrors('releaseDate')} ? 'is-invalid'" />
+                                       th:classappend="${#fields.hasErrors('releaseDate')} ? 'is-invalid'" />
                                 <span class="field-error" th:if="${#fields.hasErrors('releaseDate')}"
-                                    th:errors="*{releaseDate}"></span>
+                                      th:errors="*{releaseDate}"></span>
                             </div>
 
                             <div class="form-group">
                                 <label for="durationMinutes">Thời lượng (phút) <span class="required">*</span></label>
                                 <input id="durationMinutes" type="number" th:field="*{durationMinutes}"
-                                    class="form-control" min="1" placeholder="VD: 120"
-                                    th:classappend="${#fields.hasErrors('durationMinutes')} ? 'is-invalid'" />
+                                       class="form-control" min="1" placeholder="VD: 120"
+                                       th:classappend="${#fields.hasErrors('durationMinutes')} ? 'is-invalid'" />
                                 <span class="field-error" th:if="${#fields.hasErrors('durationMinutes')}"
-                                    th:errors="*{durationMinutes}"></span>
+                                      th:errors="*{durationMinutes}"></span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- ── Phân loại ──────────────────────────────── -->
                     <div class="form-section">
                         <div class="form-section-title">Phân loại &amp; Trạng thái</div>
 
@@ -133,56 +127,55 @@
                             <div class="form-group">
                                 <label for="ageRating">Phân loại độ tuổi <span class="required">*</span></label>
                                 <select id="ageRating" th:field="*{ageRating}" class="form-control"
-                                    th:classappend="${#fields.hasErrors('ageRating')} ? 'is-invalid'">
+                                        th:classappend="${#fields.hasErrors('ageRating')} ? 'is-invalid'">
                                     <option value="">-- Chọn --</option>
                                     <option th:each="r : ${allAgeRatings}" th:value="${r}" th:text="${r}"></option>
                                 </select>
                                 <span class="field-error" th:if="${#fields.hasErrors('ageRating')}"
-                                    th:errors="*{ageRating}"></span>
+                                      th:errors="*{ageRating}"></span>
                             </div>
 
                             <div class="form-group">
                                 <label for="quality">Chất lượng <span class="required">*</span></label>
                                 <select id="quality" th:field="*{quality}" class="form-control"
-                                    th:classappend="${#fields.hasErrors('quality')} ? 'is-invalid'">
+                                        th:classappend="${#fields.hasErrors('quality')} ? 'is-invalid'">
                                     <option value="">-- Chọn --</option>
                                     <option th:each="q : ${allQualities}" th:value="${q}" th:text="${q}"></option>
                                 </select>
                                 <span class="field-error" th:if="${#fields.hasErrors('quality')}"
-                                    th:errors="*{quality}"></span>
+                                      th:errors="*{quality}"></span>
                             </div>
 
                             <div class="form-group">
                                 <label for="status">Trạng thái <span class="required">*</span></label>
                                 <select id="status" th:field="*{status}" class="form-control"
-                                    th:classappend="${#fields.hasErrors('status')} ? 'is-invalid'">
+                                        th:classappend="${#fields.hasErrors('status')} ? 'is-invalid'">
                                     <option value="">-- Chọn --</option>
                                     <option th:each="s : ${allStatuses}" th:value="${s}" th:text="${s}"></option>
                                 </select>
                                 <span class="field-error" th:if="${#fields.hasErrors('status')}"
-                                    th:errors="*{status}"></span>
+                                      th:errors="*{status}"></span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- ── Thể loại ────────────────────────────────── -->
                     <div class="form-section">
                         <div class="form-section-title">Thể loại <span class="required">*</span></div>
                         <div class="genre-grid">
                             <label class="genre-checkbox" th:each="genre : ${allGenres}">
-                                <input type="checkbox" name="genreIds" th:value="${genre.id}"
-                                    th:checked="${movieUpsertRequest.genreIds != null and movieUpsertRequest.genreIds.contains(genre.id)}" />
+                                <input type="checkbox"
+                                       name="genreIds"
+                                       th:value="${genre.id}"
+                                       th:checked="${movieUpsertRequest.genreIds != null and movieUpsertRequest.genreIds.contains(genre.id)}" />
                                 <span th:text="${genre.name}">Thể loại</span>
                             </label>
                         </div>
-                        <!-- Genre validation error — displayed prominently -->
                         <div th:if="${#fields.hasErrors('genreIds')}" class="alert alert-danger"
-                            style="margin-top: 8px;">
+                             style="margin-top: 8px;">
                             <span th:errors="*{genreIds}"></span>
                         </div>
                     </div>
 
-                    <!-- ── Actions ───────────────────────────────────── -->
                     <div class="form-actions">
                         <a th:href="@{/admin/movies}" class="btn btn-secondary">Hủy</a>
                         <button type="submit" class="btn btn-primary">
@@ -191,83 +184,91 @@
                     </div>
 
                 </form>
-            </div><!-- /.form-card (metadata form) -->
+            </div>
 
-            <!-- ────────────────────────────────────────────────────
-             FORM 2: Upload asset — chỉ hiển thị khi đang edit
-             (Tách hoàn toàn khỏi form metadata để tránh nested form)
-             ──────────────────────────────────────────────────── -->
             <div class="form-card" th:if="${movieUpsertRequest.id != null}">
-                <form th:action="@{/admin/movies/{id}/assets(id=${movieUpsertRequest.id})}" method="post"
-                    enctype="multipart/form-data" class="upload-section">
+                <form th:action="@{/admin/movies/{id}/poster/upload(id=${movieUpsertRequest.id})}"
+                      method="post"
+                      enctype="multipart/form-data"
+                      class="upload-section">
 
-                    <div class="form-section-title">Ủy quyền File Tài nguyên (POSTER, TRAILER)</div>
+                    <div class="form-section-title">Ủy quyền File Tài nguyên (POSTER)</div>
 
-                    <div class="form-row two-col">
+                    <div class="form-row">
                         <div class="form-group">
-                            <label for="assetType">Loại tài nguyên <span class="required">*</span></label>
-                            <select id="assetType" name="assetType" class="form-control" required>
-                                <option value="">-- Chọn loại --</option>
-                                <option th:each="at : ${allAssetTypes}" th:value="${at}" th:text="${at}"></option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="uploadFile">Chọn file <span class="required">*</span></label>
+                            <label for="uploadFile">Chọn file ảnh poster <span class="required">*</span></label>
                             <input id="uploadFile" type="file" name="file" class="form-control" required
-                                accept="image/*,video/*" />
+                                   accept="image/*" />
+                            <p style="margin: 8px 0 0 0; color: #b3b3b3; font-size: 14px;">
+                                Poster được tải trực tiếp từ máy và chỉ chấp nhận file ảnh.
+                            </p>
                         </div>
                     </div>
                     <div style="text-align: right; margin-top: 15px;">
-                        <button type="submit" class="btn btn-primary">Tải lên file</button>
+                        <button type="submit" class="btn btn-primary">Tải lên poster</button>
                     </div>
 
                 </form>
-            </div><!-- /.form-card (upload form) -->
+            </div>
 
-            <!-- ────────────────────────────────────────────────────
-             FORM 3: Thêm asset bằng URL Cloudinary
-             (Giải pháp cho mạng yếu / file siêu lớn tải qua Cloudinary trước)
-             ──────────────────────────────────────────────────── -->
             <div class="form-card" th:if="${movieUpsertRequest.id != null}">
-                <form th:action="@{/admin/movies/{id}/assets/url(id=${movieUpsertRequest.id})}" method="post"
-                    class="upload-section">
+                <form th:action="@{/admin/movies/{id}/trailer/url(id=${movieUpsertRequest.id})}"
+                      method="post"
+                      class="upload-section">
 
-                    <div class="form-section-title">Ủy quyền File theo Link URL (Cloudinary)</div>
+                    <div class="form-section-title">Ủy quyền File Tài nguyên (TRAILER)</div>
                     <p style="margin: 0 0 15px 0; color: #b3b3b3; font-size: 14px;">
-                        Thay vì tải lên, nhập đường dẫn <code>Secure URL</code> để đính kèm (Khuyên dùng với
-                        FULL_VIDEO).
+                        Trailer dùng đường dẫn <code>Secure URL</code> từ Cloudinary, giống luồng gắn
+                        <code>FULL_VIDEO</code>.
                     </p>
 
-                    <div class="form-row two-col">
+                    <div class="form-row">
                         <div class="form-group">
-                            <label for="urlAssetType">Loại tài nguyên <span class="required">*</span></label>
-                            <select id="urlAssetType" name="assetType" class="form-control" required>
-                                <option value="">-- Chọn loại --</option>
-                                <option th:each="at : ${allAssetTypes}" th:value="${at}" th:text="${at}"></option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="assetUrl">Đường dẫn URL Cloudinary <span class="required">*</span></label>
-                            <input id="assetUrl" type="url" name="assetUrl" class="form-control" required
-                                placeholder="VD: https://res.cloudinary.com/.../video/upload/v1234/movie.mp4" />
+                            <label for="trailerUrl">Đường dẫn URL Cloudinary <span class="required">*</span></label>
+                            <input id="trailerUrl" type="url" name="assetUrl" class="form-control" required
+                                   placeholder="VD: https://res.cloudinary.com/.../video/upload/v1234/trailer.mp4" />
                         </div>
                     </div>
                     <div style="text-align: right; margin-top: 15px;">
-                        <button type="submit" class="btn btn-secondary">Thêm link URL</button>
+                        <button type="submit" class="btn btn-secondary">Lưu URL trailer</button>
                     </div>
 
                 </form>
-            </div><!-- /.form-card (URL form) -->
+            </div>
 
-            <!-- Gợi ý khi đang tạo mới: nhắc user lưu phim trước -->
+            <div class="form-card" th:if="${movieUpsertRequest.id != null}">
+                <form th:action="@{/admin/movies/{id}/video/url(id=${movieUpsertRequest.id})}"
+                      method="post"
+                      class="upload-section">
+
+                    <div class="form-section-title">Ủy quyền File theo Link URL (FULL_VIDEO)</div>
+                    <p style="margin: 0 0 15px 0; color: #b3b3b3; font-size: 14px;">
+                        Nhập đường dẫn <code>Secure URL</code> video từ Cloudinary để gắn file phim đầy đủ.
+                    </p>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="videoUrl">Đường dẫn URL Cloudinary <span class="required">*</span></label>
+                            <input id="videoUrl" type="url" name="assetUrl" class="form-control" required
+                                   placeholder="VD: https://res.cloudinary.com/.../video/upload/v1234/movie.mp4" />
+                        </div>
+                    </div>
+                    <div style="text-align: right; margin-top: 15px;">
+                        <button type="submit" class="btn btn-secondary">Lưu URL video</button>
+                    </div>
+
+                </form>
+            </div>
+
             <div class="form-card" th:if="${movieUpsertRequest.id == null}">
                 <p style="margin: 0; color: #b3b3b3;">
-                    Vui lòng <strong>Lưu nội dung phim</strong> ở trên trước để hệ thống cấp ID. Sau đó bạn có thể tải
-                    lên tài liệu Media (poster, trailer, video).
+                    Vui lòng <strong>lưu nội dung phim</strong> ở trên trước để hệ thống cấp ID. Sau đó bạn có thể tải
+                    lên tài liệu media như poster, trailer và video.
                 </p>
             </div>
 
-        </div><!-- /.admin-content -->
+        </div>
+    </div>
 </body>
 
 </html>
