@@ -20,7 +20,7 @@ public class WebContentLocalStorageServiceImpl implements WebContentLocalStorage
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of("jpg", "jpeg", "png", "webp");
     private static final long MAX_FILE_SIZE_BYTES = 5L * 1024L * 1024L; // 5MB
 
-    @Value("${app.upload.dir}")
+    @Value("${app.upload.dir:uploads}")
     private String uploadDir;
 
     @Override
