@@ -61,7 +61,9 @@ public class SecurityConfig {
                                 "/admin/movies",
                                 "/admin/movies/**",
                                 "/admin/series",
-                                "/admin/series/**"
+                                "/admin/series/**",
+                                "/admin/genres",
+                                "/admin/genres/**"
                         ).hasAnyAuthority("ROLE_ADMIN", "ROLE_CONTENT_MANAGER", "ADMIN", "CONTENT_MANAGER")
 
                         // 4. Admin-restricted modules: ADMIN only
