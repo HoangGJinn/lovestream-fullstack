@@ -27,12 +27,15 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final GoogleOAuth2UserService googleOAuth2UserService;
     private final OAuth2AuthenticationSuccessHandler oauth2SuccessHandler;
+
+    // Lưu trạng thái OAuth2 vào Cookie thay vì Session → tiết kiệm RAM
     private final HttpCookieOAuth2AuthorizationRequestRepository cookieAuthorizationRequestRepository;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
+                // STATELESS hoàn toàn – OAuth2 state nằm ở Cookie phía trình duyệt
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
@@ -52,16 +55,25 @@ public class SecurityConfig {
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/account/change-password/backup").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/password/backup-change").permitAll()
+
+                        // 2. Trang công khai cho khách chưa đăng nhập (SEO)
                         .requestMatchers(HttpMethod.GET, "/", "/home").permitAll()
+                        // Trang tĩnh cho public
                         .requestMatchers(HttpMethod.GET, "/about", "/privacy-policy", "/terms").permitAll()
+                        // Trang danh sách phim, chi tiết phim
                         .requestMatchers(HttpMethod.GET, "/movies", "/movies/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/series", "/series/**").permitAll()
                         .requestMatchers("/videocontents", "/videocontents/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/plans", "/plans/**", "/packages", "/packages/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/comments/**", "/api/v1/ratings/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/v1/api/vnpay/payment-callback").permitAll()
+
+
+                        // 3. Admin entrypoint: ADMIN or CONTENT_MANAGER
                         .requestMatchers("/admin", "/admin/dashboard")
                         .hasAnyAuthority("ROLE_ADMIN", "ROLE_CONTENT_MANAGER", "ADMIN", "CONTENT_MANAGER")
+
+                        // 4. Content management modules: CONTENT_MANAGER only
                         .requestMatchers(
                                 "/admin/movies",
                                 "/admin/movies/**",
