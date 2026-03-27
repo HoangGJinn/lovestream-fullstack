@@ -12,13 +12,14 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 import java.util.List;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 @Repository
 public interface MovieRepository extends JpaRepository<Movie, String> {
     Optional<Movie> findByIdAndStatus(String id, ContentStatus status);
 
+    // IMPORTANT: Hibernate cannot fetch-join multiple "bag" collections at once.
+    // fetching both mediaAssets(List) and contentCredits(List) triggers MultipleBagFetchException.
+    // We only eager-fetch mediaAssets here; other relations are loaded lazily (optionally batched).
     @EntityGraph(attributePaths = { "mediaAssets" })
     Optional<Movie> findDetailedByIdAndStatus(String id, ContentStatus status);
 
@@ -27,6 +28,7 @@ public interface MovieRepository extends JpaRepository<Movie, String> {
     // genres và contentCredits sẽ được Hibernate batch-fetch qua @BatchSize trên entity.
     Optional<Movie> findBySlug(String slug);
 
+    // Same rationale as UUID method.
     @EntityGraph(attributePaths = { "mediaAssets" })
     Optional<Movie> findDetailedBySlugAndStatus(String slug, ContentStatus status);
 

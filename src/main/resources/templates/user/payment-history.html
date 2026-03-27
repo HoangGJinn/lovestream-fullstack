@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lịch sử thanh toán - LoveStream</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/profile.css">
+    <link rel="stylesheet" href="/css/user-menu.css">
+    <style>
+        .payment-card { border: 1px solid #e5e5e5; border-radius: 8px; background: #fff; overflow: hidden; }
+        .payment-table { width: 100%; border-collapse: collapse; }
+        .payment-table th, .payment-table td { padding: 14px 16px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+        .payment-table th { background: #fafafa; color: #374151; font-weight: 700; }
+        .payment-table tr:last-child td { border-bottom: none; }
+        .payment-amount { font-weight: 700; }
+        .status-badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+        .status-success { color: #067647; background: #ecfdf3; border: 1px solid #abefc6; }
+        .status-pending { color: #b54708; background: #fffaeb; border: 1px solid #fedf89; }
+        .status-failed, .status-refunded { color: #b42318; background: #fef3f2; border: 1px solid #fecdca; }
+        .empty-payment { padding: 24px; color: #6b7280; font-size: 14px; }
+        .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 13px; }
+        @media (max-width: 900px) {
+            .payment-card { overflow-x: auto; }
+            .payment-table { min-width: 720px; }
+        }
+    </style>
+</head>
+<body>
+
+<div style="height: 70px; display: flex; align-items: center; padding: 0 40px; border-bottom: 1px solid #e5e5e5; background: #fff;">
+    <a href="/home" style="color: #e50914; font-size: 28px; font-weight: 900; text-decoration: none; letter-spacing: -1px;">LoveStream</a>
+    <div style="margin-left: auto;" th:insert="~{fragments/user-menu :: userMenu(${currentUser}, 'light')}"></div>
+</div>
+
+<div class="profile-container">
+    <div th:replace="~{fragments/account-sidebar :: sidebar('payments')}"></div>
+
+    <div class="main-content">
+        <h1 class="page-title">Lịch sử thanh toán</h1>
+        <p class="page-subtitle">Theo dõi các giao dịch gói dịch vụ của bạn</p>
+
+        <div class="payment-card" th:if="${payments != null and !#lists.isEmpty(payments)}">
+            <table class="payment-table">
+                <thead>
+                <tr>
+                    <th>Thời gian</th>
+                    <th>Gói dịch vụ</th>
+                    <th>Số tiền</th>
+                    <th>Cổng thanh toán</th>
+                    <th>Trạng thái</th>
+                    <th>Mã giao dịch</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="payment : ${payments}">
+                    <td th:text="${#temporals.format(payment.createdAt, 'dd/MM/yyyy HH:mm')}">27/03/2026 10:00</td>
+                    <td th:text="${payment.servicePlan != null ? payment.servicePlan.name : 'N/A'}">Gói Premium</td>
+                    <td class="payment-amount"
+                        th:text="${#numbers.formatDecimal(payment.amount, 1, 'COMMA', 0, 'POINT')} + ' VNĐ'">99,000 VNĐ</td>
+                    <td th:text="${payment.paymentGateway}">VNPAY</td>
+                    <td>
+                        <span class="status-badge status-success" th:if="${payment.status.name() == 'SUCCESS'}">Thành công</span>
+                        <span class="status-badge status-pending" th:if="${payment.status.name() == 'PENDING'}">Đang xử lý</span>
+                        <span class="status-badge status-failed" th:if="${payment.status.name() == 'FAILED'}">Thất bại</span>
+                        <span class="status-badge status-refunded" th:if="${payment.status.name() == 'REFUNDED'}">Hoàn tiền</span>
+                    </td>
+                    <td class="mono" th:text="${payment.transactionCode != null ? payment.transactionCode : '-'}">ABC123</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="payment-card" th:if="${payments == null or #lists.isEmpty(payments)}">
+            <p class="empty-payment">Bạn chưa có giao dịch thanh toán nào.</p>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

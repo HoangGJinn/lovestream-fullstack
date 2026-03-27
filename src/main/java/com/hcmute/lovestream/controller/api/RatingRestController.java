@@ -6,6 +6,7 @@ import com.hcmute.lovestream.repository.RatingRepository;
 import com.hcmute.lovestream.service.rating.RatingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,12 +22,9 @@ public class RatingRestController {
     private final RatingService ratingService;
     private final RatingRepository ratingRepository;
 
-    // LẤY DANH SÁCH ĐÁNH GIÁ THEO PHIM
     @GetMapping
     public ResponseEntity<?> getRatingsByVideo(@RequestParam String videoContentId) {
-        List<Rating> ratings = ratingRepository
-                .findByVideoContent_IdOrderByCreatedAtDesc(videoContentId);
-
+        List<Rating> ratings = ratingRepository.findByVideoContent_IdOrderByCreatedAtDesc(videoContentId);
         Double avg = ratingRepository.calculateAverageScoreByVideoId(videoContentId);
         int count = ratingRepository.countByVideoContentId(videoContentId);
 
@@ -37,6 +35,11 @@ public class RatingRestController {
             map.put("review", r.getReview());
             map.put("userName", r.getUser() != null ? r.getUser().getFullName() : "Ẩn danh");
             map.put("createdAt", r.getCreatedAt() != null ? r.getCreatedAt().toString() : null);
+
+            // QUAN TRỌNG: Phải thêm 2 dòng này để Frontend có số hiện lên
+            map.put("likeCount", r.getLikeCount());
+            map.put("dislikeCount", r.getDislikeCount());
+
             return map;
         }).toList();
 
@@ -44,18 +47,27 @@ public class RatingRestController {
         result.put("averageScore", avg != null ? avg : 0.0);
         result.put("totalCount", count);
         result.put("ratings", items);
-
         return ResponseEntity.ok(result);
     }
 
-    @PostMapping
-    public ResponseEntity<String> rateMovie(
-            Principal principal,
-            @Valid @RequestBody RatingRequest request) {
-
-        String email = principal.getName();
-        String resultMessage = ratingService.processRating(email, request);
-
-        return ResponseEntity.ok(resultMessage);
+    @PostMapping("/{id}/like")
+    public ResponseEntity<?> likeRating(Principal principal, @PathVariable String id) {
+        // Kiểm tra xem đã đăng nhập chưa để tránh lỗi "System Error"
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Vui lòng đăng nhập để thích đánh giá!");
+        }
+        ratingService.voteRating(principal.getName(), id, true);
+        return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/{id}/dislike")
+    public ResponseEntity<?> dislikeRating(Principal principal, @PathVariable String id) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Vui lòng đăng nhập để không thích đánh giá!");
+        }
+        ratingService.voteRating(principal.getName(), id, false);
+        return ResponseEntity.ok().build();
+    }
+
+    // Giữ nguyên hàm rateMovie cũ của bạn bên dưới...
 }

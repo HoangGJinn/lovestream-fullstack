@@ -13,6 +13,90 @@
         .vc-detail-page {
             padding-top: 96px;
         }
+
+        .vc-section {
+            max-width: 1200px;
+            margin: 26px auto 0;
+            padding: 0 20px;
+        }
+
+        .vc-section-title {
+            color: #fff;
+            margin: 0 0 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 20px;
+        }
+
+        .vc-section-title i {
+            color: #ffc107;
+        }
+
+        .vc-trailer-player {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: #000;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid #2c2c2c;
+        }
+
+        .vc-trailer-player video {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .vc-credits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 12px;
+        }
+
+        .vc-credit-card {
+            background: #141414;
+            border: 1px solid #262626;
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .vc-credit-name {
+            color: #fff;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .vc-credit-sub {
+            color: #9a9a9a;
+            margin: 6px 0 0;
+            font-size: 13px;
+        }
+
+        .vc-director-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .vc-director-pill {
+            padding: 8px 12px;
+            border-radius: 999px;
+            border: 1px solid #2c2c2c;
+            background: rgba(255,255,255,0.04);
+            color: #efefef;
+            font-size: 14px;
+        }
+
+        @media (max-width: 860px) {
+            .vc-detail-card {
+                grid-template-columns: 1fr;
+            }
+            .vc-detail-card img {
+                min-height: 360px;
+                max-height: 520px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -39,6 +123,8 @@
                 <span> • </span>
                 <span th:text="${movie.country != null ? movie.country : 'Đang cập nhật quốc gia'}">Đang cập nhật quốc gia</span>
                 <span th:if="${movie.duration > 0}"> • <span th:text="${movie.duration + ' phút'}">120 phút</span></span>
+                <span th:if="${movie.ageRating != null}"> • <span th:text="${movie.ageRating}">PG13</span></span>
+                <span th:if="${movie.quality != null}"> • <span th:text="${movie.quality}">HD</span></span>
             </p>
             <p class="vc-desc" th:text="${movie.description}">Mô tả phim</p>
 
@@ -63,7 +149,7 @@
             <div class="vc-trailer-wrap" th:if="${movie.trailerUrl != null}">
                 <a class="vc-trailer-btn" th:href="${movie.trailerUrl}" target="_blank" rel="noopener">
                     <i class="fa-regular fa-circle-play"></i>
-                    <span>Xem trailer</span>
+                    <span>Mở trailer</span>
                 </a>
             </div>
 
@@ -88,6 +174,51 @@
             </div>
         </div>
     </article>
+
+    <!-- Trailer Section (embedded video) -->
+    <section class="vc-section" th:if="${movie != null and movie.trailerUrl != null}">
+        <h2 class="vc-section-title"><i class="fa-solid fa-video"></i> Trailer</h2>
+        <div class="vc-trailer-player">
+            <video th:src="${movie.trailerUrl}" controls preload="metadata"></video>
+        </div>
+    </section>
+
+    <!-- Cast Section -->
+    <section class="vc-section" th:if="${movie != null and movie.cast != null and !#lists.isEmpty(movie.cast)}">
+        <h2 class="vc-section-title"><i class="fa-solid fa-people-group"></i> Cast</h2>
+        <div class="vc-credits-grid">
+            <div class="vc-credit-card" th:each="c : ${movie.cast}">
+                <p class="vc-credit-name" th:text="${c.fullName}">Actor Name</p>
+                <p class="vc-credit-sub" th:if="${c.characterName != null}" th:text="${c.characterName}">Character</p>
+                <p class="vc-credit-sub" th:if="${c.characterName == null}">Updating...</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Director Section (separated from cast) -->
+    <section class="vc-section" th:if="${movie != null and movie.directors != null and !#lists.isEmpty(movie.directors)}">
+        <h2 class="vc-section-title"><i class="fa-solid fa-clapperboard"></i> Director</h2>
+        <div class="vc-director-list">
+            <span class="vc-director-pill" th:each="d : ${movie.directors}" th:text="${d.fullName}">Director</span>
+        </div>
+    </section>
+
+    <section class="vc-section" th:if="${movie != null and (movie.cast == null or #lists.isEmpty(movie.cast))}">
+        <h2 class="vc-section-title"><i class="fa-solid fa-people-group"></i> Cast</h2>
+        <p style="color:#888; margin: 0;">Updating...</p>
+    </section>
+
+    <section class="vc-section" th:if="${movie != null and (movie.directors == null or #lists.isEmpty(movie.directors))}">
+        <h2 class="vc-section-title"><i class="fa-solid fa-clapperboard"></i> Director</h2>
+        <p style="color:#888; margin: 0;">Updating...</p>
+    </section>
+
+    <section class="vc-ratings-section" style="max-width: 1200px; margin: 40px auto; padding: 0 20px;">
+        <h2 style="color: #fff; margin-bottom: 20px;">Đánh giá từ người xem</h2>
+        <div id="ratingList" class="rating-list">
+            <p style="color: #888;">Đang tải đánh giá...</p>
+        </div>
+    </section>
 </main>
 
 <script>
@@ -130,6 +261,74 @@
         }
     });
 </script>
+
+
+<script>
+    const _movieId = "[[${movie?.id}]]";
+
+    document.addEventListener("DOMContentLoaded", function() {
+        loadRatingsForDetail();
+    });
+
+    async function loadRatingsForDetail() {
+        if (!_movieId) return;
+        try {
+            const res = await fetch('/api/v1/ratings?videoContentId=' + _movieId);
+            const data = await res.json();
+            const container = document.getElementById('ratingList');
+
+            if (!data.ratings || data.ratings.length === 0) {
+                container.innerHTML = '<p style="color: #888;">Chưa có đánh giá nào.</p>';
+                return;
+            }
+
+            container.innerHTML = data.ratings.map(r => `
+                <div class="rating-item" style="background: #1a1a1a; padding: 20px; border-radius: 8px; margin-bottom: 15px;">
+                    <div style="display: flex; gap: 15px;">
+                        <div class="comment-avatar" style="width: 40px; height: 40px; background: #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold;">
+                            ${(r.userName || 'A').charAt(0).toUpperCase()}
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="color: #fff; font-weight: 600;">${r.userName}</div>
+                            <div style="color: #ffc107; margin-bottom: 8px;">${'★'.repeat(r.score)}${'☆'.repeat(5 - r.score)}</div>
+                            ${r.review ? `<div style="color: #ccc; margin-bottom: 10px;">${r.review}</div>` : ''}
+                            <div class="comment-actions" style="display: flex; gap: 20px; font-size: 0.85rem;">
+                                <span style="color: #666;">${new Date(r.createdAt).toLocaleDateString('vi-VN')}</span>
+                                <button class="vote-btn" onclick="voteRatingOnDetail('${r.id}', true)" style="background:none; border:none; color:#888; cursor:pointer;">
+                                    <i class="fa-regular fa-thumbs-up"></i> <span>${r.likeCount || 0}</span>
+                                </button>
+                                <button class="vote-btn" onclick="voteRatingOnDetail('${r.id}', false)" style="background:none; border:none; color:#888; cursor:pointer;">
+                                    <i class="fa-regular fa-thumbs-down"></i> <span>${r.dislikeCount || 0}</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function voteRatingOnDetail(ratingId, isLike) {
+        const action = isLike ? 'like' : 'dislike';
+        try {
+            // SỬA DÒNG NÀY: Bỏ các dấu \ đi
+            const res = await fetch(`/api/v1/ratings/${ratingId}/${action}`, { method: 'POST' });
+
+            if (res.ok) {
+                loadRatingsForDetail();
+            } else {
+                const msg = await res.text();
+                alert(msg || "Vui lòng đăng nhập và mua gói dịch vụ để tương tác.");
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+</script>
+
 
 </body>
 </html>

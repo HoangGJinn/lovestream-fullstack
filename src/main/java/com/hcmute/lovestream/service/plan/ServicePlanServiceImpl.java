@@ -24,11 +24,18 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;
 import java.util.Comparator;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ServicePlanServiceImpl implements ServicePlanService {
+
+    private static final int DEFAULT_MAX_VIDEO_HEIGHT = 480;
+    private static final Pattern HEIGHT_PATTERN = Pattern.compile("(\\d{3,4})");
 
     private final ServicePlanRepository servicePlanRepository;
     private final PaymentRepository paymentRepository;
@@ -183,5 +190,89 @@ public class ServicePlanServiceImpl implements ServicePlanService {
         return userRepository.findByEmail(userEmail)
                 .map(user -> subscriptionRepository.existsByUserAndStatus(user, SubscriptionStatus.ACTIVE))
                 .orElse(false);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public int getMaxAllowedVideoHeight(String userEmail) {
+        if (userEmail == null || userEmail.isBlank()) {
+            return DEFAULT_MAX_VIDEO_HEIGHT;
+        }
+        return findActiveSubscription(userEmail)
+                .map(Subscription::getPlan)
+                .map(ServicePlan::getResolution)
+                .map(this::resolveHeightFromResolution)
+                .orElse(DEFAULT_MAX_VIDEO_HEIGHT);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public String getCurrentPlanQualityLabel(String userEmail) {
+        if (userEmail == null || userEmail.isBlank()) {
+            return "SD (480p)";
+        }
+        return findActiveSubscription(userEmail)
+                .map(Subscription::getPlan)
+                .map(plan -> buildQualityLabel(plan.getResolution()))
+                .orElse("SD (480p)");
+    }
+
+    private Optional<Subscription> findActiveSubscription(String userEmail) {
+        return userRepository.findByEmail(userEmail)
+                .flatMap(user -> subscriptionRepository.findTopByUserAndStatusOrderByEndDateDesc(user, SubscriptionStatus.ACTIVE));
+    }
+
+    private String buildQualityLabel(String resolution) {
+        int height = resolveHeightFromResolution(resolution);
+        if (height >= 2160) {
+            return "4K (2160p)";
+        }
+        if (height >= 1440) {
+            return "2K (1440p)";
+        }
+        if (height >= 1080) {
+            return "Full HD (1080p)";
+        }
+        if (height >= 720) {
+            return "HD (720p)";
+        }
+        return "SD (480p)";
+    }
+
+    private int resolveHeightFromResolution(String resolution) {
+        if (resolution == null || resolution.isBlank()) {
+            return DEFAULT_MAX_VIDEO_HEIGHT;
+        }
+
+        String normalized = resolution.toLowerCase(Locale.ROOT)
+                .replace("_", "")
+                .replace("-", "")
+                .replace(" ", "");
+
+        if (normalized.contains("4k") || normalized.contains("2160")) {
+            return 2160;
+        }
+        if (normalized.contains("2k") || normalized.contains("1440")) {
+            return 1440;
+        }
+        if (normalized.contains("fullhd") || normalized.contains("fhd") || normalized.contains("1080")) {
+            return 1080;
+        }
+        if (normalized.equals("hd") || normalized.contains("720")) {
+            return 720;
+        }
+        if (normalized.equals("sd") || normalized.contains("480")) {
+            return 480;
+        }
+
+        Matcher matcher = HEIGHT_PATTERN.matcher(normalized);
+        if (matcher.find()) {
+            int parsedHeight = Integer.parseInt(matcher.group(1));
+            if (parsedHeight > 0) {
+                return parsedHeight;
+            }
+        }
+
+        return DEFAULT_MAX_VIDEO_HEIGHT;
     }
 }

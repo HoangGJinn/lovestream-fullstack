@@ -48,16 +48,16 @@
                              class="banner-slide-img"/>
                     </div>
 
-                    <th:block th:if="${banner.navigationLink != null and !#strings.isEmpty(banner.navigationLink)}">
-                        <a th:href="${banner.navigationLink}" class="banner-slide-link"
+                    <th:block th:if="${banner.resolvedNavigationLink != null and !#strings.isEmpty(banner.resolvedNavigationLink)}">
+                        <a th:href="${banner.resolvedNavigationLink}" class="banner-slide-link"
                            th:aria-label="'Đi tới: ' + ${banner.title}"></a>
                     </th:block>
 
                     <div class="banner-slide-overlay">
                         <h1 class="movie-title" th:text="${banner.title}">Tiêu đề banner</h1>
-                        <div th:if="${banner.navigationLink != null and !#strings.isEmpty(banner.navigationLink)}"
+                        <div th:if="${banner.resolvedNavigationLink != null and !#strings.isEmpty(banner.resolvedNavigationLink)}"
                              class="banner-cta-row">
-                            <a th:href="${banner.navigationLink}" class="banner-cta">Xem ngay</a>
+                            <a th:href="${banner.resolvedNavigationLink}" class="banner-cta">Xem ngay</a>
                         </div>
                     </div>
                 </div>

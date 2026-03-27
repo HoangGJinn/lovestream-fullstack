@@ -38,6 +38,12 @@ const video = document.getElementById('video');
     const runtimeConfig = window.watchMovieConfig || {};
     const fallbackVideoId = runtimeConfig.videoId || '';
     const roomStateBootstrap = runtimeConfig.roomState || null;
+    const configuredMaxAllowedHeight = Number(runtimeConfig.maxAllowedHeight);
+    const planMaxAllowedHeight = Number.isFinite(configuredMaxAllowedHeight) && configuredMaxAllowedHeight > 0
+        ? configuredMaxAllowedHeight
+        : Number.POSITIVE_INFINITY;
+    const planQualityLabel = String(runtimeConfig.planQualityLabel || 'SD (480p)');
+    const upgradePackagesUrl = String(runtimeConfig.upgradePackagesUrl || '/packages');
     const queryParams = new URLSearchParams(window.location.search);
     const videoContentId = queryParams.get('id') || fallbackVideoId;
     const roomCode = (queryParams.get('roomCode') || '').trim().toUpperCase();
@@ -66,6 +72,7 @@ const video = document.getElementById('video');
     let suppressNextSeekSync = false;
     let suppressNextPlaySync = false;
     let suppressNextPauseSync = false;
+    let maxAllowedQualityLevelIndex = -1;
 
     function toPositiveNumber(value, fallback = 0) {
         const numeric = Number(value);
@@ -465,6 +472,14 @@ const video = document.getElementById('video');
     });
 
     // --- Fullscreen ---
+    function syncBackButtonFullscreenVisibility() {
+        if (!backToOriginBtn) {
+            return;
+        }
+        const isFullscreen = !!document.fullscreenElement;
+        backToOriginBtn.classList.toggle('hidden-on-fullscreen', isFullscreen);
+    }
+
     fullscreenBtn.addEventListener('click', () => {
         if (!document.fullscreenElement) {
             player.requestFullscreen();
@@ -472,6 +487,9 @@ const video = document.getElementById('video');
             document.exitFullscreen();
         }
     });
+
+    document.addEventListener('fullscreenchange', syncBackButtonFullscreenVisibility);
+    syncBackButtonFullscreenVisibility();
 
     // --- Settings menu ---
     const allSettingsPanels = [settingsMenuRoot, settingsSpeedMenu, settingsQualityMenu];
@@ -566,6 +584,66 @@ const video = document.getElementById('video');
         return 'Unknown';
     }
 
+    function getQualityHeight(level) {
+        if (!level) {
+            return 0;
+        }
+        if (Number.isFinite(level.height) && level.height > 0) {
+            return level.height;
+        }
+        if (level.attrs && level.attrs.RESOLUTION) {
+            const parts = String(level.attrs.RESOLUTION).split('x');
+            if (parts.length === 2) {
+                const parsedHeight = Number(parts[1]);
+                return Number.isFinite(parsedHeight) ? parsedHeight : 0;
+            }
+        }
+        return 0;
+    }
+
+    function isLevelIndexLockedByPlan(levelIndex) {
+        if (!Number.isFinite(planMaxAllowedHeight) || !hls || levelIndex < 0 || !hls.levels[levelIndex]) {
+            return false;
+        }
+        return getQualityHeight(hls.levels[levelIndex]) > planMaxAllowedHeight;
+    }
+
+    function promptUpgradeForQuality(requestedQualityLabel) {
+        const message = [
+            `Chat luong ${requestedQualityLabel} chi danh cho goi cao hon.`,
+            `Goi hien tai cua ban: ${planQualityLabel}.`,
+            'Ban co muon nang cap VIP ngay khong?'
+        ].join('\n');
+        if (window.confirm(message)) {
+            window.location.href = upgradePackagesUrl;
+        }
+    }
+
+    function applyAutoQualityCapByPlan() {
+        if (!hls || !hls.levels || hls.levels.length === 0) {
+            return;
+        }
+
+        if (!Number.isFinite(planMaxAllowedHeight)) {
+            hls.autoLevelCapping = -1;
+            maxAllowedQualityLevelIndex = -1;
+            return;
+        }
+
+        let bestAllowedLevel = -1;
+        let bestAllowedHeight = -1;
+        hls.levels.forEach((level, index) => {
+            const height = getQualityHeight(level);
+            if (height <= planMaxAllowedHeight && height > bestAllowedHeight) {
+                bestAllowedLevel = index;
+                bestAllowedHeight = height;
+            }
+        });
+
+        maxAllowedQualityLevelIndex = bestAllowedLevel;
+        hls.autoLevelCapping = bestAllowedLevel;
+    }
+
     function updateQualityDisplay(currentLevelIndex = null) {
         if (isAutoQuality) {
             if (currentLevelIndex !== null && hls && hls.levels[currentLevelIndex]) {
@@ -592,7 +670,8 @@ const video = document.getElementById('video');
                 button.classList.toggle('active', isAutoQuality);
             } else {
                 const buttonLevel = Number(button.dataset.level);
-                button.classList.toggle('active', !isAutoQuality && buttonLevel === selectedManualLevel);
+                const isLocked = button.dataset.locked === 'true';
+                button.classList.toggle('active', !isLocked && !isAutoQuality && buttonLevel === selectedManualLevel);
             }
         });
     }
@@ -608,6 +687,12 @@ const video = document.getElementById('video');
 
     function applyQualitySelection(levelIndex) {
         if (!hls) return;
+
+        if (levelIndex !== -1 && isLevelIndexLockedByPlan(levelIndex)) {
+            const level = hls.levels[levelIndex];
+            promptUpgradeForQuality(getQualityLabel(level));
+            return;
+        }
 
         if (levelIndex === -1) {
             isAutoQuality = true;
@@ -646,12 +731,20 @@ const video = document.getElementById('video');
         });
 
         const qualityLevels = Array.from(dedupByHeight.values())
-            .sort((a, b) => b.height - a.height);
+            .sort((a, b) => b.height - a.height)
+            .map(item => ({
+                ...item,
+                locked: Number.isFinite(planMaxAllowedHeight) && item.height > planMaxAllowedHeight
+            }));
+
+        const highestAllowed = qualityLevels.find(item => !item.locked);
+        maxAllowedQualityLevelIndex = highestAllowed ? highestAllowed.index : -1;
+        applyAutoQualityCapByPlan();
 
         const html = [
             '<button class="settings-option active" data-quality="auto" data-level="-1" type="button">Auto</button>',
             ...qualityLevels.map(item => (
-                `<button class="settings-option" data-quality="manual" data-level="${item.index}" type="button">${item.label}</button>`
+                `<button class="settings-option${item.locked ? ' locked' : ''}" data-quality="manual" data-level="${item.index}" data-label="${item.label}" data-locked="${item.locked}" type="button"><span>${item.label}</span>${item.locked ? '<span class="quality-lock-crown" title="Can nang cap goi"><i class="fa-solid fa-crown"></i></span>' : ''}</button>`
             ))
         ].join('');
 
@@ -663,11 +756,24 @@ const video = document.getElementById('video');
                 if (!canControlPlayback()) {
                     return;
                 }
+                if (button.dataset.locked === 'true') {
+                    const requestedQualityLabel = button.dataset.label || button.textContent.trim();
+                    promptUpgradeForQuality(requestedQualityLabel);
+                    return;
+                }
                 const levelIndex = Number(button.dataset.level);
                 applyQualitySelection(levelIndex);
                 closeSettingsMenu();
             });
         });
+
+        if (!isAutoQuality && selectedManualLevel !== null && isLevelIndexLockedByPlan(selectedManualLevel)) {
+            if (maxAllowedQualityLevelIndex >= 0) {
+                applyQualitySelection(maxAllowedQualityLevelIndex);
+            } else {
+                applyQualitySelection(-1);
+            }
+        }
 
         refreshQualityActiveState();
         updateQualityDisplay();
@@ -956,64 +1062,112 @@ const _movieId = new URLSearchParams(window.location.search).get('id') || ((wind
     });
 
     // ========== Load bình luận ==========
-    async function loadComments() {
-        if (!_movieId) return;
-        try {
-            const res = await fetch('/api/v1/comments?videoContentId=' + _movieId);
-            const data = await res.json();
-            const container = document.getElementById('commentList');
-            const countEl = document.getElementById('commentCount');
-            if (countEl) countEl.innerText = data.length;
+// --- 1. Hàm vẽ HTML đệ quy (Dùng chung cho cả gốc và con) ---
+function renderCommentHtml(c, level = 0) {
+    // Kiểm tra quyền sở hữu để hiện nút xóa (Dữ liệu email từ API đã sửa ở bước trước)
+    const isOwner = window.currentUserEmail === c.email;
 
-            if (data.length === 0) {
-                container.innerHTML = '<p class="no-data-msg">Chưa có bình luận nào. Hãy là người đầu tiên!</p>';
-                return;
-            }
+    // ĐỆ QUY: Nếu có phản hồi, gọi lại chính hàm này để vẽ chúng
+    const hasReplies = c.replies && c.replies.length > 0;
+    const nestedRepliesHtml = hasReplies
+        ? `<div class="reply-list" id="replyList-${c.id}" style="display: none;">
+                ${c.replies.map(r => renderCommentHtml(r, level + 1)).join('')}
+               </div>`
+        : '';
 
-            container.innerHTML = data.map(c => {
-                const repliesHtml = (c.replies && c.replies.length > 0)
-                    ? '<div class="reply-list">' + c.replies.map(r => `
-                        <div class="reply-item">
-                            <div class="reply-avatar">${(r.userName || 'A').charAt(0).toUpperCase()}</div>
-                            <div class="reply-body">
-                                <div class="reply-user-name">${escHtml(r.userName)}</div>
-                                <div class="reply-text">${escHtml(r.content)}</div>
-                                <div class="reply-date">${formatDate(r.createdAt)}</div>
-                            </div>
-                        </div>
-                    `).join('') + '</div>'
-                    : '';
+    // Nút toggle thu gọn/mở rộng
+    const toggleBtn = hasReplies
+        ? `<button class="show-replies-btn" id="btnToggle-${c.id}" onclick="toggleReplies('${c.id}')">
+                <i class="fa-solid fa-caret-down"></i> Xem ${c.replies.length} phản hồi
+               </button>`
+        : '';
 
-                return `
-                <div class="comment-item">
-                    <div class="comment-avatar">${(c.userName || 'A').charAt(0).toUpperCase()}</div>
-                    <div class="comment-body">
+    // Nút xóa (chỉ hiện cho chính chủ)
+    const deleteBtn = isOwner
+        ? `<button class="delete-comment-btn" onclick="deleteComment('${c.id}')" title="Xóa bình luận" style="background:none; border:none; color:#666; cursor:pointer; margin-left:10px;">
+                <i class="fa-solid fa-trash"></i>
+               </button>`
+        : '';
+
+    // Avatar (Ưu tiên ảnh, nếu không có thì hiện chữ cái đầu)
+    const avatarHtml = c.avatar
+        ? `<img src="${c.avatar}" style="width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0;">`
+        : `<div class="comment-avatar">${(c.userName || 'A').charAt(0).toUpperCase()}</div>`;
+
+    // Class CSS cho cấp độ (để thụt lề nếu cần)
+    const levelClass = level > 0 ? 'comment-nested' : '';
+
+    return `
+            <div class="comment-item ${levelClass}" style="${level > 0 ? 'margin-left: 42px; border-left: 1px solid #333; padding-left: 12px;' : ''}">
+                ${avatarHtml}
+                <div class="comment-body">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div class="comment-user-name">${escHtml(c.userName)}</div>
-                        <div class="comment-text">${escHtml(c.content)}</div>
-                        <div class="comment-actions">
-                            <span class="comment-date">${formatDate(c.createdAt)}</span>
-                            <button class="reply-btn" onclick="toggleReplyBox('${c.id}')">
-                                <i class="fa-solid fa-reply"></i> Trả lời
-                            </button>
-                        </div>
-                        <div class="reply-box" id="replyBox-${c.id}">
-                            <textarea id="replyInput-${c.id}" placeholder="Viết phản hồi..." maxlength="500"></textarea>
-                            <div class="reply-box-footer">
-                                <button class="btn-cancel-reply" onclick="toggleReplyBox('${c.id}')">Hủy</button>
-                                <button class="btn-send-reply" onclick="sendReply('${c.id}')">Gửi</button>
-                            </div>
-                        </div>
-                        ${repliesHtml}
+                        ${deleteBtn}
                     </div>
+                    <div class="comment-text">${escHtml(c.content)}</div>
+                    <div class="comment-actions">
+                        <span class="comment-date">${formatDate(c.createdAt)}</span>
+                        
+                    <button class="vote-btn" onclick="voteComment('${c.id}', true)">
+                        <i class="fa-regular fa-thumbs-up"></i> 
+                        <span>${c.likeCount || 0}</span>
+                    </button>
+                    <button class="vote-btn" onclick="voteComment('${c.id}', false)">
+                        <i class="fa-regular fa-thumbs-down"></i> 
+                        <span>${c.dislikeCount || 0}</span>
+                    </button>
+                        <button class="reply-btn" onclick="toggleReplyBox('${c.id}')">
+                            <i class="fa-solid fa-reply"></i> Trả lời
+                        </button>
+                    </div>
+                    <!-- Box phản hồi cho TỪNG bình luận cấp con -->
+                    <div class="reply-box" id="replyBox-${c.id}">
+                        <textarea id="replyInput-${c.id}" placeholder="Viết phản hồi..." maxlength="500"></textarea>
+                        <div class="reply-box-footer">
+                            <button class="btn-cancel-reply" onclick="toggleReplyBox('${c.id}')">Hủy</button>
+                            <button class="btn-send-reply" onclick="sendReply('${c.id}')">Gửi</button>
+                        </div>
+                    </div>
+                    ${toggleBtn}
+                    ${nestedRepliesHtml}
                 </div>
-                `;
-            }).join('');
-        } catch (e) {
-            console.error('Lỗi load bình luận:', e);
-        }
-    }
+            </div>
+        `;
+}
 
-    // ========== Gửi bình luận ==========
+// --- 2. Hàm Load bình luận chính ---
+async function loadComments() {
+    if (!_movieId) return;
+    try {
+        const res = await fetch('/api/v1/comments?videoContentId=' + _movieId);
+        const data = await res.json();
+        const container = document.getElementById('commentList');
+        const countEl = document.getElementById('commentCount');
+
+        // Tính tổng số bình luận (đệ quy) để hiển thị số lượng chính xác
+        let total = 0;
+        const countAll = (list) => {
+            total += list.length;
+            list.forEach(i => { if(i.replies) countAll(i.replies) });
+        };
+        countAll(data);
+        if (countEl) countEl.innerText = total;
+
+        if (data.length === 0) {
+            container.innerHTML = '<p class="no-data-msg">Chưa có bình luận nào. Hãy là người đầu tiên!</p>';
+            return;
+        }
+
+        // Vẽ toàn bộ cây bình luận
+        container.innerHTML = data.map(c => renderCommentHtml(c)).join('');
+    } catch (e) {
+        console.error('Lỗi load bình luận:', e);
+    }
+}
+
+
+// ========== Gửi bình luận ==========
     async function sendComment() {
         const content = commentInput.value.trim();
         const errorEl = document.getElementById('commentError');
@@ -1077,6 +1231,15 @@ const _movieId = new URLSearchParams(window.location.search).get('id') || ((wind
                         <div class="rating-stars-display">${'★'.repeat(r.score)}${'☆'.repeat(5 - r.score)}</div>
                         ${r.review ? '<div class="review-text">' + escHtml(r.review) + '</div>' : ''}
                         <div class="comment-date">${formatDate(r.createdAt)}</div>
+                        <div class="comment-actions">
+                            <span class="comment-date">${formatDate(r.createdAt)}</span>
+                            <button class="vote-btn" onclick="voteRating('${r.id}', true)">
+                                <i class="fa-regular fa-thumbs-up"></i> <span>${r.likeCount || 0}</span>
+                            </button>
+                            <button class="vote-btn" onclick="voteRating('${r.id}', false)">
+                                <i class="fa-regular fa-thumbs-down"></i> <span>${r.dislikeCount || 0}</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             `).join('');
@@ -1196,4 +1359,81 @@ const _movieId = new URLSearchParams(window.location.search).get('id') || ((wind
             const d = new Date(isoStr);
             return d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN', {hour:'2-digit',minute:'2-digit'});
         } catch { return isoStr; }
+    }
+
+    function toggleReplies(commentId) {
+        const list = document.getElementById('replyList-' + commentId);
+        const btn = document.getElementById('btnToggle-' + commentId);
+
+        if (list.style.display === 'none') {
+            list.style.display = 'block'; // Hiện danh sách
+            btn.innerHTML = `<i class="fa-solid fa-caret-up"></i> Ẩn phản hồi`;
+            btn.classList.add('active');
+        } else {
+            list.style.display = 'none'; // Ẩn danh sách
+            const count = list.querySelectorAll('.reply-item').length;
+            btn.innerHTML = `<i class="fa-solid fa-caret-down"></i> Xem ${count} phản hồi`;
+            btn.classList.remove('active');
+        }
+    }
+// Thêm hàm này vào cuối file watch_movie.js
+    async function deleteComment(commentId) {
+        // Hiện bảng xác nhận để tránh bấm nhầm
+        if (!confirm("Bạn có chắc chắn muốn xóa bình luận này không?")) {
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/v1/comments/${commentId}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                alert("Đã xóa bình luận thành công!");
+                loadComments(); // Tải lại danh sách bình luận ngay lập tức
+            } else {
+                const msg = await res.text();
+                alert("Lỗi: " + (msg || "Bạn không có quyền xóa bình luận này."));
+            }
+        } catch (err) {
+            console.error("Lỗi xóa bình luận:", err);
+            alert("Không thể kết nối tới máy chủ.");
+        }
+    }
+
+    async function voteComment(commentId, isLike) {
+        const action = isLike ? 'like' : 'dislike';
+        try {
+            const res = await fetch(`/api/v1/comments/${commentId}/${action}`, {
+                method: 'POST'
+            });
+
+            if (res.ok) {
+                loadComments(); // Tải lại danh sách để cập nhật số lượng hiển thị
+            } else {
+                const msg = await res.text();
+                alert(msg || "Vui lòng đăng nhập để thực hiện tính năng này.");
+            }
+        } catch (err) {
+            console.error("Lỗi khi vote:", err);
+        }
+    }
+
+    // Thêm vào cuối file watch_movie.js
+    async function voteRating(ratingId, isLike) {
+        const action = isLike ? 'like' : 'dislike';
+        try {
+            const res = await fetch(`/api/v1/ratings/${ratingId}/${action}`, {
+                method: 'POST'
+            });
+
+            if (res.ok) {
+                loadRatings(); // Tải lại danh sách đánh giá để cập nhật số lượng
+            } else {
+                const msg = await res.text();
+                alert(msg || "Vui lòng đăng nhập để thực hiện tính năng này.");
+            }
+        } catch (err) {
+            console.error("Lỗi khi vote đánh giá:", err);
+        }
     }

@@ -64,6 +64,7 @@ public class WatchTogetherService {
         return roomRepository.findByRoomCode(normalizeRoomCode(roomCode)).map(this::toCard);
     }
 
+    // tìm kiếm phòng theo mã phòng
     @Transactional(readOnly = true)
     public Optional<Room> findRoomEntityByCode(String roomCode) {
         if (roomCode == null || roomCode.isBlank()) {
@@ -72,20 +73,21 @@ public class WatchTogetherService {
         return roomRepository.findByRoomCode(normalizeRoomCode(roomCode));
     }
 
+    // Lấy danh sách các phòng do user này tạo ra
     @Transactional(readOnly = true)
     public List<WatchRoomCardResponse> listRoomsHostedBy(String userEmail) {
         return roomRepository.findByHost_EmailOrderByCreatedAtDesc(userEmail).stream()
                 .map(this::toCard)
                 .toList();
     }
-
+// Lấy thông tin chi tiết của phòng, bao gồm cả vai trò của user trong phòng đó
     @Transactional(readOnly = true)
     public WatchRoomStateResponse getRoomState(String roomCode, String userEmail) {
         assertActiveSubscription(userEmail);
 
         Room room = findRoomByCodeOrThrow(roomCode);
         RoomParticipant participant = roomParticipantRepository.findByRoom_IdAndUser_Email(room.getId(), userEmail)
-                .orElseThrow(() -> new IllegalStateException("Ban chua tham gia phong nay"));
+                .orElseThrow(() -> new IllegalStateException("Bạn không phải là thành viên của phòng này"));
 
         return buildRoomState(room, participant);
     }
@@ -301,9 +303,9 @@ public class WatchTogetherService {
 
         boolean live = room.getStatus() == RoomStatus.PLAYING;
         String statusText = switch (room.getStatus()) {
-            case PLAYING -> "Dang chieu";
-            case PAUSED -> "Tam dung";
-            case WAITING -> "Dang cho";
+            case PLAYING -> "Đang chiếu";
+            case PAUSED -> "Tạm dừng";
+            case WAITING -> "Đang chờ";
         };
 
         return new WatchRoomCardResponse(
@@ -349,10 +351,10 @@ public class WatchTogetherService {
 
     private String normalizeRoomName(String value) {
         if (value == null) {
-            return "Phong xem chung";
+            return "Phòng xem chung";
         }
         String trimmed = value.trim();
-        return trimmed.isEmpty() ? "Phong xem chung" : trimmed;
+        return trimmed.isEmpty() ? "Phòng xem chung" : trimmed;
     }
 
     private String normalizePassword(String value, boolean privateRoom) {
@@ -360,15 +362,17 @@ public class WatchTogetherService {
             return null;
         }
         if (value == null) {
-            throw new IllegalArgumentException("Vui long nhap mat khau cho phong rieng tu");
+            throw new IllegalArgumentException("Vui lòng nhập mật khẩu cho phòng riêng tư");
         }
         String trimmed = value.trim();
         if (trimmed.isEmpty()) {
-            throw new IllegalArgumentException("Vui long nhap mat khau cho phong rieng tu");
+            throw new IllegalArgumentException("Vui lòng nhập mật khẩu cho phòng riêng tư");
         }
         return trimmed;
     }
 
+
+    // FIX LẠI CALL THE LOAI TU Database
     private String mapGenreLabel(String genreName) {
         String normalized = genreName.toLowerCase(Locale.ROOT);
         return switch (normalized) {
@@ -382,7 +386,7 @@ public class WatchTogetherService {
 
     private void assertActiveSubscription(String userEmail) {
         if (!servicePlanService.hasActiveSubscription(userEmail)) {
-            throw new IllegalStateException("Ban can dang ky goi dich vu de tao hoac tham gia phong xem chung");
+            throw new IllegalStateException("Bạn cần có gói dịch vụ hợp lệ để sử dụng tính năng này");
         }
     }
 
@@ -394,7 +398,7 @@ public class WatchTogetherService {
 
     private void validateHost(Room room, String hostEmail) {
         if (room.getHost() == null || room.getHost().getEmail() == null || !room.getHost().getEmail().equals(hostEmail)) {
-            throw new IllegalStateException("Chi chu phong moi co quyen thuc hien hanh dong nay");
+            throw new IllegalStateException("Chỉ chủ phòng mới có quyền thực hiện thao tác này");
         }
     }
 

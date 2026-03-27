@@ -45,7 +45,6 @@
 
             <div class="control-group right-controls">
                 <button class="control-btn" id="nextBtn"><i class="fas fa-step-forward"></i></button>
-                <button class="control-btn" id="pipBtn"><i class="fas fa-external-link-alt"></i></button>
                 <div class="settings-control" id="settingsControl">
                     <button class="control-btn" id="settingsBtn" title="Tốc độ phát">
                         <i class="fas fa-cog"></i>
@@ -134,7 +133,7 @@
 
     <!-- TAB BÌNH LUẬN -->
     <div class="tab-content active" id="tabComment">
-        <p class="comment-login-notice">Vui lòng <a href="/login">đăng nhập</a> để tham gia bình luận.</p>
+
         <div class="comment-input-area">
             <textarea id="commentInput" placeholder="Viết bình luận" maxlength="500"></textarea>
             <div class="comment-input-footer">
@@ -202,9 +201,15 @@
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 <script th:inline="javascript">
+    // Lưu email người dùng hiện tại vào biến toàn cục window
+    window.currentUserEmail = /*[[${currentUserEmail}]]*/ '';
+
     window.watchMovieConfig = {
         videoId: /*[[${videoId}]]*/ '',
-        roomState: /*[[${roomState}]]*/ null
+        roomState: /*[[${roomState}]]*/ null,
+        maxAllowedHeight: /*[[${maxAllowedHeight}]]*/ 480,
+        planQualityLabel: /*[[${planQualityLabel}]]*/ 'SD (480p)',
+        upgradePackagesUrl: '/packages'
     };
 </script>
 <script src="/js/videocontent/watch_movie.js"></script>
