@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
 
@@ -25,7 +25,17 @@
                 </a>
             </li>
 
-            <li><a href="#" class="menu-item"><i class="fa-solid fa-shield-halved"></i> Bảo mật</a></li>
+            <li>
+                <a href="/account/payments" class="menu-item" th:classappend="${activeTab == 'payments'} ? 'active' : ''">
+                    <i class="fa-solid fa-receipt"></i> Lịch sử thanh toán
+                </a>
+            </li>
+
+            <li>
+                <a href="/account/security" class="menu-item" th:classappend="${activeTab == 'security'} ? 'active' : ''">
+                    <i class="fa-solid fa-shield-halved"></i> Bảo mật
+                </a>
+            </li>
             <li><a href="#" class="menu-item"><i class="fa-solid fa-laptop-mobile"></i> Thiết bị</a></li>
             <li><a href="/profile" class="menu-item"><i class="fa-solid fa-users"></i> Hồ sơ</a></li>
         </ul>

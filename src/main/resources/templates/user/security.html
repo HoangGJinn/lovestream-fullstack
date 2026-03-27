@@ -1,0 +1,259 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bảo mật - LoveStream</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/profile.css">
+    <link rel="stylesheet" href="/css/user-menu.css">
+    <style>
+        .security-card {
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            background: #fff;
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .security-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 20px;
+            border-bottom: 1px solid #e5e5e5;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .security-row:last-child {
+            border-bottom: none;
+        }
+
+        .security-row--link:hover {
+            background: #f9f9f9;
+        }
+
+        .security-left {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            min-width: 0;
+        }
+
+        .security-icon {
+            width: 22px;
+            margin-top: 2px;
+            text-align: center;
+            color: #666;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .security-text {
+            min-width: 0;
+        }
+
+        .security-item-title {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 700;
+            color: #111827;
+            line-height: 1.4;
+        }
+
+        .security-item-value {
+            margin-top: 4px;
+            font-size: 15px;
+            color: #4b5563;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .security-arrow {
+            color: #6b7280;
+            font-size: 14px;
+            margin-left: 12px;
+            flex-shrink: 0;
+        }
+
+        .verify-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+
+        .verify-badge--ok {
+            color: #067647;
+            background: #ecfdf3;
+            border-color: #abefc6;
+        }
+
+        .verify-badge--pending {
+            color: #b42318;
+            background: #fef3f2;
+            border-color: #fecdca;
+        }
+
+        .danger-zone {
+            margin-top: 20px;
+        }
+
+        .delete-btn {
+            width: 100%;
+            border: 1px solid #e5e5e5;
+            background: #fff;
+            color: #d90429;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 6px;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .delete-btn:hover {
+            background: #fff5f5;
+            border-color: #fca5a5;
+        }
+
+        .delete-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.65;
+        }
+
+        .status-text {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .status-text--ok {
+            color: #067647;
+        }
+
+        .status-text--error {
+            color: #b42318;
+        }
+
+        @media (max-width: 900px) {
+            .security-row {
+                padding: 14px 14px;
+            }
+
+            .delete-btn {
+                font-size: 15px;
+                padding: 11px 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div style="height: 70px; display: flex; align-items: center; padding: 0 40px; border-bottom: 1px solid #e5e5e5; background: #fff;">
+    <a href="/home" style="color: #e50914; font-size: 28px; font-weight: 900; text-decoration: none; letter-spacing: -1px;">LoveStream</a>
+    <div style="margin-left: auto;" th:insert="~{fragments/user-menu :: userMenu(${currentUser}, 'light')}"></div>
+</div>
+
+<div class="profile-container">
+    <div th:replace="~{fragments/account-sidebar :: sidebar('security')}"></div>
+
+    <div class="main-content">
+        <h1 class="page-title">Bảo mật</h1>
+        <p class="page-subtitle">Thông tin tài khoản</p>
+
+        <div class="security-card">
+            <a href="/account/change-password" class="security-row security-row--link">
+                <div class="security-left">
+                    <i class="fa-solid fa-lock security-icon"></i>
+                    <div class="security-text">
+                        <p class="security-item-title">Mật khẩu</p>
+                        <p class="security-item-value">Đổi mật khẩu để bảo vệ tài khoản của bạn</p>
+                    </div>
+                </div>
+                <i class="fa-solid fa-chevron-right security-arrow"></i>
+            </a>
+
+            <div class="security-row">
+                <div class="security-left">
+                    <i class="fa-regular fa-envelope security-icon"></i>
+                    <div class="security-text">
+                        <p class="security-item-title">Email</p>
+                        <p class="security-item-value" th:text="${currentUserDetail.email}">example@email.com</p>
+
+                        <span class="verify-badge verify-badge--ok" th:if="${currentUserDetail.active}">
+                            <i class="fa-solid fa-circle-check"></i> Đã xác thực
+                        </span>
+                        <span class="verify-badge verify-badge--pending" th:unless="${currentUserDetail.active}">
+                            <i class="fa-regular fa-circle-xmark"></i> Chưa xác thực
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="security-row">
+                <div class="security-left">
+                    <i class="fa-solid fa-mobile-screen-button security-icon"></i>
+                    <div class="security-text">
+                        <p class="security-item-title">Điện thoại di động</p>
+                        <p class="security-item-value"
+                           th:text="${currentUserDetail.phone != null and !#strings.isEmpty(currentUserDetail.phone) ? currentUserDetail.phone : 'Chưa cập nhật'}">
+                            Chưa cập nhật
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="danger-zone" th:if="${canDeleteAccount}">
+            <button id="request-delete-account-btn" class="delete-btn">Xóa tài khoản</button>
+            <p id="delete-status-text" class="status-text" style="display: none;"></p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const deleteBtn = document.getElementById('request-delete-account-btn');
+    const statusText = document.getElementById('delete-status-text');
+
+    if (deleteBtn && statusText) {
+        deleteBtn.addEventListener('click', async () => {
+            const confirmed = confirm('Bạn có chắc chắn muốn xóa tài khoản không? Hệ thống sẽ gửi email để bạn xác nhận lần cuối.');
+            if (!confirmed) return;
+
+            deleteBtn.disabled = true;
+            statusText.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/v1/account/deletion/request', {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+                statusText.style.display = 'block';
+
+                if (response.ok) {
+                    statusText.className = 'status-text status-text--ok';
+                    statusText.textContent = data.message || 'Đã gửi email xác nhận xóa tài khoản.';
+                } else {
+                    statusText.className = 'status-text status-text--error';
+                    statusText.textContent = data.error || 'Không thể gửi yêu cầu xóa tài khoản.';
+                }
+            } catch (e) {
+                statusText.style.display = 'block';
+                statusText.className = 'status-text status-text--error';
+                statusText.textContent = 'Lỗi kết nối đến máy chủ.';
+            } finally {
+                deleteBtn.disabled = false;
+            }
+        });
+    }
+</script>
+
+</body>
+</html>

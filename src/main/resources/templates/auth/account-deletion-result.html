@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kết quả xóa tài khoản - LoveStream</title>
+    <link rel="stylesheet" href="/css/profile.css">
+    <style>
+        .result-wrap { max-width: 720px; margin: 40px auto; padding: 0 20px; }
+        .result-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; }
+        .result-title { margin: 0 0 10px 0; font-size: 28px; }
+        .result-message { margin: 0 0 20px 0; font-size: 15px; color: #4b5563; line-height: 1.6; }
+        .result-badge { display: inline-block; margin-bottom: 14px; padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+        .result-badge--ok { background: #ecfdf3; color: #067647; }
+        .result-badge--error { background: #fef3f2; color: #b42318; }
+        .result-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .result-btn { text-decoration: none; border-radius: 6px; padding: 10px 14px; font-weight: 600; font-size: 14px; }
+        .result-btn--primary { background: #e50914; color: #fff; }
+        .result-btn--secondary { background: #f3f4f6; color: #111827; }
+    </style>
+</head>
+<body>
+<div style="height: 70px; display: flex; align-items: center; padding: 0 40px; border-bottom: 1px solid #e5e5e5; background: #fff;">
+    <a href="/login" style="color: #e50914; font-size: 28px; font-weight: 900; text-decoration: none; letter-spacing: -1px;">LoveStream</a>
+</div>
+
+<div class="result-wrap">
+    <div class="result-card">
+        <span class="result-badge result-badge--ok" th:if="${success}">Thành công</span>
+        <span class="result-badge result-badge--error" th:if="${!success}">Không thành công</span>
+
+        <h1 class="result-title" th:text="${title}">Kết quả</h1>
+        <p class="result-message" th:text="${message}">Nội dung kết quả xử lý.</p>
+
+        <div class="result-actions">
+            <a th:if="${success}" href="/login" class="result-btn result-btn--primary">Đăng nhập</a>
+            <a th:if="${!success}" href="/account/security" class="result-btn result-btn--primary">Quay lại bảo mật</a>
+            <a href="/home" class="result-btn result-btn--secondary">Về trang chủ</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>
