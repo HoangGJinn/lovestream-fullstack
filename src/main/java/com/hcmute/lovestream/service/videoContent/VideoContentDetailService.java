@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,12 +33,14 @@ public class VideoContentDetailService {
         //   - Nếu input là UUID (36 ký tự dạng xxxxxxxx-xxxx-...) → tìm thẳng bằng id
         //   - Ngược lại → tìm bằng slug
         // Điều này đảm bảo mỗi request chỉ cần đúng 1 query DB.
-        final boolean isUuid = slugOrId != null
-                && slugOrId.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
+        final String key = slugOrId == null ? null : slugOrId.trim();
+        // UUID string can be upper-case depending on link generation / DB / client.
+        final boolean isUuid = key != null
+                && key.matches("(?i)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
 
         Optional<Movie> movieOpt = isUuid
-                ? movieRepository.findDetailedByIdAndStatus(slugOrId, ContentStatus.ACTIVE)
-                : movieRepository.findDetailedBySlugAndStatus(slugOrId, ContentStatus.ACTIVE);
+                ? movieRepository.findDetailedByIdAndStatus(key, ContentStatus.ACTIVE)
+                : movieRepository.findDetailedBySlugAndStatus(key, ContentStatus.ACTIVE);
 
         Movie movie = movieOpt.orElseThrow(() ->
                 new IllegalArgumentException("Phim không tồn tại hoặc đã bị gỡ khỏi hệ thống."));
@@ -45,8 +48,12 @@ public class VideoContentDetailService {
         Double avg = ratingRepository.calculateAverageScoreByVideoId(movie.getId());
         double rating = avg == null ? 0.0 : avg;
 
-        String director = extractDirector(movie.getContentCredits());
-        List<String> actors = extractActors(movie.getContentCredits());
+        List<VideoContentDetail.DirectorItem> directors = extractDirectors(movie.getContentCredits());
+        List<VideoContentDetail.CastItem> cast = extractCast(movie.getContentCredits());
+
+        // Legacy fields for current template bindings.
+        String director = directors.stream().map(VideoContentDetail.DirectorItem::getFullName).findFirst().orElse(null);
+        List<String> actors = cast.stream().map(VideoContentDetail.CastItem::getFullName).distinct().toList();
 
         List<String> genres = movie.getGenres() == null
                 ? List.of()
@@ -70,10 +77,14 @@ public class VideoContentDetailService {
                 .description(movie.getDescription())
                 .genres(genres)
                 .releaseYear(movie.getReleaseYear())
+                .ageRating(movie.getAgeRating() != null ? movie.getAgeRating().name() : null)
+                .quality(movie.getQuality() != null ? movie.getQuality().name() : null)
                 .country(movie.getCountry())
                 .duration(movie.getDurationMinutes())
                 .actors(actors)
                 .director(director)
+                .cast(cast)
+                .directors(directors)
                 .posterUrl(posterUrl)
                 .trailerUrl(trailerUrl)
                 .views(views)
@@ -83,27 +94,37 @@ public class VideoContentDetailService {
                 .build();
     }
 
-    private String extractDirector(List<ContentCredit> credits) {
+    private List<VideoContentDetail.DirectorItem> extractDirectors(List<ContentCredit> credits) {
         if (credits == null) {
-            return null;
+            return List.of();
         }
         return credits.stream()
                 .filter(c -> c != null && c.getCreditType() == CreditType.DIRECTOR)
-                .map(c -> c.getPerson() != null ? c.getPerson().getFullName() : null)
-                .filter(Objects::nonNull)
-                .findFirst()
-                .orElse(null);
+                .filter(c -> c.getPerson() != null && c.getPerson().getFullName() != null)
+                .map(c -> VideoContentDetail.DirectorItem.builder()
+                        .personId(c.getPerson().getId())
+                        .fullName(c.getPerson().getFullName())
+                        .build())
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toMap(VideoContentDetail.DirectorItem::getPersonId, d -> d, (a, b) -> a),
+                        map -> map.values().stream().toList()
+                ));
     }
 
-    private List<String> extractActors(List<ContentCredit> credits) {
+    private List<VideoContentDetail.CastItem> extractCast(List<ContentCredit> credits) {
         if (credits == null) {
             return List.of();
         }
         return credits.stream()
                 .filter(c -> c != null && c.getCreditType() == CreditType.CAST)
-                .map(c -> c.getPerson() != null ? c.getPerson().getFullName() : null)
-                .filter(Objects::nonNull)
-                .distinct()
+                .filter(c -> c.getPerson() != null && c.getPerson().getFullName() != null)
+                .map(c -> VideoContentDetail.CastItem.builder()
+                        .personId(c.getPerson().getId())
+                        .fullName(c.getPerson().getFullName())
+                        .characterName((c.getCharacterName() != null && !c.getCharacterName().isBlank())
+                                ? c.getCharacterName()
+                                : null)
+                        .build())
                 .toList();
     }
 

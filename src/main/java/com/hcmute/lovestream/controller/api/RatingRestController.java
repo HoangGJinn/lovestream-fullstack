@@ -69,23 +69,5 @@ public class RatingRestController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping
-    public ResponseEntity<?> rateMovie(Principal principal, @Valid @RequestBody RatingRequest request) {
-        // 1. Kiểm tra đăng nhập
-        if (principal == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Vui lòng đăng nhập để đánh giá phim!");
-        }
-
-        try {
-            // 2. Gọi service để xử lý lưu/cập nhật đánh giá
-            String message = ratingService.processRating(principal.getName(), request);
-            return ResponseEntity.ok(message);
-        } catch (RuntimeException e) {
-            // 3. Trả về lỗi nếu có (ví dụ: chưa mua gói dịch vụ)
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-
     // Giữ nguyên hàm rateMovie cũ của bạn bên dưới...
 }
