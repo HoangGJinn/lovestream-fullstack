@@ -169,6 +169,24 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
+    public void verifyForgotPasswordOtp(String otp) {
+        String email = otpService.getEmailByOtp(otp);
+        if (email == null) {
+            throw new RuntimeException("Mã xác nhận không hợp lệ hoặc đã hết hạn");
+        }
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+
+        if (user.getStatus() == UserStatus.BANNED || user.getStatus() == UserStatus.REMOVED) {
+            throw new RuntimeException("Tài khoản đang bị khóa hoặc đã xóa. Không thể thao tác.");
+        }
+
+        otpService.clearOtp(otp);
+    }
+
+    @Override
+    @Transactional
     public void resetPassword(String otp, String newPassword) {
         String email = otpService.getEmailByOtp(otp);
         if (email == null) {
@@ -315,4 +333,4 @@ public class AuthServiceImpl implements AuthService {
         tokens.put("role", user.getRole().getAuthority());
         return tokens;
     }
-}
+}
