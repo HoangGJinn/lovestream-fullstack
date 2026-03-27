@@ -16,7 +16,7 @@ import java.util.List;
  * Chạy tự động 1 lần khi app khởi động.
  * An toàn khi chạy nhiều lần: chỉ xử lý record có slug == null.
  */
-@Component
+//@Component
 @RequiredArgsConstructor
 @Slf4j
 public class SlugBackfillRunner implements ApplicationRunner {
@@ -26,26 +26,26 @@ public class SlugBackfillRunner implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        List<VideoContent> all = videoContentRepository.findAll();
-        int count = 0;
-
-        for (VideoContent vc : all) {
-            if (vc.getSlug() == null || vc.getSlug().isBlank()) {
-                String slug = VideoContent.generateSlug(vc.getTitle());
-                vc.setSlug(slug);
-                // Nếu title bị null/trống, fallback về id
-                if (slug.isBlank()) {
-                    vc.setSlug(vc.getId());
-                }
-                count++;
-            }
-        }
-
-        if (count > 0) {
-            videoContentRepository.saveAll(all);
-            log.info("[SlugBackfill] Đã backfill slug cho {} VideoContent records.", count);
-        } else {
-            log.info("[SlugBackfill] Tất cả record đã có slug, không cần backfill.");
-        }
+//        List<VideoContent> all = videoContentRepository.findAll();
+//        int count = 0;
+//
+//        for (VideoContent vc : all) {
+//            if (vc.getSlug() == null || vc.getSlug().isBlank()) {
+//                String slug = VideoContent.generateSlug(vc.getTitle());
+//                vc.setSlug(slug);
+//                // Nếu title bị null/trống, fallback về id
+//                if (slug.isBlank()) {
+//                    vc.setSlug(vc.getId());
+//                }
+//                count++;
+//            }
+//        }
+//
+//        if (count > 0) {
+//            videoContentRepository.saveAll(all);
+//            log.info("[SlugBackfill] Đã backfill slug cho {} VideoContent records.", count);
+//        } else {
+//            log.info("[SlugBackfill] Tất cả record đã có slug, không cần backfill.");
+//        }
     }
 }
