@@ -1,5 +1,7 @@
 package com.hcmute.lovestream.dto.request.webcontent;
 
+import com.hcmute.lovestream.entity.enums.WebContentBannerTargetType;
+import com.hcmute.lovestream.entity.enums.WebStaticPageType;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,10 +20,16 @@ public class WebContentBannerUpsertRequest {
     @NotBlank(message = "Tiêu đề banner không được để trống.")
     private String title;
 
-    /**
-     * Relative or absolute link to navigate when clicking banner.
-     */
-    private String navigationLink;
+    @Builder.Default
+    private WebContentBannerTargetType targetType = WebContentBannerTargetType.NONE;
+
+    private String movieTargetId;
+
+    private String seriesTargetId;
+
+    private WebStaticPageType staticPageTarget;
+
+    private String externalUrl;
 
     /**
      * Ascending order on home slider.
@@ -40,4 +48,3 @@ public class WebContentBannerUpsertRequest {
      */
     private String existingImagePath;
 }
-

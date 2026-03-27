@@ -22,8 +22,7 @@
 
         <div class="webcontent-tabs">
             <a th:href="@{/content-manager/web-content(tab='banners')}" class="active">Banner trang chủ</a>
-            <a th:href="@{/content-manager/web-content(tab='static-pages')}" th:classappend="${bannerRequest.id != null} ? '' : ''"
-                >Trang tĩnh</a>
+            <a th:href="@{/content-manager/web-content(tab='static-pages')}">Trang tĩnh</a>
         </div>
 
         <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
@@ -47,16 +46,66 @@
                         <div class="form-group">
                             <label for="title">Tiêu đề <span class="required">*</span></label>
                             <input id="title" type="text" th:field="*{title}" class="form-control"
-                                   th:classappend="${#fields.hasErrors('title')} ? 'is-invalid' : ''"/>
+                                   th:classappend="${#fields.hasErrors('title')} ? 'is-invalid' : ''" />
                             <span class="field-error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></span>
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="navigationLink">Link điều hướng</label>
-                            <input id="navigationLink" type="text" th:field="*{navigationLink}" class="form-control"
-                                   placeholder="VD: /movies/some-slug hoặc https://example.com" />
+                            <label for="targetType">Kiểu điều hướng</label>
+                            <select id="targetType" th:field="*{targetType}" class="form-control">
+                                <option th:each="type : ${bannerTargetTypes}"
+                                        th:value="${type}"
+                                        th:text="${type.displayLabel}"></option>
+                            </select>
+                            <div style="color: var(--netflix-light-grey); font-size: 13px; margin-top: 8px;">
+                                Chọn nội dung đích, hệ thống sẽ tự sinh link điều hướng cho banner.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row" data-target-group="MOVIE">
+                        <div class="form-group">
+                            <label for="movieTargetId">Phim đích</label>
+                            <select id="movieTargetId" th:field="*{movieTargetId}" class="form-control">
+                                <option value="">-- Chọn phim --</option>
+                                <option th:each="movie : ${availableMovies}"
+                                        th:value="${movie.value}"
+                                        th:text="${movie.label}"></option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row" data-target-group="SERIES">
+                        <div class="form-group">
+                            <label for="seriesTargetId">Series đích</label>
+                            <select id="seriesTargetId" th:field="*{seriesTargetId}" class="form-control">
+                                <option value="">-- Chọn series --</option>
+                                <option th:each="series : ${availableSeries}"
+                                        th:value="${series.value}"
+                                        th:text="${series.label}"></option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row" data-target-group="STATIC_PAGE">
+                        <div class="form-group">
+                            <label for="staticPageTarget">Trang tĩnh đích</label>
+                            <select id="staticPageTarget" th:field="*{staticPageTarget}" class="form-control">
+                                <option value="">-- Chọn trang tĩnh --</option>
+                                <option th:each="page : ${availableStaticPages}"
+                                        th:value="${page.value}"
+                                        th:text="${page.label}"></option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row" data-target-group="EXTERNAL_URL">
+                        <div class="form-group">
+                            <label for="externalUrl">URL tùy chỉnh</label>
+                            <input id="externalUrl" type="text" th:field="*{externalUrl}" class="form-control"
+                                   placeholder="VD: /plans hoặc https://example.com" />
                         </div>
                     </div>
 
@@ -93,7 +142,7 @@
                             <label>Preview ảnh hiện tại</label>
                             <img th:if="${bannerRequest.existingImagePath != null and !#strings.isEmpty(bannerRequest.existingImagePath)}"
                                  th:src="@{/uploads/{path}(path=${bannerRequest.existingImagePath})}"
-                                 class="banner-thumb" alt="Banner preview"/>
+                                 class="banner-thumb" alt="Banner preview" />
                             <div th:if="${bannerRequest.existingImagePath == null or #strings.isEmpty(bannerRequest.existingImagePath)}"
                                  style="color: var(--netflix-light-grey);">Chưa có ảnh</div>
                         </div>
@@ -108,7 +157,29 @@
             </form>
         </div>
     </div>
+
+    <script>
+        (function () {
+            const targetTypeField = document.getElementById('targetType');
+            const groups = Array.from(document.querySelectorAll('[data-target-group]'));
+            if (!targetTypeField || groups.length === 0) return;
+
+            function syncTargetGroups() {
+                const activeType = targetTypeField.value || 'NONE';
+
+                groups.forEach(group => {
+                    const isActive = group.getAttribute('data-target-group') === activeType;
+                    group.hidden = !isActive;
+                    group.querySelectorAll('input, select').forEach(field => {
+                        field.disabled = !isActive;
+                    });
+                });
+            }
+
+            targetTypeField.addEventListener('change', syncTargetGroups);
+            syncTargetGroups();
+        })();
+    </script>
 </body>
 
 </html>
-
