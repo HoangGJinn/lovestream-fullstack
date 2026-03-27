@@ -133,7 +133,7 @@
 
     <!-- TAB BÌNH LUẬN -->
     <div class="tab-content active" id="tabComment">
-        <p class="comment-login-notice">Vui lòng <a href="/login">đăng nhập</a> để tham gia bình luận.</p>
+
         <div class="comment-input-area">
             <textarea id="commentInput" placeholder="Viết bình luận" maxlength="500"></textarea>
             <div class="comment-input-footer">
@@ -201,6 +201,9 @@
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 <script th:inline="javascript">
+    // Lưu email người dùng hiện tại vào biến toàn cục window
+    window.currentUserEmail = /*[[${currentUserEmail}]]*/ '';
+
     window.watchMovieConfig = {
         videoId: /*[[${videoId}]]*/ '',
         roomState: /*[[${roomState}]]*/ null,

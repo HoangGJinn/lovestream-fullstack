@@ -1018,3 +1018,91 @@
                 font-size: 1.5rem;
             }
         }
+/* Nút hiển thị/ẩn phản hồi */
+    .show-replies-btn {
+        background: none;
+        border: none;
+        color: #4285f4; /* Màu xanh giống YouTube hoặc bạn chọn màu var(--primary-color) */
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 8px 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: color 0.2s;
+    }
+
+    .show-replies-btn:hover {
+        color: #fff;
+    }
+
+    .show-replies-btn i {
+        transition: transform 0.2s;
+    }
+
+    /* Hiệu ứng khi đang mở (nút quay ngược icon nếu muốn) */
+    .show-replies-btn.active i {
+        color: #fff;
+    }
+
+    /* Căn lề cho danh sách phản hồi để nó lùi vào trong một chút */
+    .reply-list {
+        margin-top: 5px;
+        border-left: 2px solid rgba(255, 255, 255, 0.1);
+        padding-left: 15px;
+    }
+
+    .vote-btn {
+        background: none;
+        border: none;
+        color: #888; /* Màu xám mặc định */
+        font-size: 0.85rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        margin-right: 15px;
+        transition: color 0.2s;
+    }
+
+    .vote-btn:hover {
+        color: #fff; /* Sáng lên khi di chuột vào */
+    }
+
+    .vote-btn i {
+        font-size: 1rem;
+    }
+
+    .like-btn:hover i {
+        color: #4caf50; /* Màu xanh lá khi hover nút Like */
+    }
+
+    .dislike-btn:hover i {
+        color: #f44336; /* Màu đỏ khi hover nút Dislike */
+    }
+    .comment-actions {
+        display: flex;
+        align-items: center;
+        gap: 15px; /* Tạo khoảng cách giữa các nút */
+        margin-top: 5px;
+    }
+
+    .vote-btn {
+        background: none;
+        border: none;
+        color: #888;
+        cursor: pointer;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .vote-btn:hover {
+        color: #fff; /* Sáng lên khi di chuột vào */
+    }
+
+    .vote-btn i {
+        font-size: 1rem;
+    }
