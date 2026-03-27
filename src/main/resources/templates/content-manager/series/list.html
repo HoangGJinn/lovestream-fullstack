@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý TV Series</title>
+    <link rel="stylesheet" th:href="@{/css/content-manager/content-manager-theme.css}" />
+    <link rel="stylesheet" th:href="@{/css/content-manager/movies.css}" />
+</head>
+<body>
+
+<div th:replace="~{content-manager/fragments/sidebar :: sidebar(activeMenu='series')}"></div>
+
+<div class="admin-content">
+    <header class="admin-header">
+        <h1>Quản lý TV Series</h1>
+        <div class="header-actions">
+            <a th:href="@{/content-manager/series/new}" class="btn btn-primary">Tạo series mới</a>
+        </div>
+    </header>
+
+    <div class="admin-content">
+        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}"   class="alert alert-danger"  th:text="${errorMessage}"></div>
+
+        <!-- Filter Bar -->
+        <form method="get" th:action="@{/content-manager/series}" class="filter-bar">
+            <div class="form-group">
+                <label for="keyword">Tìm kiếm tên series</label>
+                <input id="keyword" name="keyword" type="text" class="form-control"
+                       placeholder="Nhập tên series..."
+                       th:value="${currentKeyword}" />
+            </div>
+            <div class="form-group">
+                <label for="status">Trạng thái</label>
+                <select id="status" name="status" class="form-control">
+                    <option value="">-- Tất cả --</option>
+                    <option th:each="s : ${allStatuses}"
+                            th:value="${s}"
+                            th:text="${s}"
+                            th:selected="${s == currentStatus}">
+                    </option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+            <a th:href="@{/content-manager/series}" class="btn btn-secondary">Xóa lọc</a>
+        </form>
+
+        <div class="card">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Poster</th>
+                        <th>Tên Series</th>
+                        <th>Năm</th>
+                        <th>Trạng thái</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(seriesList)}">
+                        <td colspan="5" class="empty-state">Chưa có TV Series nào.</td>
+                    </tr>
+                    <tr th:each="series : ${seriesList}">
+                        <td>
+                            <img class="poster-thumb"
+                                 th:if="${series.posterUrl != null and !series.posterUrl.contains('placeholder')}"
+                                 th:src="${series.posterUrl}"
+                                 th:alt="${series.title}" />
+                            <div class="poster-thumb--placeholder"
+                                 th:unless="${series.posterUrl != null and !series.posterUrl.contains('placeholder')}">
+                                No Img
+                            </div>
+                        </td>
+                        <td>
+                            <strong th:text="${series.title}">Tên series</strong>
+                        </td>
+                        <td th:text="${series.releaseYear}">2024</td>
+                        <td>
+                            <span class="badge"
+                                  th:classappend="${series.status == T(com.hcmute.lovestream.entity.enums.ContentStatus).ACTIVE} ? 'badge-active' : 'badge-hidden'"
+                                  th:text="${series.status == T(com.hcmute.lovestream.entity.enums.ContentStatus).ACTIVE} ? 'Đang chiếu' : 'Đã ẩn'">
+                            </span>
+                        </td>
+                        <td class="actions">
+                            <a th:href="@{/content-manager/series/{id}/edit(id=${series.id})}" class="btn btn-secondary btn-sm">Sửa</a>
+                            <form th:action="@{/content-manager/series/{id}/toggle-status(id=${series.id})}" method="post" style="display:inline;">
+                                <button class="btn btn-sm" th:classappend="${series.status == T(com.hcmute.lovestream.entity.enums.ContentStatus).ACTIVE} ? 'btn-warning' : 'btn-success'"
+                                        type="submit" th:text="${series.status == T(com.hcmute.lovestream.entity.enums.ContentStatus).ACTIVE} ? 'Ẩn' : 'Hiện'"></button>
+                            </form>
+                            <form th:action="@{/content-manager/series/{id}/delete(id=${series.id})}" method="post" style="display:inline;"
+                                  onsubmit="return confirm('CẢNH BÁO: Xóa series sẽ xóa toàn bộ SEASON và EPISODE bên trong. Bạn có chắc chắn?')">
+                                <button class="btn btn-danger btn-sm" type="submit">Xóa</button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="pagination-bar" th:if="${seriesPage != null and seriesPage.totalPages > 1}">
+                <a class="btn btn-secondary btn-sm" th:if="${!seriesPage.first}"
+                   th:href="@{/content-manager/series(status=${currentStatus},keyword=${currentKeyword},page=${currentPage - 1})}">← Trang trước</a>
+                <span>Trang <strong th:text="${currentPage + 1}">1</strong> / <strong th:text="${seriesPage.totalPages}">1</strong></span>
+                <a class="btn btn-secondary btn-sm" th:if="${!seriesPage.last}"
+                   th:href="@{/content-manager/series(status=${currentStatus},keyword=${currentKeyword},page=${currentPage + 1})}">Trang sau →</a>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

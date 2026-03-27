@@ -77,7 +77,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
             if ("ROLE_ADMIN".equals(role)) {
                 redirectUrl = "/admin/dashboard";
             } else if ("ROLE_CONTENT_MANAGER".equals(role)) {
-                redirectUrl = "/admin/movies";
+                redirectUrl = "/content-manager/dashboard";
             }
 
             log.info("Google OAuth2 login success: email={}, redirect={}", email, redirectUrl);

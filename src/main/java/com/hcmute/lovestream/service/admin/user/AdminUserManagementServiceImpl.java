@@ -63,9 +63,8 @@ public class AdminUserManagementServiceImpl implements AdminUserManagementServic
                 .email(request.getEmail())
                 .phone(request.getPhone())
                 .password(passwordEncoder.encode(request.getPassword()))
-                // 3. Gán cứng thông số quan trọng (Role cố định, Không cần OTP xác thực)
                 .role(Role.CONTENT_MANAGER)
-                .isActive(true)
+                .isActive(false)
                 .status(UserStatus.ACTIVE)
                 .build();
 

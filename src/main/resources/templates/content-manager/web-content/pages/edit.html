@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'Chỉnh sửa ' + ${pageType}">Trang tĩnh</title>
+    <link rel="stylesheet" th:href="@{/css/content-manager/content-manager-theme.css}" />
+    <link rel="stylesheet" th:href="@{/css/content-manager/web-content.css}" />
+
+    <!-- Quill (rich text editor) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css">
+    <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
+    <style>
+        #quill-editor {
+            height: 420px;
+            background: #1f1f1f;
+        }
+
+        .ql-toolbar.ql-snow {
+            border: 1px solid var(--ls-border);
+            background: #141414;
+            color: #fff;
+        }
+
+        .ql-container.ql-snow {
+            border: 1px solid var(--ls-border);
+        }
+
+        .ql-editor {
+            color: #fff;
+            background: #141414;
+        }
+    </style>
+</head>
+
+<body>
+    <div th:replace="~{content-manager/fragments/sidebar :: sidebar(activeMenu='web-content')}"></div>
+
+    <div class="admin-content">
+        <header class="admin-header">
+            <h2>
+                <th:block th:switch="${pageType}">
+                    <span th:case="${T(com.hcmute.lovestream.entity.enums.WebStaticPageType).ABOUT}">Chỉnh sửa Giới thiệu</span>
+                    <span th:case="${T(com.hcmute.lovestream.entity.enums.WebStaticPageType).PRIVACY_POLICY}">Chỉnh sửa Chính sách bảo mật</span>
+                    <span th:case="*">Chỉnh sửa Điều khoản sử dụng</span>
+                </th:block>
+            </h2>
+            <div class="header-actions">
+                <a th:href="@{/content-manager/web-content?tab=static-pages}" class="btn btn-secondary btn-sm">Quay lại</a>
+            </div>
+        </header>
+
+        <div class="webcontent-tabs">
+            <a th:href="@{/content-manager/web-content(tab='banners')}" class="">Banner trang chủ</a>
+            <a th:href="@{/content-manager/web-content(tab='static-pages')}" class="active">Trang tĩnh</a>
+        </div>
+
+        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+        <div class="form-card">
+            <form id="editorForm"
+                  th:action="@{/content-manager/web-content/pages/{pageType}/edit(pageType=${pageType})}"
+                  method="post">
+
+                <input type="hidden" name="htmlContent" id="htmlContentInput" th:value="${htmlContent}" />
+
+                <div class="form-section">
+                    <div class="form-section-title">Nội dung (HTML)</div>
+                    <div id="quill-editor"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Lưu nội dung</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const htmlInput = document.getElementById('htmlContentInput');
+            const editorEl = document.getElementById('quill-editor');
+            if (!editorEl || !htmlInput) return;
+
+            const initialHtml = htmlInput.value || '';
+
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp';
+            fileInput.style.display = 'none';
+            document.body.appendChild(fileInput);
+
+            function imageHandler() {
+                fileInput.value = '';
+                fileInput.click();
+            }
+
+            fileInput.addEventListener('change', async function () {
+                const file = fileInput.files && fileInput.files[0];
+                if (!file) return;
+
+                const range = quill.getSelection(true);
+
+                const formData = new FormData();
+                formData.append('file', file);
+
+                try {
+                    const res = await fetch('/content-manager/web-content/editor/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await res.json().catch(() => ({}));
+
+                    if (!res.ok || !data.success || !data.url) {
+                        throw new Error(data.message || 'Upload ảnh thất bại.');
+                    }
+
+                    quill.insertEmbed(range.index, 'image', data.url, 'user');
+                    quill.setSelection(range.index + 1, 0);
+                } catch (e) {
+                    console.error(e);
+                    alert(e.message || 'Không thể upload ảnh.');
+                }
+            });
+
+            const quill = new Quill('#quill-editor', {
+                theme: 'snow',
+                modules: {
+                    toolbar: {
+                        container: [
+                            [{ 'header': [1, 2, 3, false] }],
+                            ['bold', 'italic'],
+                            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                            ['link', 'image']
+                        ],
+                        handlers: {
+                            'image': imageHandler
+                        }
+                    }
+                }
+            });
+
+            quill.root.innerHTML = initialHtml;
+
+            const form = document.getElementById('editorForm');
+            form.addEventListener('submit', function () {
+                htmlInput.value = quill.root.innerHTML;
+            });
+        })();
+    </script>
+</body>
+
+</html>
+

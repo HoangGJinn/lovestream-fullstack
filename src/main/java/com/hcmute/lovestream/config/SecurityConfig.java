@@ -69,28 +69,23 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/v1/api/vnpay/payment-callback").permitAll()
 
 
-                        // 3. Admin entrypoint: ADMIN or CONTENT_MANAGER
-                        .requestMatchers("/admin", "/admin/dashboard")
-                        .hasAnyAuthority("ROLE_ADMIN", "ROLE_CONTENT_MANAGER", "ADMIN", "CONTENT_MANAGER")
+                        // 3. Admin modules: ADMIN only
+                        .requestMatchers("/admin", "/admin/dashboard", "/admin/**")
+                        .hasAnyAuthority("ROLE_ADMIN", "ADMIN")
 
-                        // 4. Content management modules: CONTENT_MANAGER only
+                        // 4. Content manager modules: CONTENT_MANAGER only
                         .requestMatchers(
-                                "/admin/movies",
-                                "/admin/movies/**",
-                                "/admin/series",
-                                "/admin/series/**",
-                                "/admin/genres",
-                                "/admin/genres/**",
-                                "/admin/web-content",
-                                "/admin/web-content/**"
+                                "/content-manager",
+                                "/content-manager/dashboard",
+                                "/content-manager/movies",
+                                "/content-manager/movies/**",
+                                "/content-manager/series",
+                                "/content-manager/series/**",
+                                "/content-manager/genres",
+                                "/content-manager/genres/**",
+                                "/content-manager/web-content",
+                                "/content-manager/web-content/**"
                         ).hasAnyAuthority("ROLE_CONTENT_MANAGER", "CONTENT_MANAGER")
-                        .requestMatchers(
-                                "/admin/users/**",
-                                "/admin/plans/**",
-                                "/admin/vouchers/**",
-                                "/admin/transactions/**"
-                        ).hasAnyAuthority("ROLE_ADMIN", "ADMIN")
-                        .requestMatchers("/admin/**").hasAnyAuthority("ROLE_ADMIN", "ADMIN")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exc -> exc.authenticationEntryPoint((request, response, authException) -> {
@@ -115,7 +110,7 @@ public class SecurityConfig {
                         .successHandler(oauth2SuccessHandler)
                         .failureHandler((request, response, exception) -> {
                             org.slf4j.LoggerFactory.getLogger(SecurityConfig.class)
-                                    .error("Google OAuth2 login FAILED: {}", exception.getMessage(), exception);
+                                    .warn("Google OAuth2 login FAILED: {}", exception.getMessage());
 
                             cookieAuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
 
