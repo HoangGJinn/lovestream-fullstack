@@ -17,4 +17,5 @@ public interface AdminUserManagementService {
      */
     User createContentManager(CreateContentManagerRequest request);
     List<Map<String, Object>> getAllUsers(String searchKeyword);
+    void toggleUserLock(String id, String reason);
 }

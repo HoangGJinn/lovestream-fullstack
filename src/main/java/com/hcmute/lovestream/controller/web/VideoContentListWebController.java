@@ -10,6 +10,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 
 import java.util.ArrayList;
@@ -32,8 +33,14 @@ public class VideoContentListWebController {
                             Authentication authentication,
                             Model model) {
         String userEmail = null;
-        if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getName())) {
+        if (authentication != null
+                && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken)) {
             userEmail = authentication.getName();
+            try {
+                model.addAttribute("currentUser", userProfileService.getCurrentUserByEmail(userEmail));
+            } catch (RuntimeException ignored) {
+            }
         }
 
         List<MovieResponse> movies = movieService.getMoviesForListing(sort, userEmail);
@@ -52,7 +59,15 @@ public class VideoContentListWebController {
 
     @GetMapping("/series")
     public String getSeries(Authentication authentication, Model model) {
-
+        if (authentication != null
+                && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken)) {
+            try {
+                model.addAttribute("currentUser",
+                        userProfileService.getCurrentUserByEmail(authentication.getName()));
+            } catch (RuntimeException ignored) {
+            }
+        }
 
         List<TVSeries> series = tvSeriesRepository.findAllByStatus(com.hcmute.lovestream.entity.enums.ContentStatus.ACTIVE);
 

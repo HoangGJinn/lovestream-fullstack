@@ -47,6 +47,10 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Email đã tồn tại trong hệ thống");
         }
 
+        if (userRepository.existsByPhone(request.getPhone())) {
+            throw new RuntimeException("Số điện thoại đã được sử dụng bởi tài khoản khác");
+        }
+
         User user = User.builder()
                 .fullName(request.getFullName())
                 .email(request.getEmail())
@@ -165,6 +169,24 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
+    public void verifyForgotPasswordOtp(String otp) {
+        String email = otpService.getEmailByOtp(otp);
+        if (email == null) {
+            throw new RuntimeException("Mã xác nhận không hợp lệ hoặc đã hết hạn");
+        }
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+
+        if (user.getStatus() == UserStatus.BANNED || user.getStatus() == UserStatus.REMOVED) {
+            throw new RuntimeException("Tài khoản đang bị khóa hoặc đã xóa. Không thể thao tác.");
+        }
+
+        otpService.clearOtp(otp);
+    }
+
+    @Override
+    @Transactional
     public void resetPassword(String otp, String newPassword) {
         String email = otpService.getEmailByOtp(otp);
         if (email == null) {
@@ -269,5 +291,46 @@ public class AuthServiceImpl implements AuthService {
             token.setRevoked(true);
             refreshTokenRepository.save(token);
         });
+    }
+
+    @Override
+    @Transactional
+    public Map<String, String> googleLogin(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản Google trong hệ thống"));
+
+        if (user.getStatus() == UserStatus.BANNED) {
+            throw new RuntimeException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ hỗ trợ.");
+        }
+        if (user.getStatus() == UserStatus.REMOVED) {
+            throw new RuntimeException("Tài khoản của bạn đã bị xóa. Vui lòng sử dụng tài khoản khác.");
+        }
+
+        // Tạo Access Token (giống luồng login thường)
+        boolean isVip = subscriptionRepository.existsByUser_IdAndStatusAndEndDateAfter(
+                user.getId(),
+                SubscriptionStatus.ACTIVE,
+                LocalDateTime.now()
+        );
+        String accessToken = jwtUtil.generateToken(user, isVip);
+
+        // Tạo và lưu Refresh Token mới
+        String refreshTokenString = UUID.randomUUID().toString();
+        refreshTokenRepository.deleteByUser(user);
+
+        LocalDateTime expiresAtTime = LocalDateTime.now().plusSeconds(refreshExpiration / 1000);
+        RefreshToken refreshToken = RefreshToken.builder()
+                .user(user)
+                .token(refreshTokenString)
+                .expiresAt(expiresAtTime)
+                .revoked(false)
+                .build();
+        refreshTokenRepository.save(refreshToken);
+
+        Map<String, String> tokens = new HashMap<>();
+        tokens.put("accessToken", accessToken);
+        tokens.put("refreshToken", refreshTokenString);
+        tokens.put("role", user.getRole().getAuthority());
+        return tokens;
     }
 }

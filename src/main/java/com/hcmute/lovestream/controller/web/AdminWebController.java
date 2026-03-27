@@ -20,5 +20,16 @@ public class AdminWebController {
         return "admin/admin-vouchers";
     }
 
-    // ĐÃ XÓA HÀM @GetMapping("/users") Ở ĐÂY VÌ ĐÃ CÓ ADMIN_USER_CONTROLLER LO
+    // Mở trang Quản lý Giao dịch
+    @GetMapping("/transactions")
+    public String transactionManagePage(Model model) {
+        model.addAttribute("pageTitle", "Quản lý Giao dịch");
+        return "admin/admin-transactions";
+    }
+
+    @GetMapping("/plans")
+    public String planManagePage(Model model) {
+        model.addAttribute("pageTitle", "Quản lý Gói dịch vụ");
+        return "admin/admin-plans";
+    }
 }

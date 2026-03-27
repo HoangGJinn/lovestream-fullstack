@@ -1,6 +1,7 @@
 package com.hcmute.lovestream.repository;
 
 import com.hcmute.lovestream.entity.Rating;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -45,4 +46,7 @@ public interface RatingRepository extends JpaRepository<Rating, String> {
 			where r.user.id = :userId and r.score >= 4
 			""")
 	List<String> findPreferredGenreNamesByUserId(@Param("userId") String userId);
+
+	@EntityGraph(attributePaths = {"user", "comment"})
+	List<Rating> findByVideoContent_IdOrderByCreatedAtDesc(String videoContentId);
 }

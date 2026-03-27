@@ -299,6 +299,62 @@ body {
     padding: 10px 18px;
     color: #fff;
     background: linear-gradient(135deg, #e50914, #b20710);
+    border: 1px solid transparent;
+    cursor: pointer;
+    font: inherit;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease,
+        background 0.18s ease;
+    box-shadow: 0 10px 18px rgba(229, 9, 20, 0.22);
+}
+
+.vc-buy-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 24px rgba(229, 9, 20, 0.28);
+}
+
+.vc-buy-btn--ghost {
+    background: linear-gradient(135deg, rgba(229, 9, 20, 0.92), rgba(178, 7, 16, 0.82));
+    border-color: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 10px 18px rgba(0, 0, 0, 0.22);
+}
+
+.vc-trailer-wrap {
+    margin: 18px 0 14px;
+}
+
+.vc-trailer-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: #fff;
+    font-weight: 700;
+    padding: 11px 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.06));
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+    transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.vc-trailer-btn i {
+    color: #ff6b74;
+    font-size: 16px;
+}
+
+.vc-trailer-btn:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 107, 116, 0.42);
+    background: linear-gradient(135deg, rgba(255, 107, 116, 0.18), rgba(255, 255, 255, 0.08));
+    box-shadow: 0 16px 28px rgba(0, 0, 0, 0.24);
+}
+
+.vc-primary-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 10px;
 }
 
 .vc-detail-error {
@@ -485,6 +541,10 @@ body {
 
     .vc-detail-card img {
         max-height: 430px;
+    }
+
+    .vc-primary-actions {
+        gap: 10px;
     }
 }
 

@@ -29,10 +29,10 @@ public class Episode {
     private Season season;
 
     // Các tài nguyên Media riêng cho loại tập phim
-    @OneToMany(mappedBy = "episode", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "episode", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private List<MediaAsset> mediaAssets;
+    private List<MediaAsset> mediaAssets = new ArrayList<>();
 
     // THÊM MỚI: 1-N với Comment (Một tập phim có nhiều bình luận)
     @OneToMany(mappedBy = "episode", cascade = CascadeType.ALL, orphanRemoval = true)

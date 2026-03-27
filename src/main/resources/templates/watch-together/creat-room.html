@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Tạo phòng xem chung - LoveStream</title>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+	<link rel="stylesheet" href="/css/user-menu.css">
+	<style>
+		:root {
+			--bg: #090a10;
+			--bg-soft: #11141f;
+			--card: #161824;
+			--card-hover: #1e2232;
+			--text: #f4f4f5;
+			--muted: #a6adbb;
+			--accent: #e50914;
+			--line: rgba(255, 255, 255, 0.1);
+		}
+
+		* {
+			box-sizing: border-box;
+		}
+
+		body {
+			margin: 0;
+			font-family: "Inter", sans-serif;
+			color: var(--text);
+			background:
+				radial-gradient(circle at 12% 30%, rgba(229, 9, 20, 0.26), transparent 45%),
+				radial-gradient(circle at 75% 60%, rgba(0, 98, 255, 0.18), transparent 40%),
+				var(--bg);
+			min-height: 100vh;
+		}
+
+		.navbar {
+			position: sticky;
+			top: 0;
+			z-index: 50;
+			height: 64px;
+			padding: 0 24px;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			background: rgba(0, 0, 0, 0.86);
+			border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+		}
+
+		.nav-left {
+			display: flex;
+			align-items: center;
+			gap: 22px;
+			min-width: 0;
+		}
+
+		.logo {
+			text-decoration: none;
+			color: var(--accent);
+			font-size: 30px;
+			font-weight: 900;
+			letter-spacing: 0.5px;
+		}
+
+		.nav-links {
+			display: flex;
+			list-style: none;
+			gap: 24px;
+			margin: 0;
+			padding: 0;
+		}
+
+
+
+		.nav-links a {
+			text-decoration: none;
+			color: #c8ccd3;
+			font-size: 14px;
+			font-weight: 500;
+			transition: color 0.2s ease;
+		}
+
+		.nav-links a.active,
+		.nav-links a:hover {
+			color: #ffffff;
+		}
+
+		.nav-right {
+			display: flex;
+			align-items: center;
+		}
+
+
+
+		.container {
+			width: min(1240px, calc(100% - 56px));
+			margin: 16px auto 0;
+			padding-bottom: 24px;
+		}
+
+		.content-grid {
+			display: grid;
+			grid-template-columns: 34% 1fr;
+			gap: 22px;
+		}
+
+		.panel h1 {
+			margin: 2px 0 10px;
+			font-size: clamp(24px, 2.6vw, 44px);
+			line-height: 0.95;
+			font-weight: 900;
+			letter-spacing: -0.8px;
+		}
+
+		.panel .subtitle {
+			margin: 0 0 20px;
+			color: #d5d9e0;
+			max-width: 520px;
+			font-size: 17px;
+			line-height: 1.28;
+			font-weight: 500;
+		}
+
+		.quick-nav {
+			display: flex;
+			gap: 8px;
+			flex-wrap: wrap;
+			margin: 0 0 16px;
+		}
+
+		.quick-nav a {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			text-decoration: none;
+			padding: 8px 11px;
+			border-radius: 999px;
+			font-size: 12px;
+			font-weight: 700;
+			letter-spacing: 0.4px;
+			color: #f1f3f7;
+			border: 1px solid rgba(255, 255, 255, 0.2);
+			background: rgba(255, 255, 255, 0.06);
+		}
+
+		.quick-nav a:hover {
+			border-color: rgba(255, 255, 255, 0.44);
+			background: rgba(255, 255, 255, 0.12);
+		}
+
+		.field {
+			margin-bottom: 18px;
+		}
+
+		.private-password-field {
+			display: none;
+		}
+
+		.private-password-field.show {
+			display: block;
+		}
+
+		.field label {
+			display: block;
+			text-transform: uppercase;
+			font-size: 12px;
+			font-weight: 700;
+			letter-spacing: 1.2px;
+			margin-bottom: 8px;
+		}
+
+		.input,
+		.search-input,
+		.date-input {
+			width: 100%;
+			height: 46px;
+			border: 1px solid transparent;
+			border-radius: 8px;
+			background: rgba(30, 33, 44, 0.86);
+			color: #ffffff;
+			padding: 0 14px;
+			font-size: 14px;
+			outline: none;
+			transition: border-color 0.2s ease, background-color 0.2s ease;
+		}
+
+		.input::placeholder,
+		.search-input::placeholder {
+			color: #8a92a2;
+		}
+
+		.input:focus,
+		.search-input:focus,
+		.date-input:focus {
+			border-color: rgba(229, 9, 20, 0.7);
+			background: rgba(36, 40, 54, 0.95);
+		}
+
+		.mode-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 16px;
+		}
+
+		.mode-card {
+			background: rgba(30, 33, 44, 0.86);
+			border: 1px solid transparent;
+			border-radius: 12px;
+			padding: 12px 10px;
+			text-align: center;
+			cursor: pointer;
+			transition: border-color 0.2s ease, transform 0.2s ease;
+		}
+
+		.mode-card i {
+			font-size: 17px;
+			margin-bottom: 8px;
+			opacity: 0.94;
+		}
+
+		.mode-card h3 {
+			margin: 0;
+			font-size: 17px;
+			font-weight: 700;
+		}
+
+		.mode-card p {
+			margin: 8px 0 0;
+			font-size: 12px;
+			color: #c3c8d2;
+			line-height: 1.3;
+		}
+
+		.mode-card.active {
+			background: var(--accent);
+			border-color: #ff4b52;
+		}
+
+		.mode-card.active p {
+			color: #ffd8da;
+		}
+
+		.datetime-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 16px;
+		}
+
+		.datetime-wrap {
+			position: relative;
+		}
+
+		.datetime-wrap i {
+			position: absolute;
+			left: 18px;
+			top: 50%;
+			transform: translateY(-50%);
+			color: #b0b6c2;
+			pointer-events: none;
+		}
+
+		.date-input {
+			padding-left: 36px;
+			font-size: 14px;
+		}
+
+		.movies-panel {
+			min-height: 480px;
+		}
+
+		.movies-head {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 16px;
+			margin-bottom: 20px;
+		}
+
+		.movies-head h2 {
+			margin: 0;
+			font-size: 24px;
+			font-weight: 800;
+		}
+
+		.search-wrap {
+			position: relative;
+			width: min(380px, 56%);
+		}
+
+		.search-wrap i {
+			position: absolute;
+			left: 16px;
+			top: 50%;
+			transform: translateY(-50%);
+			color: #8f98a8;
+		}
+
+		.search-input {
+			padding-left: 44px;
+			font-size: 14px;
+		}
+
+		.movie-grid {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 16px;
+		}
+
+		.movie-card {
+			position: relative;
+			border: 2px solid transparent;
+			border-radius: 10px;
+			overflow: hidden;
+			background: #0f1220;
+			cursor: pointer;
+			transition: border-color 0.2s ease, transform 0.2s ease;
+		}
+
+		.movie-card:hover {
+			transform: translateY(-2px);
+		}
+
+		.movie-card img {
+			display: block;
+			width: 100%;
+			height: 260px;
+			object-fit: cover;
+		}
+
+		.movie-card .title {
+			position: absolute;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			padding: 10px 10px 12px;
+			background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.9));
+			font-size: 17px;
+			font-weight: 700;
+			line-height: 1.2;
+		}
+
+		.movie-card.selected {
+			border-color: #ff3d46;
+			box-shadow: 0 0 0 2px rgba(229, 9, 20, 0.25) inset;
+		}
+
+		.movie-card .selected-badge {
+			position: absolute;
+			top: 12px;
+			right: 12px;
+			width: 30px;
+			height: 30px;
+			border-radius: 50%;
+			background: var(--accent);
+			color: #fff;
+			display: none;
+			place-items: center;
+			font-size: 16px;
+		}
+
+		.movie-card.selected .selected-badge {
+			display: grid;
+		}
+
+		.actions {
+			margin-top: 20px;
+			padding-top: 0;
+			border-top: none;
+			display: flex;
+			justify-content: flex-start;
+			gap: 12px;
+		}
+
+		.btn {
+			border: none;
+			border-radius: 10px;
+			padding: 10px 18px;
+			font-size: 16px;
+			font-weight: 700;
+			cursor: pointer;
+			transition: opacity 0.2s ease;
+		}
+
+		.btn-cancel {
+			background: transparent;
+			color: #d1d6df;
+		}
+
+		.btn-primary {
+			background: var(--accent);
+			color: #ffffff;
+			min-width: 150px;
+		}
+
+		.btn:hover {
+			opacity: 0.92;
+		}
+
+		.footer {
+			margin-top: 30px;
+			padding: 20px 28px 24px;
+			color: #838a99;
+			border-top: 1px solid rgba(255, 255, 255, 0.06);
+		}
+
+		.footer-grid {
+			display: grid;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			gap: 20px;
+			max-width: 1200px;
+		}
+
+		.footer a {
+			display: block;
+			color: #8f96a6;
+			text-decoration: none;
+			margin-bottom: 12px;
+			font-size: 14px;
+		}
+
+		.copyright {
+			margin-top: 14px;
+			font-size: 14px;
+		}
+
+		.hidden-radio {
+			position: absolute;
+			opacity: 0;
+			pointer-events: none;
+		}
+
+		.sr-only {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			padding: 0;
+			margin: -1px;
+			overflow: hidden;
+			clip: rect(0, 0, 0, 0);
+			border: 0;
+		}
+
+		@media (max-width: 1400px) {
+			.container {
+				width: min(1080px, calc(100% - 32px));
+			}
+
+			.content-grid {
+				grid-template-columns: 1fr;
+			}
+
+			.panel .subtitle {
+				font-size: 16px;
+			}
+
+			.movies-head h2 {
+				font-size: 22px;
+			}
+		}
+
+		@media (max-width: 900px) {
+
+			.navbar {
+				padding: 0 12px;
+				height: auto;
+				min-height: 58px;
+			}
+
+			.nav-links {
+				display: none;
+			}
+
+
+			.container {
+				width: calc(100% - 24px);
+				margin-top: 18px;
+			}
+
+			.mode-grid,
+			.datetime-grid {
+				grid-template-columns: 1fr;
+			}
+
+			.movie-grid {
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+			}
+
+			.search-wrap {
+				width: 100%;
+			}
+
+			.movies-head {
+				flex-direction: column;
+				align-items: flex-start;
+			}
+
+			.actions {
+				justify-content: stretch;
+			}
+
+			.btn {
+				flex: 1;
+			}
+
+			.footer {
+				padding: 24px 18px 30px;
+			}
+
+			.footer-grid {
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+			}
+		}
+	</style>
+</head>
+<body>
+<div class="navbar" id="navbar">
+	<div th:replace="~{fragments/top-navbar :: topNavLeft('watch-together')}"></div>
+	<div class="nav-right">
+		<div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>
+	</div>
+</div>
+<main class="container">
+	<form id="createRoomForm" class="content-grid" th:action="@{/watch-together/creat-room}" th:object="${createRoomForm}" method="post">
+		<section class="panel">
+			<h1>Tạo Phòng Xem Chung</h1>
+			<p class="subtitle">Chia sẻ khoảnh khắc điện ảnh cùng bạn bè ở bất cứ đâu.</p>
+			<div class="quick-nav">
+				<a href="/watch-together"><i class="fa-solid fa-layer-group"></i> Danh sách phòng</a>
+				<a href="/watch-together/my-rooms"><i class="fa-solid fa-list-check"></i> Phòng của tôi</a>
+				<a href="/watch-together/join-private"><i class="fa-solid fa-key"></i> Vào phòng private</a>
+			</div>
+			<p th:if="${errorMessage}" th:text="${errorMessage}" style="color:#ff8f95; margin:0 0 14px; font-size:14px;"></p>
+
+			<div class="field">
+				<label for="roomName">Tên phòng</label>
+				<input id="roomName" class="input" type="text" th:field="*{roomName}" placeholder="Ví dụ: Đêm cày phim kinh dị..." required>
+				<p th:if="${#fields.hasErrors('roomName')}" th:errors="*{roomName}" style="color:#ff8f95; margin:8px 0 0; font-size:13px;"></p>
+			</div>
+
+			<div class="field">
+				<label>Chế độ phòng</label>
+				<div class="mode-grid" id="modeGrid">
+					<div class="mode-card" th:classappend="${!createRoomForm.privateRoom} ? ' active'" data-mode="public">
+						<input id="privacy-public" class="hidden-radio" type="radio" th:field="*{privateRoom}" value="false">
+						<label for="privacy-public" class="sr-only">Cong khai</label>
+						<i class="fa-solid fa-earth-asia"></i>
+						<h3>Công khai</h3>
+						<p>Mọi người đều có thể tham gia</p>
+					</div>
+					<div class="mode-card" th:classappend="${createRoomForm.privateRoom} ? ' active'" data-mode="private">
+						<input id="privacy-private" class="hidden-radio" type="radio" th:field="*{privateRoom}" value="true">
+						<label for="privacy-private" class="sr-only">Rieng tu</label>
+						<i class="fa-solid fa-lock"></i>
+						<h3>Riêng tư</h3>
+						<p>Chỉ những ai có liên kết mời vào được</p>
+					</div>
+				</div>
+				<p th:if="${#fields.hasErrors('privateRoom')}" th:errors="*{privateRoom}" style="color:#ff8f95; margin:8px 0 0; font-size:13px;"></p>
+			</div>
+
+			<div id="passwordField" class="field private-password-field" th:classappend="${createRoomForm.privateRoom} ? ' show'">
+				<label for="roomPassword">Mật khẩu phòng</label>
+				<input id="roomPassword" class="input" type="password" th:field="*{password}" placeholder="Nhập mật khẩu để bảo vệ phòng">
+				<p th:if="${#fields.hasErrors('password')}" th:errors="*{password}" style="color:#ff8f95; margin:8px 0 0; font-size:13px;"></p>
+			</div>
+
+			<div class="field">
+				<label for="maxParticipants">Số người tối đa</label>
+				<div class="datetime-grid">
+					<div class="datetime-wrap">
+						<i class="fa-solid fa-users"></i>
+						<input id="maxParticipants" class="date-input" type="number" th:field="*{maxParticipants}" min="2" max="200">
+					</div>
+				</div>
+				<p th:if="${#fields.hasErrors('maxParticipants')}" th:errors="*{maxParticipants}" style="color:#ff8f95; margin:8px 0 0; font-size:13px;"></p>
+			</div>
+
+			<div class="actions">
+				<a href="/watch-together" class="btn btn-cancel" style="text-decoration:none; display:inline-flex; align-items:center;">Hủy</a>
+				<button type="submit" form="createRoomForm" class="btn btn-primary">Bắt đầu ngay</button>
+			</div>
+		</section>
+
+		<section class="movies-panel">
+			<div class="movies-head">
+				<h2>Chọn phim</h2>
+				<label class="search-wrap" for="movieSearch">
+					<i class="fa-solid fa-magnifying-glass"></i>
+					<input id="movieSearch" class="search-input" type="text" placeholder="Tìm tên phim...">
+				</label>
+			</div>
+
+			<input id="selectedMovie" type="hidden" th:field="*{videoContentId}">
+			<div class="movie-grid" id="movieGrid">
+				<article class="movie-card"
+						 th:each="movie, iter : ${movieOptions}"
+						 th:classappend="${(createRoomForm.videoContentId != null and createRoomForm.videoContentId == movie.id) or (createRoomForm.videoContentId == null and iter.index == 0)} ? ' selected'"
+						 th:attr="data-movie=${movie.id},data-title=${movie.title}">
+					<img th:src="${movie.posterUrl}" th:alt="${movie.title}">
+					<div class="selected-badge"><i class="fa-solid fa-check"></i></div>
+					<div class="title" th:text="${movie.title}">Movie title</div>
+				</article>
+				<div th:if="${#lists.isEmpty(movieOptions)}" style="color:#c6ccda; font-size:14px; grid-column:1 / -1;">Chua co phim de tao phong.</div>
+			</div>
+			<p th:if="${#fields.hasErrors('videoContentId')}" th:errors="*{videoContentId}" style="color:#ff8f95; margin:8px 0 0; font-size:13px;"></p>
+		</section>
+	</form>
+</main>
+
+<footer class="footer">
+	<div class="footer-grid">
+		<div>
+			<a href="#">Audio Description</a>
+			<a href="#">Help Center</a>
+			<a href="#">Gift Cards</a>
+		</div>
+		<div>
+			<a href="#">Media Center</a>
+			<a href="#">Investor Relations</a>
+			<a href="#">Jobs</a>
+		</div>
+		<div>
+			<a href="#">Terms of Use</a>
+			<a href="#">Privacy</a>
+			<a href="#">Legal Notices</a>
+		</div>
+		<div>
+			<a href="#">Cookie Preferences</a>
+			<a href="#">Corporate Information</a>
+			<a href="#">Contact Us</a>
+		</div>
+	</div>
+	<p class="copyright">&copy; 1997-2024 Netflix, Inc.</p>
+</footer>
+
+<script>
+	(function () {
+		const modeCards = document.querySelectorAll('.mode-card');
+		const movieCards = document.querySelectorAll('.movie-card');
+		const movieSearch = document.getElementById('movieSearch');
+		const selectedMovieInput = document.getElementById('selectedMovie');
+		const passwordField = document.getElementById('passwordField');
+		const roomPasswordInput = document.getElementById('roomPassword');
+
+		function togglePasswordField() {
+			if (!passwordField || !roomPasswordInput) {
+				return;
+			}
+			const checkedPrivacy = document.querySelector('input[name="privateRoom"]:checked');
+			const isPrivate = checkedPrivacy && checkedPrivacy.value === 'true';
+			passwordField.classList.toggle('show', !!isPrivate);
+			roomPasswordInput.required = !!isPrivate;
+		}
+
+		if (movieCards.length > 0 && !selectedMovieInput.value) {
+			const firstMovie = movieCards[0].getAttribute('data-movie');
+			selectedMovieInput.value = firstMovie || '';
+		}
+
+		modeCards.forEach(function (card) {
+			card.addEventListener('click', function () {
+				modeCards.forEach(function (item) {
+					item.classList.remove('active');
+				});
+				card.classList.add('active');
+				const radio = card.querySelector('input[type="radio"]');
+				if (radio) radio.checked = true;
+				togglePasswordField();
+			});
+		});
+
+		togglePasswordField();
+
+		movieCards.forEach(function (card) {
+			card.addEventListener('click', function () {
+				movieCards.forEach(function (item) {
+					item.classList.remove('selected');
+				});
+				card.classList.add('selected');
+				selectedMovieInput.value = card.getAttribute('data-movie') || '';
+			});
+		});
+
+		if (!movieSearch) {
+			return;
+		}
+
+		movieSearch.addEventListener('input', function () {
+			const keyword = movieSearch.value.trim().toLowerCase();
+			movieCards.forEach(function (card) {
+				const title = (card.getAttribute('data-title') || '').toLowerCase();
+				card.style.display = title.indexOf(keyword) !== -1 ? '' : 'none';
+			});
+		});
+	})();
+</script>
+</body>
+</html>
+
+

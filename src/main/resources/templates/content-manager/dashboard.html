@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bảng điều khiển nội dung - LoveStream</title>
+    <link rel="stylesheet" th:href="@{/css/content-manager/content-manager-theme.css}" />
+    <link rel="stylesheet" th:href="@{/css/content-manager/dashboard.css}" />
+</head>
+<body>
+
+<div th:replace="~{content-manager/fragments/sidebar :: sidebar(activeMenu='dashboard')}"></div>
+
+<div class="admin-content">
+    <header class="admin-header">
+        <div>
+            <p class="eyebrow">Khu vực quản lý nội dung</p>
+        </div>
+        <div class="welcome">
+            Xin chào, <b sec:authentication="name">Content Manager</b>
+        </div>
+    </header>
+
+    <section class="dashboard-grid">
+        <a class="dashboard-card" th:href="@{/content-manager/web-content}">
+            <span class="dashboard-card__label">Nội dung web</span>
+            <h2>Banner và trang tĩnh</h2>
+            <p>Quản lý hero banner, sắp xếp hiển thị và chỉnh sửa nội dung các trang giới thiệu, điều khoản, bảo mật.</p>
+        </a>
+
+        <a class="dashboard-card" th:href="@{/content-manager/movies}">
+            <span class="dashboard-card__label">Phim lẻ</span>
+            <h2>Phim lẻ</h2>
+            <p>Thêm phim mới, cập nhật metadata, poster, trailer và trạng thái hiển thị cho kho phim lẻ.</p>
+        </a>
+
+        <a class="dashboard-card" th:href="@{/content-manager/series}">
+            <span class="dashboard-card__label">Loạt phim</span>
+            <h2>Series, season và episode</h2>
+            <p>Quản lý trọn vòng đời của series từ mùa phim, tập phim đến video episode.</p>
+        </a>
+
+        <a class="dashboard-card" th:href="@{/content-manager/genres}">
+            <span class="dashboard-card__label">Thể loại</span>
+            <h2>Thể loại</h2>
+            <p>Dọn cây thể loại để việc gắn tag, tìm kiếm và phân trang nội dung nhất quán hơn.</p>
+        </a>
+    </section>
+</div>
+
+</body>
+</html>

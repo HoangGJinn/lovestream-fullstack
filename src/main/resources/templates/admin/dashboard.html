@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,144 +8,149 @@
     <link rel="stylesheet" th:href="@{/css/admin/admin-theme.css}" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
 
-<div th:replace="~{admin/fragments/sidebar :: sidebar(activeMenu='dashboard')}"></div>
+    <div th:replace="~{admin/fragments/sidebar :: sidebar(activeMenu='dashboard')}"></div>
 
-<div class="admin-content">
-    <div class="admin-header">
-        <h2>Tổng quan hệ thống</h2>
-        <div>Xin chào, <b sec:authentication="name">Admin</b> (<span sec:authentication="authorities">Role</span>)</div>
+    <div class="admin-content">
+        <div class="admin-header">
+            <h2>Tổng quan hệ thống</h2>
+            <div>Xin chào, <b sec:authentication="name">Admin</b> (<span sec:authentication="authorities">Role</span>)
+            </div>
+        </div>
+
+        <!-- KHU VỰC ADMIN ONLY CHO THỐNG KÊ DOANH THU & NGƯỜI DÙNG -->
+        <th:block sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ADMIN')">
+            <div class="kpi-container">
+                <div class="kpi-card">
+                    <div class="kpi-title">Tổng Doanh Thu</div>
+                    <div class="kpi-value">$1,250,000</div>
+                    <div class="kpi-up">↑ +15% so với tháng trước</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Tổng Người Dùng</div>
+                    <div class="kpi-value">150,000</div>
+                    <div class="kpi-up">↑ +5% user mới</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Giao Dịch Thành Công</div>
+                    <div class="kpi-value">12,000</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Đang Có Gói (Active)</div>
+                    <div class="kpi-value" style="color: var(--netflix-red);">80,000</div>
+                </div>
+            </div>
+
+            <div class="charts-container">
+                <div class="chart-box">
+                    <h3 style="margin-top:0;">Xu hướng doanh thu (1 tháng)</h3>
+                    <canvas id="revenueChart" height="100"></canvas>
+                </div>
+                <div class="chart-box">
+                    <h3 style="margin-top:0;">Phân phối gói dịch vụ</h3>
+                    <canvas id="planChart" height="220"></canvas>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <h3 style="margin-top:0;">Giao dịch mới nhất</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID User</th>
+                            <th>Tên Gói</th>
+                            <th>Số tiền</th>
+                            <th>Thời gian</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>9024020</td>
+                            <td>Premium</td>
+                            <td>$27.00</td>
+                            <td>2026-03-22 14:30</td>
+                            <td><span class="status-success">Thành công</span></td>
+                        </tr>
+                        <tr>
+                            <td>8022088</td>
+                            <td>Standard</td>
+                            <td>$15.00</td>
+                            <td>2026-03-22 14:15</td>
+                            <td><span class="status-success">Thành công</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </th:block>
+
+        <!-- CONTENT MANAGER THẤY CHÀO MỪNG HOẶC CHỈ CÁC THÔNG TIN CONTENT CƠ BẢN -->
+        <th:block sec:authorize="hasAnyAuthority('ROLE_CONTENT_MANAGER', 'CONTENT_MANAGER')">
+            <div class="kpi-container">
+                <div class="kpi-card">
+                    <div class="kpi-title">Quyền hạn</div>
+                    <div class="kpi-value" style="font-size: 20px;">Quản lý nội dung phim</div>
+                    <div class="kpi-up">Bạn được phân công quản trị kho phim.</div>
+                </div>
+            </div>
+            <div class="table-container"
+                style="background-color: transparent; border: 1px dashed var(--netflix-dark-grey); text-align: center; color: var(--netflix-light-grey); padding: 50px;">
+                <h3>Chào mừng tới Content Management Dashboard</h3>
+                <p>Vui lòng chọn chức năng "Quản lý phim lẻ" ở Menu trái để bắt đầu thêm mới hoặc cập nhật thông tin
+                    phim.</p>
+            </div>
+        </th:block>
+
     </div>
 
-    <!-- KHU VỰC ADMIN ONLY CHO THỐNG KÊ DOANH THU & NGƯỜI DÙNG -->
-    <th:block sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ADMIN')">
-        <div class="kpi-container">
-            <div class="kpi-card">
-                <div class="kpi-title">Tổng Doanh Thu</div>
-                <div class="kpi-value">$1,250,000</div>
-                <div class="kpi-up">↑ +15% so với tháng trước</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-title">Tổng Người Dùng</div>
-                <div class="kpi-value">150,000</div>
-                <div class="kpi-up">↑ +5% user mới</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-title">Giao Dịch Thành Công</div>
-                <div class="kpi-value">12,000</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-title">Đang Có Gói (Active)</div>
-                <div class="kpi-value" style="color: var(--netflix-red);">80,000</div>
-            </div>
-        </div>
-
-        <div class="charts-container">
-            <div class="chart-box">
-                <h3 style="margin-top:0;">Xu hướng doanh thu (1 tháng)</h3>
-                <canvas id="revenueChart" height="100"></canvas>
-            </div>
-            <div class="chart-box">
-                <h3 style="margin-top:0;">Phân phối gói dịch vụ</h3>
-                <canvas id="planChart" height="220"></canvas>
-            </div>
-        </div>
-
-        <div class="table-container">
-            <h3 style="margin-top:0;">Giao dịch mới nhất</h3>
-            <table>
-                <thead>
-                <tr>
-                    <th>ID User</th>
-                    <th>Tên Gói</th>
-                    <th>Số tiền</th>
-                    <th>Thời gian</th>
-                    <th>Trạng thái</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr>
-                    <td>9024020</td>
-                    <td>Premium</td>
-                    <td>$27.00</td>
-                    <td>2026-03-22 14:30</td>
-                    <td><span class="status-success">Thành công</span></td>
-                </tr>
-                <tr>
-                    <td>8022088</td>
-                    <td>Standard</td>
-                    <td>$15.00</td>
-                    <td>2026-03-22 14:15</td>
-                    <td><span class="status-success">Thành công</span></td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-    </th:block>
-
-    <!-- CONTENT MANAGER THẤY CHÀO MỪNG HOẶC CHỈ CÁC THÔNG TIN CONTENT CƠ BẢN -->
-    <th:block sec:authorize="hasAnyAuthority('ROLE_CONTENT_MANAGER', 'CONTENT_MANAGER')">
-        <div class="kpi-container">
-            <div class="kpi-card">
-                <div class="kpi-title">Quyền hạn</div>
-                <div class="kpi-value" style="font-size: 20px;">Quản lý nội dung phim</div>
-                <div class="kpi-up">Bạn được phân công quản trị kho phim.</div>
-            </div>
-        </div>
-        <div class="table-container" style="background-color: transparent; border: 1px dashed var(--netflix-dark-grey); text-align: center; color: var(--netflix-light-grey); padding: 50px;">
-            <h3>Chào mừng tới Content Management Dashboard</h3>
-            <p>Vui lòng chọn chức năng "Quản lý phim lẻ" ở Menu trái để bắt đầu thêm mới hoặc cập nhật thông tin phim.</p>
-        </div>
-    </th:block>
-
-</div>
-
-<script>
-    if(document.getElementById('revenueChart')) {
-        const ctxRev = document.getElementById('revenueChart').getContext('2d');
-        new Chart(ctxRev, {
-            type: 'line',
-            data: {
-                labels: ['1', '5', '10', '15', '20', '25', '30'],
-                datasets: [{
-                    label: 'Doanh thu ($)',
-                    data: [50000, 100000, 75000, 150000, 120000, 200000, 180000],
-                    borderColor: '#E50914',
-                    backgroundColor: 'rgba(229, 9, 20, 0.1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { grid: { color: '#404040' }, ticks: { color: '#b3b3b3' } },
-                    x: { grid: { display: false }, ticks: { color: '#b3b3b3' } }
-                }
-            }
-        });
-
-        const ctxPlan = document.getElementById('planChart').getContext('2d');
-        new Chart(ctxPlan, {
-            type: 'doughnut',
-            data: {
-                labels: ['Basic', 'Standard', 'Premium', 'No Plan'],
-                datasets: [{
-                    data: [30, 15, 25, 30],
-                    backgroundColor: ['#4287f5', '#f5a442', '#E50914', '#555555'],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                plugins: {
-                    legend: { position: 'right', labels: { color: '#b3b3b3' } }
+    <script>
+        if (document.getElementById('revenueChart')) {
+            const ctxRev = document.getElementById('revenueChart').getContext('2d');
+            new Chart(ctxRev, {
+                type: 'line',
+                data: {
+                    labels: ['1', '5', '10', '15', '20', '25', '30'],
+                    datasets: [{
+                        label: 'Doanh thu ($)',
+                        data: [50000, 100000, 75000, 150000, 120000, 200000, 180000],
+                        borderColor: '#E50914',
+                        backgroundColor: 'rgba(229, 9, 20, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
                 },
-                cutout: '70%'
-            }
-        });
-    }
-</script>
+                options: {
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: '#404040' }, ticks: { color: '#b3b3b3' } },
+                        x: { grid: { display: false }, ticks: { color: '#b3b3b3' } }
+                    }
+                }
+            });
+
+            const ctxPlan = document.getElementById('planChart').getContext('2d');
+            new Chart(ctxPlan, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Basic', 'Standard', 'Premium', 'No Plan'],
+                    datasets: [{
+                        data: [30, 15, 25, 30],
+                        backgroundColor: ['#4287f5', '#f5a442', '#E50914', '#555555'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: { position: 'right', labels: { color: '#b3b3b3' } }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+    </script>
 </body>
+
 </html>

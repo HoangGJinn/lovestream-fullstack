@@ -44,17 +44,8 @@
 <body>
 
 <div class="navbar" id="navbar">
-    <div class="nav-left">
-        <a href="/" class="logo">LoveStream</a>
-        <ul class="nav-links">
-            <li><a href="/home">Trang chu</a></li>
-            <li><a href="/series" class="active">Series</a></li>
-            <li><a href="/movies">Phim</a></li>
-            <li><a href="#">Moi & Pho bien</a></li>
-            <li><a href="#">Danh sach cua toi</a></li>
-        </ul>
-    </div>
-    <div class="nav-right">
+            <div th:replace="~{fragments/top-navbar :: topNavLeft('series')}"></div>
+        <div class="nav-right">
         <i class="fa-solid fa-magnifying-glass nav-icon"></i>
         <a href="/notifications" class="nav-icon" aria-label="Thong bao"><i class="fa-regular fa-bell"></i></a>
         <div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>
@@ -74,10 +65,14 @@
 
         <div class="categories-container" th:each="row : ${seriesRows}">
             <div class="row-posters">
-                <div class="movie-card" th:id="${series.id}" th:each="series : ${row}">
-                    <img th:src="${series.posterUrl}" class="row-poster" th:alt="${series.title}">
-                    <div class="movie-title-overlay" th:text="${series.title}"></div>
-                </div>
+                <a th:each="series : ${row}" th:href="@{/series/{id}(id=${series.id})}"
+                   style="text-decoration:none;color:inherit;">
+                    <div class="movie-card" th:id="${series.id}">
+                        <img th:src="${series.posterUrl}" class="row-poster" th:alt="${series.title}">
+                        <div class="movie-title-overlay" th:text="${series.title}"></div>
+                    </div>
+                </a>
+
             </div>
         </div>
     </div>

@@ -1,6 +1,7 @@
 package com.hcmute.lovestream.entity;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
@@ -9,6 +10,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -18,10 +20,14 @@ import java.util.List;
 @AllArgsConstructor
 public class TVSeries extends VideoContent {
 
-    @OneToMany(mappedBy = "tvSeries", cascade = CascadeType.ALL)
+    /** Thời lượng trung bình mỗi tập (phút) */
+    @Column(name = "duration_minutes")
+    private Integer durationMinutes;
+
+    @OneToMany(mappedBy = "tvSeries", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private List<Season> seasons;
+    private List<Season> seasons = new ArrayList<>();
 
     @Override
     public void getDetails() {

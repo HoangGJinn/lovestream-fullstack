@@ -4,6 +4,7 @@ import com.hcmute.lovestream.entity.VideoContent;
 import com.hcmute.lovestream.entity.enums.ContentStatus;
 import com.hcmute.lovestream.repository.VideoContentRepository;
 import com.hcmute.lovestream.service.user.UserProfileService;
+import com.hcmute.lovestream.service.webcontent.WebContentBannerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -19,38 +20,42 @@ public class HomeWebController {
 
     private final VideoContentRepository videoContentRepository;
     private final UserProfileService userProfileService;
+    private final WebContentBannerService bannerService;
 
-    @GetMapping({"/", "/home"})
+    @GetMapping({ "/", "/home" })
     public String homePage(Authentication authentication, Model model) {
-        if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getName())) {
-            model.addAttribute("currentUser", userProfileService.getCurrentUserByEmail(authentication.getName()));
-        }
+        boolean isAuthenticated = authentication != null
+                && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken);
 
-        // 1. Phim Hành động (Tên tiếng Anh chuẩn từ TVmaze là "Action")
-        List<VideoContent> actionMovies = videoContentRepository.findByGenres_Name("Action").stream().filter(v -> v.getStatus() == ContentStatus.ACTIVE).toList();
-        model.addAttribute("actionMovies", actionMovies);
+        model.addAttribute("isAuthenticated", isAuthenticated);
 
-        // 2. Phim Tâm lý / Tình cảm (Drama)
-        List<VideoContent> dramaMovies = videoContentRepository.findByGenres_Name("Drama").stream().filter(v -> v.getStatus() == ContentStatus.ACTIVE).toList();
-        model.addAttribute("dramaMovies", dramaMovies);
-
-        // 3. Phim Hài hước (Comedy)
-        List<VideoContent> comedyMovies = videoContentRepository.findByGenres_Name("Comedy").stream().filter(v -> v.getStatus() == ContentStatus.ACTIVE).toList();
-        model.addAttribute("comedyMovies", comedyMovies);
-
-        // 4. Viễn tưởng / Kỳ ảo (Science-Fiction hoặc Fantasy)
-        List<VideoContent> sciFiMovies = videoContentRepository.findByGenres_Name("Science-Fiction").stream().filter(v -> v.getStatus() == ContentStatus.ACTIVE).toList();
-        model.addAttribute("sciFiMovies", sciFiMovies);
-
-        if (authentication != null
-            && authentication.isAuthenticated()
-            && !(authentication instanceof AnonymousAuthenticationToken)) {
+        if (isAuthenticated) {
             try {
-                model.addAttribute("currentUser",
-                        userProfileService.getCurrentUserByEmail(authentication.getName()));
+                model.addAttribute("currentUser", userProfileService.getCurrentUserByEmail(authentication.getName()));
             } catch (RuntimeException ignored) {
             }
         }
+
+        var displayedBanners = bannerService.getDisplayedForHome();
+        model.addAttribute("displayedBanners", displayedBanners);
+        model.addAttribute("hasDisplayedBanners", !displayedBanners.isEmpty());
+
+        List<VideoContent> actionMovies = videoContentRepository.findByGenres_Name("Action").stream()
+                .filter(v -> v.getStatus() == ContentStatus.ACTIVE).toList();
+        model.addAttribute("actionMovies", actionMovies);
+
+        List<VideoContent> dramaMovies = videoContentRepository.findByGenres_Name("Drama").stream()
+                .filter(v -> v.getStatus() == ContentStatus.ACTIVE).toList();
+        model.addAttribute("dramaMovies", dramaMovies);
+
+        List<VideoContent> comedyMovies = videoContentRepository.findByGenres_Name("Comedy").stream()
+                .filter(v -> v.getStatus() == ContentStatus.ACTIVE).toList();
+        model.addAttribute("comedyMovies", comedyMovies);
+
+        List<VideoContent> sciFiMovies = videoContentRepository.findByGenres_Name("Science-Fiction").stream()
+                .filter(v -> v.getStatus() == ContentStatus.ACTIVE).toList();
+        model.addAttribute("sciFiMovies", sciFiMovies);
 
         return "home";
     }

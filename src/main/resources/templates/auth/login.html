@@ -1,97 +1,145 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="vi">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Đăng nhập - LoveStream</title>
-    <style>
-        body {
-            margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background-color: #000;
-            /* Hình nền phim mờ phía sau */
-            background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.8)), url('https://assets.nflxext.com/ffe/siteui/vlv3/ab180a27-b661-44d7-a6d9-940cb32f2f4a/7fb62e44-31fd-4e1c-bba3-1e7412d4d623/VN-en-20231009-popsignuptwoweeks-perspective_alpha_website_large.jpg');
-            background-size: cover;
-            color: #fff; display: flex; flex-direction: column; min-height: 100vh;
-        }
-        .header { padding: 20px 50px; }
-        .logo { color: #e50914; font-size: 2.5rem; font-weight: 900; text-decoration: none; display: inline-block; letter-spacing: -1px;}
-        .login-wrapper { display: flex; justify-content: center; align-items: center; flex-grow: 1; padding-bottom: 80px;}
-        .login-box { background-color: rgba(0,0,0,0.85); padding: 60px 68px 40px; border-radius: 4px; width: 100%; max-width: 314px; }
-        .login-box h2 { font-size: 32px; font-weight: 600; margin-top: 0; margin-bottom: 28px; }
-        .form-control { width: 100%; padding: 16px 20px; border: 0; border-radius: 4px; background: #333; color: #fff; margin-bottom: 16px; box-sizing: border-box; font-size: 16px;}
-        .form-control:focus { background: #454545; outline: none; }
-        .btn-login { width: 100%; padding: 16px; font-size: 16px; font-weight: bold; background: #e50914; color: #fff; border: none; border-radius: 4px; cursor: pointer; margin-top: 24px; transition: 0.2s ease;}
-        .btn-login:hover { background: #c11119; }
-        .error-message { color: #e87c03; margin-bottom: 15px; font-size: 14px; display: none; padding: 10px 20px; background: #e87c0333; border-radius: 4px;}
-        .links { margin-top: 40px; color: #737373; font-size: 16px;}
-        .links a { color: #fff; text-decoration: none; margin-left: 5px; }
-        .links a:hover { text-decoration: underline; }
-        .links-small { margin-top: 15px; font-size: 13px; text-align: right;}
-        .links-small a { color: #b3b3b3; text-decoration: none; }
-        .links-small a:hover { text-decoration: underline; }
-    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/auth.css}">
 </head>
+
 <body>
 
-<div class="header">
-    <a href="/" class="logo">LoveStream</a>
-</div>
+    <div class="header">
+        <a href="/" class="logo">LoveStream</a>
+    </div>
 
-<div class="login-wrapper">
-    <div class="login-box">
-        <h2>Đăng nhập</h2>
+    <div class="auth-wrapper">
+        <div class="auth-box">
+            <h2>Đăng nhập</h2>
 
-        <div id="error-alert" class="error-message"></div>
+            <div id="error-alert" class="alert alert-error"></div>
+            <div id="google-error" class="alert alert-error"></div>
 
-        <form id="loginForm">
-            <input type="email" id="email" class="form-control" placeholder="Email hoặc số điện thoại" required>
-            <input type="password" id="password" class="form-control" placeholder="Mật khẩu" required>
-            <button type="submit" class="btn-login">Đăng nhập</button>
-        </form>
+            <form id="loginForm">
+                <div class="form-group">
+                    <input type="email" id="email" class="form-control" placeholder="Địa chỉ email" required
+                        autocomplete="email">
+                </div>
+                <div class="form-group password-wrapper">
+                    <input type="password" id="password" class="form-control pr-40" placeholder="Mật khẩu" required
+                        autocomplete="current-password">
+                    <button type="button" class="toggle-password" id="togglePasswordBtn" aria-label="Hiện mật khẩu">
+                        <svg id="eye-closed" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path
+                                d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
+                            </path>
+                            <line x1="1" y1="1" x2="23" y2="23"></line>
+                        </svg>
+                        <svg id="eye-open" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="20"
+                            height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                </div>
 
-        <div class="links-small">
-            <a href="/forgot-password">Quên mật khẩu?</a>
-        </div>
+                <button type="submit" class="btn btn-primary" id="submitBtn">Đăng nhập</button>
+            </form>
 
-        <div class="links">
-            Bạn mới tham gia LoveStream? <a href="/register">Đăng ký ngay.</a>
+            <div class="forgot-link">
+                <a href="/forgot-password">Quên mật khẩu?</a>
+            </div>
+
+            <div class="divider">hoặc</div>
+
+            <a href="/oauth2/authorization/google" id="googleBtn" class="btn btn-google">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo">
+                Đăng nhập bằng Google
+            </a>
+
+            <div class="auth-prompt">
+                Bạn mới tham gia LoveStream?<a href="/register">Đăng ký ngay</a>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-    document.getElementById('loginForm').addEventListener('submit', async function(event) {
-        event.preventDefault();
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const errorAlert = document.getElementById('error-alert');
-        errorAlert.style.display = 'none';
+    <script>
+        // Xử lý ẩn/hiện mật khẩu
+        const passwordInput = document.getElementById('password');
+        const togglePasswordBtn = document.getElementById('togglePasswordBtn');
+        const eyeClosed = document.getElementById('eye-closed');
+        const eyeOpen = document.getElementById('eye-open');
 
-        try {
-            const response = await fetch('/api/v1/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: email, password: password })
-            });
+        togglePasswordBtn.addEventListener('click', function () {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
 
-            const data = await response.json();
-            if (response.ok) {
-                window.location.href = data.redirectUrl || '/';
+            if (type === 'text') {
+                eyeClosed.style.display = 'none';
+                eyeOpen.style.display = 'block';
             } else {
-                if (data.isUnverified) {
-                    sessionStorage.setItem('verifyEmail', email);
-                    sessionStorage.setItem('autoSend', 'true');
-                    window.location.href = '/verify-email';
-                } else {
-                    errorAlert.innerText = data.error || 'Đăng nhập thất bại. Vui lòng thử lại.';
-                    errorAlert.style.display = 'block';
-                }
+                eyeClosed.style.display = 'block';
+                eyeOpen.style.display = 'none';
             }
-        } catch (error) {
-            errorAlert.innerText = 'Lỗi kết nối đến máy chủ.';
-            errorAlert.style.display = 'block';
-        }
-    });
-</script>
+        });
+
+        // Hiển thị lỗi Google OAuth2
+        (function () {
+            const params = new URLSearchParams(window.location.search);
+            const googleErr = params.get('error');
+            if (googleErr) {
+                const el = document.getElementById('google-error');
+                el.innerText = decodeURIComponent(googleErr);
+                el.style.display = 'block';
+            }
+        })();
+
+        // Xử lý Submit
+        document.getElementById('loginForm').addEventListener('submit', async function (event) {
+            event.preventDefault();
+            const email = document.getElementById('email').value.trim();
+            const password = passwordInput.value;
+            const errorAlert = document.getElementById('error-alert');
+            const submitBtn = document.getElementById('submitBtn');
+
+            errorAlert.style.display = 'none';
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Đang xử lý...';
+
+            try {
+                const response = await fetch('/api/v1/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    window.location.href = data.redirectUrl || '/home';
+                } else {
+                    if (data.isUnverified) {
+                        sessionStorage.setItem('verifyEmail', email);
+                        sessionStorage.setItem('autoSend', 'true');
+                        window.location.href = '/verify-email';
+                    } else {
+                        errorAlert.innerText = data.error || 'Đăng nhập thất bại. Vui lòng thử lại.';
+                        errorAlert.style.display = 'block';
+                    }
+                }
+            } catch (err) {
+                errorAlert.innerText = 'Lỗi kết nối đến máy chủ.';
+                errorAlert.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = 'Đăng nhập';
+            }
+        });
+    </script>
 </body>
+
 </html>

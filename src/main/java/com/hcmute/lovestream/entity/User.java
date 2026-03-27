@@ -16,6 +16,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class User {
+    private String lockReason;
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
@@ -29,7 +30,7 @@ public class User {
     @Column(unique = true)
     private String phone;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String password;
 
     // Giới tính của người dùng
