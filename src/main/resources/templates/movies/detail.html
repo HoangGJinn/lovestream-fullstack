@@ -88,6 +88,13 @@
             </div>
         </div>
     </article>
+
+    <section class="vc-ratings-section" style="max-width: 1200px; margin: 40px auto; padding: 0 20px;">
+        <h2 style="color: #fff; margin-bottom: 20px;">Đánh giá từ người xem</h2>
+        <div id="ratingList" class="rating-list">
+            <p style="color: #888;">Đang tải đánh giá...</p>
+        </div>
+    </section>
 </main>
 
 <script>
@@ -130,6 +137,74 @@
         }
     });
 </script>
+
+
+<script>
+    const _movieId = "[[${movie?.id}]]";
+
+    document.addEventListener("DOMContentLoaded", function() {
+        loadRatingsForDetail();
+    });
+
+    async function loadRatingsForDetail() {
+        if (!_movieId) return;
+        try {
+            const res = await fetch('/api/v1/ratings?videoContentId=' + _movieId);
+            const data = await res.json();
+            const container = document.getElementById('ratingList');
+
+            if (!data.ratings || data.ratings.length === 0) {
+                container.innerHTML = '<p style="color: #888;">Chưa có đánh giá nào.</p>';
+                return;
+            }
+
+            container.innerHTML = data.ratings.map(r => `
+                <div class="rating-item" style="background: #1a1a1a; padding: 20px; border-radius: 8px; margin-bottom: 15px;">
+                    <div style="display: flex; gap: 15px;">
+                        <div class="comment-avatar" style="width: 40px; height: 40px; background: #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold;">
+                            ${(r.userName || 'A').charAt(0).toUpperCase()}
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="color: #fff; font-weight: 600;">${r.userName}</div>
+                            <div style="color: #ffc107; margin-bottom: 8px;">${'★'.repeat(r.score)}${'☆'.repeat(5 - r.score)}</div>
+                            ${r.review ? `<div style="color: #ccc; margin-bottom: 10px;">${r.review}</div>` : ''}
+                            <div class="comment-actions" style="display: flex; gap: 20px; font-size: 0.85rem;">
+                                <span style="color: #666;">${new Date(r.createdAt).toLocaleDateString('vi-VN')}</span>
+                                <button class="vote-btn" onclick="voteRatingOnDetail('${r.id}', true)" style="background:none; border:none; color:#888; cursor:pointer;">
+                                    <i class="fa-regular fa-thumbs-up"></i> <span>${r.likeCount || 0}</span>
+                                </button>
+                                <button class="vote-btn" onclick="voteRatingOnDetail('${r.id}', false)" style="background:none; border:none; color:#888; cursor:pointer;">
+                                    <i class="fa-regular fa-thumbs-down"></i> <span>${r.dislikeCount || 0}</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function voteRatingOnDetail(ratingId, isLike) {
+        const action = isLike ? 'like' : 'dislike';
+        try {
+            // SỬA DÒNG NÀY: Bỏ các dấu \ đi
+            const res = await fetch(`/api/v1/ratings/${ratingId}/${action}`, { method: 'POST' });
+
+            if (res.ok) {
+                loadRatingsForDetail();
+            } else {
+                const msg = await res.text();
+                alert(msg || "Vui lòng đăng nhập và mua gói dịch vụ để tương tác.");
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+</script>
+
 
 </body>
 </html>
