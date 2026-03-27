@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý nội dung web</title>
+    <link rel="stylesheet" th:href="@{/css/content-manager/content-manager-theme.css}" />
+    <link rel="stylesheet" th:href="@{/css/content-manager/web-content.css}" />
+    <link rel="stylesheet" th:href="@{/css/content-manager/movies.css}" />
+</head>
+
+<body>
+    <div th:replace="~{content-manager/fragments/sidebar :: sidebar(activeMenu='web-content')}"></div>
+
+    <div class="admin-content">
+        <header class="admin-header">
+            <h2>Quản lý nội dung trang web</h2>
+        </header>
+
+        <div class="webcontent-tabs">
+            <a th:href="@{/content-manager/web-content(tab='banners')}"
+               th:classappend="${tab == 'banners'} ? 'active'">Banner trang chủ</a>
+            <a th:href="@{/content-manager/web-content(tab='static-pages')}"
+               th:classappend="${tab == 'static-pages'} ? 'active'">Trang tĩnh</a>
+        </div>
+
+        <div th:if="${tab == 'banners'}">
+            <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+            <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+            <div class="card">
+                <header class="admin-header" style="margin-bottom: 14px;">
+                    <h1 style="font-size: 20px; margin: 0;">Banner trang chủ</h1>
+                    <div class="header-actions">
+                        <a th:href="@{/content-manager/web-content/banners/new}" class="btn btn-primary btn-sm">+ Thêm banner</a>
+                    </div>
+                </header>
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Preview</th>
+                            <th>Tiêu đề</th>
+                            <th>Link</th>
+                            <th>Thứ tự</th>
+                            <th>Trạng thái</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bannerTableBody">
+                        <tr th:if="${#lists.isEmpty(banners)}">
+                            <td colspan="6" class="empty-state">Chưa có banner. Hãy tạo banner đầu tiên!</td>
+                        </tr>
+
+                        <tr th:each="banner : ${banners}"
+                            class="draggable-row"
+                            th:data-banner-id="${banner.id}"
+                            draggable="true">
+                            <td>
+                                <img th:src="@{/uploads/{path}(path=${banner.imagePath})}" class="banner-thumb"
+                                     th:alt="${banner.title}" />
+                            </td>
+                            <td>
+                                <strong th:text="${banner.title}">Tiêu đề</strong>
+                            </td>
+                            <td>
+                                <a th:if="${banner.navigationLink != null and !#strings.isEmpty(banner.navigationLink)}"
+                                   th:href="${banner.navigationLink}" target="_blank"
+                                   th:text="${#strings.length(banner.navigationLink) > 28 ? banner.navigationLink.substring(0, 28) + '...' : banner.navigationLink}">Link</a>
+                                <span th:if="${banner.navigationLink == null or #strings.isEmpty(banner.navigationLink)}">-</span>
+                            </td>
+                            <td>
+                                <input type="number" class="form-control order-input"
+                                       th:value="${banner.displayOrder}" min="1" />
+                            </td>
+                            <td>
+                                <span class="badge"
+                                      th:classappend="${banner.isDisplayed} ? ' badge-active' : ' badge-hidden'"
+                                      th:text="${banner.isDisplayed} ? 'Đang hiển thị' : 'Đã ẩn'"></span>
+                            </td>
+                            <td class="actions">
+                                <a th:href="@{/content-manager/web-content/banners/{id}/edit(id=${banner.id})}"
+                                   class="btn btn-secondary btn-sm">Sửa</a>
+
+                                <form th:action="@{/content-manager/web-content/banners/{id}/toggle(id=${banner.id})}"
+                                      method="post" style="display:inline;">
+                                    <button class="btn btn-sm"
+                                            th:classappend="${banner.isDisplayed} ? ' btn-warning' : ' btn-success'"
+                                            type="submit"
+                                            th:text="${banner.isDisplayed} ? 'Ẩn' : 'Hiện'"></button>
+                                </form>
+
+                                <form th:action="@{/content-manager/web-content/banners/{id}/delete(id=${banner.id})}"
+                                      method="post" style="display:inline;"
+                                      onsubmit="return confirm('Bạn có chắc chắn muốn xóa banner này không?')">
+                                    <button class="btn btn-danger btn-sm" type="submit">Xóa</button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="form-actions" style="justify-content: flex-start;">
+                    <button type="button" class="btn btn-primary" onclick="saveBannerOrder()">Lưu thứ tự</button>
+                </div>
+            </div>
+        </div>
+
+        <div th:unless="${tab == 'banners'}" th:if="${tab == 'static-pages'}">
+            <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+            <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+            <div class="card">
+                <header class="admin-header" style="margin-bottom: 14px;">
+                    <h1 style="font-size: 20px; margin: 0;">Trang tĩnh</h1>
+                    <div class="header-actions"></div>
+                </header>
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Trang</th>
+                            <th>Nội dung</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Giới thiệu</strong></td>
+                            <td>Trang mô tả nền tảng LoveStream.</td>
+                            <td>
+                                <a th:href="@{/content-manager/web-content/pages/ABOUT/edit}" class="btn btn-secondary btn-sm">Chỉnh sửa</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Chính sách bảo mật</strong></td>
+                            <td>Quy định về dữ liệu cá nhân và quyền riêng tư.</td>
+                            <td>
+                                <a th:href="@{/content-manager/web-content/pages/PRIVACY_POLICY/edit}" class="btn btn-secondary btn-sm">Chỉnh sửa</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Điều khoản sử dụng</strong></td>
+                            <td>Điều khoản &amp; quy tắc sử dụng dịch vụ.</td>
+                            <td>
+                                <a th:href="@{/content-manager/web-content/pages/TERMS/edit}" class="btn btn-secondary btn-sm">Chỉnh sửa</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const tbody = document.getElementById('bannerTableBody');
+            if (!tbody) return;
+
+            const rows = Array.from(tbody.querySelectorAll('tr.draggable-row'));
+            let draggedRow = null;
+
+            function updateOrderInputsFromDOM() {
+                const currentRows = Array.from(tbody.querySelectorAll('tr.draggable-row'));
+                currentRows.forEach((row, idx) => {
+                    const input = row.querySelector('.order-input');
+                    if (input) input.value = idx + 1;
+                });
+            }
+
+            rows.forEach(row => {
+                row.addEventListener('dragstart', (e) => {
+                    draggedRow = row;
+                    row.classList.add('dragging');
+                    try {
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/plain', row.getAttribute('data-banner-id'));
+                    } catch (_) {}
+                });
+
+                row.addEventListener('dragend', () => {
+                    row.classList.remove('dragging');
+                    draggedRow = null;
+                });
+
+                row.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                });
+
+                row.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    if (!draggedRow || draggedRow === row) return;
+
+                    const siblings = Array.from(tbody.querySelectorAll('tr.draggable-row'));
+                    const draggedIndex = siblings.indexOf(draggedRow);
+                    const dropIndex = siblings.indexOf(row);
+
+                    if (draggedIndex < 0 || dropIndex < 0) return;
+
+                    if (draggedIndex < dropIndex) {
+                        tbody.insertBefore(draggedRow, row.nextSibling);
+                    } else {
+                        tbody.insertBefore(draggedRow, row);
+                    }
+
+                    updateOrderInputsFromDOM();
+                });
+            });
+        })();
+
+        async function saveBannerOrder() {
+            const tbody = document.getElementById('bannerTableBody');
+            if (!tbody) return;
+
+            const rows = Array.from(tbody.querySelectorAll('tr.draggable-row'));
+            const orders = rows.map(row => {
+                const id = parseInt(row.getAttribute('data-banner-id'), 10);
+                const input = row.querySelector('.order-input');
+                const displayOrder = input ? parseInt(input.value, 10) : null;
+                return { id, displayOrder };
+            });
+
+            try {
+                const res = await fetch('/content-manager/web-content/banners/reorder', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orders })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    alert(err.message || 'Không thể lưu thứ tự banner.');
+                    return;
+                }
+
+                window.location.reload();
+            } catch (e) {
+                console.error(e);
+                alert('Không thể lưu thứ tự banner.');
+            }
+        }
+    </script>
+</body>
+
+</html>
