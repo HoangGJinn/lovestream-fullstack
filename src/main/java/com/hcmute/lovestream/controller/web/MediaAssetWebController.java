@@ -1,6 +1,7 @@
 package com.hcmute.lovestream.controller.web;
 
 import com.hcmute.lovestream.dto.response.WatchRoomStateResponse;
+import com.hcmute.lovestream.service.plan.ServicePlanService;
 import com.hcmute.lovestream.service.watchtogether.WatchTogetherService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -15,6 +16,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class MediaAssetWebController {
 
     private final WatchTogetherService watchTogetherService;
+    private final ServicePlanService servicePlanService;
 
     @GetMapping("/watch-movie")
     public String moviePage(
@@ -39,6 +41,13 @@ public class MediaAssetWebController {
 
         model.addAttribute("videoId", id);
         model.addAttribute("roomCode", roomCode);
+
+        String userEmail = authentication != null ? authentication.getName() : null;
+        int maxAllowedHeight = servicePlanService.getMaxAllowedVideoHeight(userEmail);
+        String planQualityLabel = servicePlanService.getCurrentPlanQualityLabel(userEmail);
+        model.addAttribute("maxAllowedHeight", maxAllowedHeight);
+        model.addAttribute("planQualityLabel", planQualityLabel);
+
         return "videocontent/watch_movie";
     }
 

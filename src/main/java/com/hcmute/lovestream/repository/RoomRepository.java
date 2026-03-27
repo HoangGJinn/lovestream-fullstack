@@ -19,8 +19,6 @@ public interface RoomRepository extends JpaRepository<Room, String> {
 	@EntityGraph(attributePaths = {"videoContent", "videoContent.mediaAssets", "host"})
 	List<Room> findByHost_EmailOrderByCreatedAtDesc(String hostEmail);
 
-//	@EntityGraph(attributePaths = {"videoContent", "videoContent.mediaAssets", "host", "participants", "participants.user"})
-//	Optional<Room> findByLinkJoin(String linkJoin);
 
 	Optional<Room> findByRoomCode(String roomCode);
 
