@@ -956,64 +956,112 @@ const _movieId = new URLSearchParams(window.location.search).get('id') || ((wind
     });
 
     // ========== Load bình luận ==========
-    async function loadComments() {
-        if (!_movieId) return;
-        try {
-            const res = await fetch('/api/v1/comments?videoContentId=' + _movieId);
-            const data = await res.json();
-            const container = document.getElementById('commentList');
-            const countEl = document.getElementById('commentCount');
-            if (countEl) countEl.innerText = data.length;
+// --- 1. Hàm vẽ HTML đệ quy (Dùng chung cho cả gốc và con) ---
+function renderCommentHtml(c, level = 0) {
+    // Kiểm tra quyền sở hữu để hiện nút xóa (Dữ liệu email từ API đã sửa ở bước trước)
+    const isOwner = window.currentUserEmail === c.email;
 
-            if (data.length === 0) {
-                container.innerHTML = '<p class="no-data-msg">Chưa có bình luận nào. Hãy là người đầu tiên!</p>';
-                return;
-            }
+    // ĐỆ QUY: Nếu có phản hồi, gọi lại chính hàm này để vẽ chúng
+    const hasReplies = c.replies && c.replies.length > 0;
+    const nestedRepliesHtml = hasReplies
+        ? `<div class="reply-list" id="replyList-${c.id}" style="display: none;">
+                ${c.replies.map(r => renderCommentHtml(r, level + 1)).join('')}
+               </div>`
+        : '';
 
-            container.innerHTML = data.map(c => {
-                const repliesHtml = (c.replies && c.replies.length > 0)
-                    ? '<div class="reply-list">' + c.replies.map(r => `
-                        <div class="reply-item">
-                            <div class="reply-avatar">${(r.userName || 'A').charAt(0).toUpperCase()}</div>
-                            <div class="reply-body">
-                                <div class="reply-user-name">${escHtml(r.userName)}</div>
-                                <div class="reply-text">${escHtml(r.content)}</div>
-                                <div class="reply-date">${formatDate(r.createdAt)}</div>
-                            </div>
-                        </div>
-                    `).join('') + '</div>'
-                    : '';
+    // Nút toggle thu gọn/mở rộng
+    const toggleBtn = hasReplies
+        ? `<button class="show-replies-btn" id="btnToggle-${c.id}" onclick="toggleReplies('${c.id}')">
+                <i class="fa-solid fa-caret-down"></i> Xem ${c.replies.length} phản hồi
+               </button>`
+        : '';
 
-                return `
-                <div class="comment-item">
-                    <div class="comment-avatar">${(c.userName || 'A').charAt(0).toUpperCase()}</div>
-                    <div class="comment-body">
+    // Nút xóa (chỉ hiện cho chính chủ)
+    const deleteBtn = isOwner
+        ? `<button class="delete-comment-btn" onclick="deleteComment('${c.id}')" title="Xóa bình luận" style="background:none; border:none; color:#666; cursor:pointer; margin-left:10px;">
+                <i class="fa-solid fa-trash"></i>
+               </button>`
+        : '';
+
+    // Avatar (Ưu tiên ảnh, nếu không có thì hiện chữ cái đầu)
+    const avatarHtml = c.avatar
+        ? `<img src="${c.avatar}" style="width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0;">`
+        : `<div class="comment-avatar">${(c.userName || 'A').charAt(0).toUpperCase()}</div>`;
+
+    // Class CSS cho cấp độ (để thụt lề nếu cần)
+    const levelClass = level > 0 ? 'comment-nested' : '';
+
+    return `
+            <div class="comment-item ${levelClass}" style="${level > 0 ? 'margin-left: 42px; border-left: 1px solid #333; padding-left: 12px;' : ''}">
+                ${avatarHtml}
+                <div class="comment-body">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div class="comment-user-name">${escHtml(c.userName)}</div>
-                        <div class="comment-text">${escHtml(c.content)}</div>
-                        <div class="comment-actions">
-                            <span class="comment-date">${formatDate(c.createdAt)}</span>
-                            <button class="reply-btn" onclick="toggleReplyBox('${c.id}')">
-                                <i class="fa-solid fa-reply"></i> Trả lời
-                            </button>
-                        </div>
-                        <div class="reply-box" id="replyBox-${c.id}">
-                            <textarea id="replyInput-${c.id}" placeholder="Viết phản hồi..." maxlength="500"></textarea>
-                            <div class="reply-box-footer">
-                                <button class="btn-cancel-reply" onclick="toggleReplyBox('${c.id}')">Hủy</button>
-                                <button class="btn-send-reply" onclick="sendReply('${c.id}')">Gửi</button>
-                            </div>
-                        </div>
-                        ${repliesHtml}
+                        ${deleteBtn}
                     </div>
+                    <div class="comment-text">${escHtml(c.content)}</div>
+                    <div class="comment-actions">
+                        <span class="comment-date">${formatDate(c.createdAt)}</span>
+                        
+                    <button class="vote-btn" onclick="voteComment('${c.id}', true)">
+                        <i class="fa-regular fa-thumbs-up"></i> 
+                        <span>${c.likeCount || 0}</span>
+                    </button>
+                    <button class="vote-btn" onclick="voteComment('${c.id}', false)">
+                        <i class="fa-regular fa-thumbs-down"></i> 
+                        <span>${c.dislikeCount || 0}</span>
+                    </button>
+                        <button class="reply-btn" onclick="toggleReplyBox('${c.id}')">
+                            <i class="fa-solid fa-reply"></i> Trả lời
+                        </button>
+                    </div>
+                    <!-- Box phản hồi cho TỪNG bình luận cấp con -->
+                    <div class="reply-box" id="replyBox-${c.id}">
+                        <textarea id="replyInput-${c.id}" placeholder="Viết phản hồi..." maxlength="500"></textarea>
+                        <div class="reply-box-footer">
+                            <button class="btn-cancel-reply" onclick="toggleReplyBox('${c.id}')">Hủy</button>
+                            <button class="btn-send-reply" onclick="sendReply('${c.id}')">Gửi</button>
+                        </div>
+                    </div>
+                    ${toggleBtn}
+                    ${nestedRepliesHtml}
                 </div>
-                `;
-            }).join('');
-        } catch (e) {
-            console.error('Lỗi load bình luận:', e);
-        }
-    }
+            </div>
+        `;
+}
 
-    // ========== Gửi bình luận ==========
+// --- 2. Hàm Load bình luận chính ---
+async function loadComments() {
+    if (!_movieId) return;
+    try {
+        const res = await fetch('/api/v1/comments?videoContentId=' + _movieId);
+        const data = await res.json();
+        const container = document.getElementById('commentList');
+        const countEl = document.getElementById('commentCount');
+
+        // Tính tổng số bình luận (đệ quy) để hiển thị số lượng chính xác
+        let total = 0;
+        const countAll = (list) => {
+            total += list.length;
+            list.forEach(i => { if(i.replies) countAll(i.replies) });
+        };
+        countAll(data);
+        if (countEl) countEl.innerText = total;
+
+        if (data.length === 0) {
+            container.innerHTML = '<p class="no-data-msg">Chưa có bình luận nào. Hãy là người đầu tiên!</p>';
+            return;
+        }
+
+        // Vẽ toàn bộ cây bình luận
+        container.innerHTML = data.map(c => renderCommentHtml(c)).join('');
+    } catch (e) {
+        console.error('Lỗi load bình luận:', e);
+    }
+}
+
+
+// ========== Gửi bình luận ==========
     async function sendComment() {
         const content = commentInput.value.trim();
         const errorEl = document.getElementById('commentError');
@@ -1197,3 +1245,62 @@ const _movieId = new URLSearchParams(window.location.search).get('id') || ((wind
             return d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN', {hour:'2-digit',minute:'2-digit'});
         } catch { return isoStr; }
     }
+
+    function toggleReplies(commentId) {
+        const list = document.getElementById('replyList-' + commentId);
+        const btn = document.getElementById('btnToggle-' + commentId);
+
+        if (list.style.display === 'none') {
+            list.style.display = 'block'; // Hiện danh sách
+            btn.innerHTML = `<i class="fa-solid fa-caret-up"></i> Ẩn phản hồi`;
+            btn.classList.add('active');
+        } else {
+            list.style.display = 'none'; // Ẩn danh sách
+            const count = list.querySelectorAll('.reply-item').length;
+            btn.innerHTML = `<i class="fa-solid fa-caret-down"></i> Xem ${count} phản hồi`;
+            btn.classList.remove('active');
+        }
+    }
+// Thêm hàm này vào cuối file watch_movie.js
+    async function deleteComment(commentId) {
+        // Hiện bảng xác nhận để tránh bấm nhầm
+        if (!confirm("Bạn có chắc chắn muốn xóa bình luận này không?")) {
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/v1/comments/${commentId}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                alert("Đã xóa bình luận thành công!");
+                loadComments(); // Tải lại danh sách bình luận ngay lập tức
+            } else {
+                const msg = await res.text();
+                alert("Lỗi: " + (msg || "Bạn không có quyền xóa bình luận này."));
+            }
+        } catch (err) {
+            console.error("Lỗi xóa bình luận:", err);
+            alert("Không thể kết nối tới máy chủ.");
+        }
+    }
+
+    async function voteComment(commentId, isLike) {
+        const action = isLike ? 'like' : 'dislike';
+        try {
+            const res = await fetch(`/api/v1/comments/${commentId}/${action}`, {
+                method: 'POST'
+            });
+
+            if (res.ok) {
+                loadComments(); // Tải lại danh sách để cập nhật số lượng hiển thị
+            } else {
+                const msg = await res.text();
+                alert(msg || "Vui lòng đăng nhập để thực hiện tính năng này.");
+            }
+        } catch (err) {
+            console.error("Lỗi khi vote:", err);
+        }
+    }
+

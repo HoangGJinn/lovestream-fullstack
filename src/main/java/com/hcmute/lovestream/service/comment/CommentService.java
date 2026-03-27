@@ -2,16 +2,14 @@ package com.hcmute.lovestream.service.comment;
 
 import com.hcmute.lovestream.dto.request.CommentRequest;
 import com.hcmute.lovestream.entity.Comment;
+import com.hcmute.lovestream.entity.CommentVote;
 import com.hcmute.lovestream.entity.User;
 import com.hcmute.lovestream.entity.VideoContent;
 import com.hcmute.lovestream.entity.enums.ContentStatus;
 import com.hcmute.lovestream.entity.enums.SubscriptionStatus;
 import com.hcmute.lovestream.entity.enums.UserStatus;
 
-import com.hcmute.lovestream.repository.CommentRepository;
-import com.hcmute.lovestream.repository.SubscriptionRepository;
-import com.hcmute.lovestream.repository.UserRepository;
-import com.hcmute.lovestream.repository.VideoContentRepository;
+import com.hcmute.lovestream.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,25 +24,28 @@ public class CommentService {
     private final VideoContentRepository videoContentRepository;
     private final BadWordFilterService badWordFilter;
     private final SubscriptionRepository subscriptionRepository;
+    private final CommentVoteRepository commentVoteRepository;
+
 
     private void checkSubscription(User user) {
         boolean hasActive = subscriptionRepository.existsByUser_IdAndStatusAndEndDateAfter(
                 user.getId(), SubscriptionStatus.ACTIVE, LocalDateTime.now());
         if (!hasActive) {
-            throw new RuntimeException("Bạn cần mua gói dịch vụ để sử dụng tính năng này. Vui lòng đăng ký gói tại trang Gói dịch vụ.");
+            throw new RuntimeException(
+                    "Bạn cần mua gói dịch vụ để sử dụng tính năng này. Vui lòng đăng ký gói tại trang Gói dịch vụ.");
         }
     }
 
     @Transactional
     public void addComment(String email, CommentRequest request) {
 
-        if(badWordFilter.containsBadWord(request.getContent())){
+        if (badWordFilter.containsBadWord(request.getContent())) {
             throw new RuntimeException("Bình luận của bạn chứa các từ ngữ không phù hợp với tiêu chuẩn cộng đồng");
         }
 
         User user = userRepository.findByEmail(email).orElseThrow();
 
-        if(user.getStatus() == UserStatus.BANNED){
+        if (user.getStatus() == UserStatus.BANNED) {
             throw new RuntimeException("Tài khoản của bạn đang bị tước quyền bình luận");
         }
 
@@ -54,7 +55,7 @@ public class CommentService {
         comment.setContent(request.getContent());
         comment.setUser(user);
 
-        if(request.getVideoContentId() != null){
+        if (request.getVideoContentId() != null) {
             VideoContent videoContent = videoContentRepository.findById(request.getVideoContentId()).orElseThrow();
             if (videoContent.getStatus() != ContentStatus.ACTIVE) {
                 throw new RuntimeException("Nội dung không tồn tại hoặc đã bị ẩn");
@@ -67,7 +68,7 @@ public class CommentService {
 
     @Transactional
     public void editComment(String email, String commentId, String newComment) {
-        if(badWordFilter.containsBadWord(newComment)){
+        if (badWordFilter.containsBadWord(newComment)) {
             throw new RuntimeException("Bình luận chứa từ ngữ không phù hợp");
         }
 
@@ -119,5 +120,47 @@ public class CommentService {
 
         commentRepository.save(reply);
     }
+
+    @Transactional
+    public void voteComment(String email, String commentId, boolean isLike) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Người dùng chưa đăng nhập hoặc không tồn tại"));
+
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new RuntimeException("Bình luận này không còn tồn tại"));
+
+        // Kiểm tra xem user này đã từng Like/Dislike bình luận này chưa
+        var existingVote = commentVoteRepository.findByUserAndComment(user, comment);
+
+        if (existingVote.isPresent()) {
+            CommentVote vote = existingVote.get();
+            if (vote.isLike() == isLike) {
+                // Nếu bấm lại cùng một nút -> Hủy bình chọn (Toggle Off)
+                commentVoteRepository.delete(vote);
+                if (isLike) comment.setLikeCount(Math.max(0, comment.getLikeCount() - 1));
+                else comment.setDislikeCount(Math.max(0, comment.getDislikeCount() - 1));
+            } else {
+                // Nếu đang Like mà bấm sang Dislike (hoặc ngược lại) -> Đổi trạng thái
+                vote.setLike(isLike);
+                commentVoteRepository.save(vote);
+                if (isLike) {
+                    comment.setLikeCount(comment.getLikeCount() + 1);
+                    comment.setDislikeCount(Math.max(0, comment.getDislikeCount() - 1));
+                } else {
+                    comment.setDislikeCount(comment.getDislikeCount() + 1);
+                    comment.setLikeCount(Math.max(0, comment.getLikeCount() - 1));
+                }
+            }
+        } else {
+            // Lần đầu bấm bình chọn
+            CommentVote newVote = CommentVote.builder().user(user).comment(comment).isLike(isLike).build();
+            commentVoteRepository.save(newVote);
+            if (isLike) comment.setLikeCount(comment.getLikeCount() + 1);
+            else comment.setDislikeCount(comment.getDislikeCount() + 1);
+        }
+
+        commentRepository.save(comment);
+    }
+
 
 }

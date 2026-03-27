@@ -1,6 +1,9 @@
 package com.hcmute.lovestream.controller.web;
 
 import com.hcmute.lovestream.dto.response.WatchRoomStateResponse;
+import com.hcmute.lovestream.entity.User;
+import com.hcmute.lovestream.repository.UserRepository;
+import com.hcmute.lovestream.service.user.UserProfileService;
 import com.hcmute.lovestream.service.watchtogether.WatchTogetherService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -15,6 +18,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class MediaAssetWebController {
 
     private final WatchTogetherService watchTogetherService;
+    private final UserProfileService userProfileService;
+
 
     @GetMapping("/watch-movie")
     public String moviePage(
@@ -34,6 +39,17 @@ public class MediaAssetWebController {
             } catch (RuntimeException ex) {
                 redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
                 return "redirect:/watch-together";
+            }
+        }
+
+        // 2. Xử lý logic lấy thông tin người dùng (Qua UserProfileService)
+        if (authentication != null && authentication.isAuthenticated()) {
+            try {
+                User user = userProfileService.getCurrentUserByEmail(authentication.getName());
+                model.addAttribute("currentUserEmail", user.getEmail());
+                model.addAttribute("currentUserAvatar", user.getAvatar());
+            } catch (RuntimeException e) {
+                // Nếu không tìm thấy user cũng không làm chết trang
             }
         }
 
