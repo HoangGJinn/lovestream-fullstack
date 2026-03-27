@@ -3,8 +3,14 @@ package com.hcmute.lovestream.service.webcontent.impl;
 import com.hcmute.lovestream.dto.request.webcontent.WebContentBannerReorderRequest;
 import com.hcmute.lovestream.dto.request.webcontent.WebContentBannerUpsertRequest;
 import com.hcmute.lovestream.entity.WebContentBanner;
+import com.hcmute.lovestream.entity.enums.WebContentBannerTargetType;
+import com.hcmute.lovestream.entity.enums.WebStaticPageType;
+import com.hcmute.lovestream.repository.MovieRepository;
+import com.hcmute.lovestream.repository.StaticPageRepository;
+import com.hcmute.lovestream.repository.TVSeriesRepository;
 import com.hcmute.lovestream.repository.WebContentBannerRepository;
 import com.hcmute.lovestream.service.storage.WebContentLocalStorageService;
+import com.hcmute.lovestream.service.webcontent.WebContentBannerNavigationResolver;
 import com.hcmute.lovestream.service.webcontent.WebContentBannerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,15 +31,23 @@ public class WebContentBannerServiceImpl implements WebContentBannerService {
 
     private final WebContentBannerRepository bannerRepository;
     private final WebContentLocalStorageService localStorageService;
+    private final WebContentBannerNavigationResolver navigationResolver;
+    private final MovieRepository movieRepository;
+    private final TVSeriesRepository tvSeriesRepository;
+    private final StaticPageRepository staticPageRepository;
 
     @Override
     public List<WebContentBanner> getAllOrdered() {
-        return bannerRepository.findAllByOrderByDisplayOrderAsc();
+        List<WebContentBanner> banners = bannerRepository.findAllByOrderByDisplayOrderAsc();
+        navigationResolver.populateResolvedFields(banners);
+        return banners;
     }
 
     @Override
     public List<WebContentBanner> getDisplayedForHome() {
-        return bannerRepository.findByIsDisplayedTrueOrderByDisplayOrderAsc();
+        List<WebContentBanner> banners = bannerRepository.findByIsDisplayedTrueOrderByDisplayOrderAsc();
+        navigationResolver.populateResolvedFields(banners);
+        return banners;
     }
 
     @Override
@@ -63,11 +77,11 @@ public class WebContentBannerServiceImpl implements WebContentBannerService {
 
         WebContentBanner banner = WebContentBanner.builder()
                 .title(request.getTitle().trim())
-                .navigationLink(trimToNull(request.getNavigationLink()))
                 .displayOrder(request.getDisplayOrder())
                 .isDisplayed(Boolean.TRUE.equals(request.getIsDisplayed()))
                 .imagePath(imagePath)
                 .build();
+        applyNavigationTarget(banner, request);
 
         return java.util.Objects.requireNonNull(bannerRepository.save(banner));
     }
@@ -88,9 +102,9 @@ public class WebContentBannerServiceImpl implements WebContentBannerService {
         validateUpsertRequest(request, false);
 
         existing.setTitle(request.getTitle().trim());
-        existing.setNavigationLink(trimToNull(request.getNavigationLink()));
         existing.setDisplayOrder(request.getDisplayOrder());
         existing.setIsDisplayed(Boolean.TRUE.equals(request.getIsDisplayed()));
+        applyNavigationTarget(existing, request);
 
         MultipartFile newImage = request.getBannerImage();
         if (newImage != null && !newImage.isEmpty()) {
@@ -135,7 +149,6 @@ public class WebContentBannerServiceImpl implements WebContentBannerService {
             return;
         }
 
-        // Unique ids + validate displayOrder.
         Set<Long> seen = new HashSet<>();
         for (WebContentBannerReorderRequest.WebContentBannerOrderItem item : request.orders()) {
             if (item == null || item.id() == null) {
@@ -170,17 +183,112 @@ public class WebContentBannerServiceImpl implements WebContentBannerService {
         if (request.getIsDisplayed() == null) {
             request.setIsDisplayed(true);
         }
-        if (requireImage) {
-            if (request.getBannerImage() == null || request.getBannerImage().isEmpty()) {
-                throw new IllegalArgumentException("Vui lòng chọn ảnh banner.");
+        if (request.getTargetType() == null) {
+            request.setTargetType(WebContentBannerTargetType.NONE);
+        }
+
+        String movieTargetId = trimToNull(request.getMovieTargetId());
+        String seriesTargetId = trimToNull(request.getSeriesTargetId());
+        String externalUrl = trimToNull(request.getExternalUrl());
+
+        request.setMovieTargetId(movieTargetId);
+        request.setSeriesTargetId(seriesTargetId);
+        request.setExternalUrl(externalUrl);
+
+        switch (request.getTargetType()) {
+            case NONE -> {
+                request.setMovieTargetId(null);
+                request.setSeriesTargetId(null);
+                request.setStaticPageTarget(null);
+                request.setExternalUrl(null);
+            }
+            case MOVIE -> {
+                request.setSeriesTargetId(null);
+                request.setStaticPageTarget(null);
+                request.setExternalUrl(null);
+                if (movieTargetId == null) {
+                    throw new IllegalArgumentException("Vui lòng chọn phim đích cho banner.");
+                }
+                if (!movieRepository.existsById(movieTargetId)) {
+                    throw new IllegalArgumentException("Phim đích không còn tồn tại.");
+                }
+            }
+            case SERIES -> {
+                request.setMovieTargetId(null);
+                request.setStaticPageTarget(null);
+                request.setExternalUrl(null);
+                if (seriesTargetId == null) {
+                    throw new IllegalArgumentException("Vui lòng chọn series đích cho banner.");
+                }
+                if (!tvSeriesRepository.existsById(seriesTargetId)) {
+                    throw new IllegalArgumentException("Series đích không còn tồn tại.");
+                }
+            }
+            case STATIC_PAGE -> {
+                request.setMovieTargetId(null);
+                request.setSeriesTargetId(null);
+                request.setExternalUrl(null);
+                if (request.getStaticPageTarget() == null) {
+                    throw new IllegalArgumentException("Vui lòng chọn trang tĩnh đích cho banner.");
+                }
+                if (!staticPageRepository.existsByPageType(request.getStaticPageTarget())) {
+                    throw new IllegalArgumentException("Trang tĩnh đích chưa có nội dung.");
+                }
+            }
+            case EXTERNAL_URL -> {
+                request.setMovieTargetId(null);
+                request.setSeriesTargetId(null);
+                request.setStaticPageTarget(null);
+                if (externalUrl == null) {
+                    throw new IllegalArgumentException("Vui lòng nhập URL tùy chỉnh cho banner.");
+                }
+                if (!externalUrl.startsWith("/") && !externalUrl.startsWith("http://")
+                        && !externalUrl.startsWith("https://")) {
+                    throw new IllegalArgumentException(
+                            "URL tùy chỉnh phải bắt đầu bằng '/', 'http://' hoặc 'https://'.");
+                }
+            }
+        }
+
+        if (requireImage && (request.getBannerImage() == null || request.getBannerImage().isEmpty())) {
+            throw new IllegalArgumentException("Vui lòng chọn ảnh banner.");
+        }
+    }
+
+    private void applyNavigationTarget(WebContentBanner banner, WebContentBannerUpsertRequest request) {
+        banner.setTargetType(request.getTargetType());
+        banner.setNavigationLink(null);
+
+        switch (request.getTargetType()) {
+            case NONE -> {
+                banner.setTargetRefId(null);
+                banner.setExternalUrl(null);
+            }
+            case MOVIE -> {
+                banner.setTargetRefId(request.getMovieTargetId());
+                banner.setExternalUrl(null);
+            }
+            case SERIES -> {
+                banner.setTargetRefId(request.getSeriesTargetId());
+                banner.setExternalUrl(null);
+            }
+            case STATIC_PAGE -> {
+                WebStaticPageType staticPageTarget = request.getStaticPageTarget();
+                banner.setTargetRefId(staticPageTarget != null ? staticPageTarget.name() : null);
+                banner.setExternalUrl(null);
+            }
+            case EXTERNAL_URL -> {
+                banner.setTargetRefId(null);
+                banner.setExternalUrl(request.getExternalUrl());
             }
         }
     }
 
     private String trimToNull(String value) {
-        if (value == null) return null;
+        if (value == null) {
+            return null;
+        }
         String trimmed = value.trim();
         return trimmed.isBlank() ? null : trimmed;
     }
 }
-
