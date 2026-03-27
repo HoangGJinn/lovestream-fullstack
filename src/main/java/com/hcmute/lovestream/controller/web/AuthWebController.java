@@ -30,7 +30,7 @@ public class AuthWebController {
             boolean isContentManager = auth.getAuthorities().stream()
                     .anyMatch(a -> a.getAuthority().equals("ROLE_CONTENT_MANAGER"));
             if (isContentManager) {
-                return "redirect:/admin/web-content";
+                return "redirect:/content-manager/dashboard";
             }
         }
         return "redirect:/home";
