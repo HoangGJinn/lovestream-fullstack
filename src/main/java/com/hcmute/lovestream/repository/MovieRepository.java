@@ -12,6 +12,8 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Repository
 public interface MovieRepository extends JpaRepository<Movie, String> {
@@ -50,4 +52,10 @@ public interface MovieRepository extends JpaRepository<Movie, String> {
 
     // 5. Đếm số lượng phim theo trạng thái
     long countByStatus(ContentStatus status);
+
+    Page<Movie> findByTitleContainingIgnoreCaseAndStatus(String title, ContentStatus status, Pageable pageable);
+
+    Page<Movie> findByStatus(ContentStatus status, Pageable pageable);
+
+    Page<Movie> findByTitleContainingIgnoreCase(String title, Pageable pageable);
 }
