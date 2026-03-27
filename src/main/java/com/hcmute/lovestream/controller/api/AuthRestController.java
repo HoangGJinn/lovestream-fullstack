@@ -114,6 +114,16 @@ public class AuthRestController {
     }
 
     // UC4: Đặt lại mật khẩu (Sau khi nhập mã OTP)
+    @PostMapping("/verify-forgot-password-otp")
+    public ResponseEntity<?> verifyForgotPasswordOtp(@Valid @RequestBody VerifyEmail request) {
+        try {
+            authService.verifyForgotPasswordOtp(request.getToken());
+            return ResponseEntity.ok(Map.of("message", "Xác minh OTP thành công."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPassword request) {
         try {

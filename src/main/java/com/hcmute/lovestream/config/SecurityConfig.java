@@ -110,7 +110,7 @@ public class SecurityConfig {
                         .successHandler(oauth2SuccessHandler)
                         .failureHandler((request, response, exception) -> {
                             org.slf4j.LoggerFactory.getLogger(SecurityConfig.class)
-                                    .error("Google OAuth2 login FAILED: {}", exception.getMessage(), exception);
+                                    .warn("Google OAuth2 login FAILED: {}", exception.getMessage());
 
                             cookieAuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
 

@@ -9,6 +9,7 @@ public interface AuthService {
     void verifyEmail(String token);
     Map<String, String> login(Login request);
     void forgotPassword(String email);
+    void verifyForgotPasswordOtp(String token);
     void resetPassword(String token, String newPassword);
     void resendOtp(String email);
     Map<String, String> refreshToken(String refreshToken);
