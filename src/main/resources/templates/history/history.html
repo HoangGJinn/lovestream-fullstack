@@ -4,83 +4,116 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lich su xem - LoveStream</title>
+  <link rel="stylesheet" href="/css/home.css">
+  <link rel="stylesheet" href="/css/user-menu.css">
+
   <style>
     :root {
-      --netflix-red: #e50914;
-      --netflix-black: #141414;
-      --netflix-grey: #808080;
-      --text-white: #ffffff;
-      --card-hover: #2f2f2f;
+      --accent: #e50914;
+      --accent-soft: rgba(229, 9, 20, 0.22);
+      --bg: #111317;
+      --surface: #191c22;
+      --surface-2: #20242c;
+      --border: #2c313a;
+      --text: #f3f4f6;
+      --muted: #a3a8b3;
+      --shadow: 0 14px 36px rgba(0, 0, 0, 0.34);
     }
 
     body {
-      background-color: var(--netflix-black);
-      color: var(--text-white);
+      background:
+        radial-gradient(circle at top, rgba(229, 9, 20, 0.08), transparent 36%),
+        linear-gradient(180deg, #0c0e12 0%, var(--bg) 40%, #0f1116 100%);
+      color: var(--text);
       font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
       margin: 0;
       padding: 0;
-    }
-
-    header {
-      padding: 20px 4%;
-      background: linear-gradient(to bottom, rgba(0,0,0,0.7) 10%, transparent);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-
-    h1 {
-      color: var(--text-white);
-      font-size: 2rem;
-      margin-bottom: 20px;
+      min-height: 100vh;
     }
 
     .history-container {
-      padding: 0 4% 50px 4%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 14px 24px 56px;
+    }
+
+    header {
+      margin: 20px 0 26px;
+      padding: 22px 24px;
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 16px;
+      background: linear-gradient(140deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01));
+      backdrop-filter: blur(2px);
+    }
+
+    h1 {
+      margin: 0;
+      color: var(--text);
+      font-size: clamp(1.7rem, 1.2rem + 1.5vw, 2.2rem);
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+
+    .header-subtitle {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
     }
 
     .history-section {
-      margin-bottom: 40px;
+      margin-bottom: 30px;
     }
 
     .section-title {
-      font-size: 1.2rem;
-      color: var(--netflix-grey);
-      margin-bottom: 15px;
-      border-bottom: 1px solid #333;
-      padding-bottom: 10px;
+      font-size: 1.03rem;
+      color: #d8dbe2;
+      margin-bottom: 14px;
+      padding-left: 12px;
+      border-left: 3px solid var(--accent);
+      font-weight: 600;
+      letter-spacing: 0.25px;
     }
 
     .video-list {
       display: flex;
       flex-direction: column;
-      gap: 15px;
+      gap: 14px;
     }
 
-    /* Thẻ video phong cách kết hợp */
     .video-item {
-      display: flex;
-      background: transparent;
-      border-radius: 4px;
-      overflow: hidden;
-      transition: background 0.3s ease;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 18px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+      box-shadow: var(--shadow);
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
       cursor: pointer;
-      padding: 10px;
+      padding: 11px;
       position: relative;
     }
 
     .video-item:hover {
-      background-color: var(--card-hover);
+      transform: translateY(-2px);
+      border-color: #3c4552;
+      box-shadow: 0 18px 34px rgba(0, 0, 0, 0.44);
     }
 
-    /* Thumbnail với thanh tiến trình */
+    .video-item:focus-visible {
+      outline: 2px solid var(--accent-soft);
+      outline-offset: 2px;
+    }
+
     .thumbnail-container {
       position: relative;
-      min-width: 240px;
-      width: 240px;
-      height: 135px;
-      border-radius: 4px;
+      min-width: 236px;
+      width: 236px;
+      aspect-ratio: 16 / 9;
+      border-radius: 10px;
       overflow: hidden;
+      background: #0d0f13;
     }
 
     .thumbnail-container img {
@@ -91,134 +124,188 @@
 
     .progress-bar-container {
       position: absolute;
-      bottom: 0;
       left: 0;
+      bottom: 0;
       width: 100%;
-      height: 4px;
-      background: rgba(255,255,255,0.3);
+      height: 5px;
+      background: rgba(255, 255, 255, 0.24);
     }
 
     .progress-fill {
       height: 100%;
-      background: var(--netflix-red);
-      width: 70%; /* Giả lập % đã xem */
+      background: linear-gradient(90deg, #ff2f3f, var(--accent));
+      width: 70%;
     }
 
-    /* Chi tiết video */
     .video-details {
-      padding-left: 20px;
       display: flex;
       flex-direction: column;
-      justify-content: center;
+      gap: 4px;
+      min-width: 0;
     }
 
     .video-title {
-      font-size: 1.1rem;
-      font-weight: bold;
-      margin-bottom: 8px;
-      color: var(--text-white);
+      font-size: 1.06rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.35;
+      margin: 0;
     }
 
     .resume-timeline {
-      margin: 6px 0 10px;
-      width: min(560px, 90%);
+      margin: 6px 0 8px;
+      width: min(640px, 94%);
     }
 
     .resume-track {
       width: 100%;
-      height: 6px;
+      height: 7px;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.16);
       overflow: hidden;
     }
 
     .resume-fill {
       height: 100%;
-      background: var(--netflix-red);
+      background: linear-gradient(90deg, #ff2f3f, var(--accent));
       border-radius: 999px;
     }
 
     .resume-time {
-      margin-top: 5px;
-      font-size: 0.82rem;
-      color: #c6c6c6;
+      margin-top: 6px;
+      font-size: 0.81rem;
+      color: #c6ccd7;
+      letter-spacing: 0.2px;
     }
 
     .video-description {
-      font-size: 0.85rem;
-      color: #b3b3b3;
+      font-size: 0.88rem;
+      color: #c1c6d0;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
-      max-width: 600px;
+      max-width: 720px;
+      line-height: 1.42;
     }
 
-    /* Item phim đã bị ẩn */
     .video-item.unavailable {
-      opacity: 0.45;
+      opacity: 0.62;
       cursor: not-allowed;
     }
 
     .video-item.unavailable:hover {
-      background-color: transparent;
+      transform: none;
+      border-color: var(--border);
+      box-shadow: var(--shadow);
     }
 
     .unavailable-badge {
-      display: inline-block;
-      background: #555;
-      color: #ccc;
-      font-size: 0.76rem;
-      padding: 2px 8px;
-      border-radius: 4px;
-      margin-top: 6px;
+      display: inline-flex;
+      align-self: flex-start;
+      background: rgba(255, 255, 255, 0.11);
+      color: #d0d5df;
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-top: 1px;
     }
 
-    /* Nút xóa lịch sử (đặc trưng YouTube) */
     .remove-btn {
-      position: absolute;
-      right: 20px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      color: var(--netflix-grey);
-      font-size: 1.5rem;
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #b8beca;
+      font-size: 1.2rem;
       cursor: pointer;
       opacity: 0;
-      transition: opacity 0.2s;
+      transition: opacity 0.2s ease, color 0.2s ease, background 0.2s ease;
+      margin-right: 4px;
     }
 
-    .video-item:hover .remove-btn {
+    .video-item:hover .remove-btn,
+    .video-item:focus-within .remove-btn {
       opacity: 1;
     }
 
     .remove-btn:hover {
-      color: var(--text-white);
+      color: #ffffff;
+      background: rgba(229, 9, 20, 0.25);
+      border-color: rgba(229, 9, 20, 0.5);
     }
 
-    @media (max-width: 768px) {
-      .thumbnail-container {
-        min-width: 160px;
-        width: 160px;
-        height: 90px;
+    .history-placeholder {
+      border: 1px dashed rgba(255, 255, 255, 0.18);
+      border-radius: 14px;
+      padding: 30px 24px;
+      text-align: center;
+      color: #c4c9d4;
+      background: rgba(255, 255, 255, 0.03);
+      font-size: 0.95rem;
+    }
+
+    @media (max-width: 900px) {
+      .history-container {
+        padding: 12px 16px 42px;
       }
+
+      .video-item {
+        grid-template-columns: auto 1fr;
+      }
+
+      .remove-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+      }
+    }
+
+    @media (max-width: 700px) {
+      header {
+        padding: 18px 16px;
+      }
+
+      .video-item {
+        gap: 12px;
+        padding: 9px;
+      }
+
+      .thumbnail-container {
+        min-width: 138px;
+        width: 138px;
+      }
+
       .video-description {
         display: none;
+      }
+
+      .resume-timeline {
+        width: 96%;
       }
     }
   </style>
 </head>
 <body>
+<div class="navbar" id="navbar">
+  <div th:replace="~{fragments/top-navbar :: topNavLeft('movies')}"></div>
+  <div class="nav-right">
+    <i class="fa-solid fa-magnifying-glass nav-icon"></i>
+    <a href="/notifications" class="nav-icon" aria-label="Thong bao"><i class="fa-regular fa-bell"></i></a>
+    <div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>
+  </div>
 
-<header>
-  <h1>Lịch sử xem</h1>
-</header>
+</div>
+
 
 <div class="history-container">
-
+  <header>
+    <h1>Lịch sử xem</h1>
+    <p class="header-subtitle">Tiếp tục những nội dung bạn đang xem dở chỉ với một lần bấm.</p>
+  </header>
   <div class="history-section">
-    <div class="section-title">Gan day</div>
+    <div class="section-title">Gần đây</div>
     <div class="video-list" id="historyList"></div>
   </div>
 
@@ -250,7 +337,7 @@
 
   function renderHistory(items) {
     if (!Array.isArray(items) || items.length === 0) {
-      historyList.innerHTML = '<p>Ban chua co lich su xem.</p>';
+      historyList.innerHTML = '<div class="history-placeholder">Bạn chưa có lịch sử xem nào gần đây.</div>';
       return;
     }
 
@@ -259,7 +346,6 @@
       const progressSeconds = Number.isFinite(item.progressSeconds) ? Math.max(0, item.progressSeconds) : 0;
       const durationSeconds = Number.isFinite(item.durationSeconds) ? Math.max(progressSeconds, item.durationSeconds) : progressSeconds;
       const rawVideoId = String(item.videoContentId || '');
-      const safeVideoId = encodeURIComponent(rawVideoId);
       const title = escapeHtml(item.title || 'Khong co tieu de');
       const description = escapeHtml(item.description || '');
       const posterUrl = escapeHtml(item.posterUrl || 'https://via.placeholder.com/300x169?text=No+Poster');
@@ -272,7 +358,7 @@
       const totalDuration = formatDuration(durationSeconds);
 
       return `
-        <div class="video-item${available ? '' : ' unavailable'}" data-video-id="${escapeHtml(rawVideoId)}"${watchUrl ? ` data-watch-url="${escapeHtml(watchUrl)}"` : ''}>
+        <div class="video-item${available ? '' : ' unavailable'}" data-video-id="${escapeHtml(rawVideoId)}"${watchUrl ? ` data-watch-url="${escapeHtml(watchUrl)}"` : ''}${available ? ' tabindex="0" role="button" aria-label="Mo noi dung da xem"' : ''}>
           <div class="thumbnail-container">
             <img src="${posterUrl}" alt="${title}">
             <div class="progress-bar-container">
@@ -305,6 +391,17 @@
           window.location.href = watchUrl;
         }
       });
+
+      card.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') {
+          return;
+        }
+        event.preventDefault();
+        const watchUrl = card.getAttribute('data-watch-url');
+        if (watchUrl) {
+          window.location.href = watchUrl;
+        }
+      });
     });
   }
 
@@ -312,12 +409,12 @@
     try {
       const response = await fetch('/api/v1/history');
       if (!response.ok) {
-        throw new Error('Khong the tai lich su');
+        throw new Error('Không thể tải lịch sử');
       }
       const data = await response.json();
       renderHistory(data);
     } catch (error) {
-      historyList.innerHTML = '<p>Khong the tai lich su. Vui long thu lai.</p>';
+      historyList.innerHTML = '<div class="history-placeholder">Khong the tai lich su. Vui long thu lai sau.</div>';
       console.error(error);
     }
   }
@@ -327,12 +424,12 @@
     try {
       const response = await fetch(`/api/v1/history/${videoContentId}`, { method: 'DELETE' });
       if (!response.ok && response.status !== 204) {
-        throw new Error('Khong the xoa lich su');
+        throw new Error('Không thể xóa lịch sử');
       }
       await loadHistory();
     } catch (error) {
       console.error(error);
-      alert('Xoa lich su that bai');
+      alert('Xóa lịch sử thất bại. Vui lòng thử lại.');
     }
   }
 

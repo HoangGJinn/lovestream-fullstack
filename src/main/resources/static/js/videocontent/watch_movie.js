@@ -38,6 +38,12 @@ const video = document.getElementById('video');
     const runtimeConfig = window.watchMovieConfig || {};
     const fallbackVideoId = runtimeConfig.videoId || '';
     const roomStateBootstrap = runtimeConfig.roomState || null;
+    const configuredMaxAllowedHeight = Number(runtimeConfig.maxAllowedHeight);
+    const planMaxAllowedHeight = Number.isFinite(configuredMaxAllowedHeight) && configuredMaxAllowedHeight > 0
+        ? configuredMaxAllowedHeight
+        : Number.POSITIVE_INFINITY;
+    const planQualityLabel = String(runtimeConfig.planQualityLabel || 'SD (480p)');
+    const upgradePackagesUrl = String(runtimeConfig.upgradePackagesUrl || '/packages');
     const queryParams = new URLSearchParams(window.location.search);
     const videoContentId = queryParams.get('id') || fallbackVideoId;
     const roomCode = (queryParams.get('roomCode') || '').trim().toUpperCase();
@@ -66,6 +72,7 @@ const video = document.getElementById('video');
     let suppressNextSeekSync = false;
     let suppressNextPlaySync = false;
     let suppressNextPauseSync = false;
+    let maxAllowedQualityLevelIndex = -1;
 
     function toPositiveNumber(value, fallback = 0) {
         const numeric = Number(value);
@@ -465,6 +472,14 @@ const video = document.getElementById('video');
     });
 
     // --- Fullscreen ---
+    function syncBackButtonFullscreenVisibility() {
+        if (!backToOriginBtn) {
+            return;
+        }
+        const isFullscreen = !!document.fullscreenElement;
+        backToOriginBtn.classList.toggle('hidden-on-fullscreen', isFullscreen);
+    }
+
     fullscreenBtn.addEventListener('click', () => {
         if (!document.fullscreenElement) {
             player.requestFullscreen();
@@ -472,6 +487,9 @@ const video = document.getElementById('video');
             document.exitFullscreen();
         }
     });
+
+    document.addEventListener('fullscreenchange', syncBackButtonFullscreenVisibility);
+    syncBackButtonFullscreenVisibility();
 
     // --- Settings menu ---
     const allSettingsPanels = [settingsMenuRoot, settingsSpeedMenu, settingsQualityMenu];
@@ -566,6 +584,66 @@ const video = document.getElementById('video');
         return 'Unknown';
     }
 
+    function getQualityHeight(level) {
+        if (!level) {
+            return 0;
+        }
+        if (Number.isFinite(level.height) && level.height > 0) {
+            return level.height;
+        }
+        if (level.attrs && level.attrs.RESOLUTION) {
+            const parts = String(level.attrs.RESOLUTION).split('x');
+            if (parts.length === 2) {
+                const parsedHeight = Number(parts[1]);
+                return Number.isFinite(parsedHeight) ? parsedHeight : 0;
+            }
+        }
+        return 0;
+    }
+
+    function isLevelIndexLockedByPlan(levelIndex) {
+        if (!Number.isFinite(planMaxAllowedHeight) || !hls || levelIndex < 0 || !hls.levels[levelIndex]) {
+            return false;
+        }
+        return getQualityHeight(hls.levels[levelIndex]) > planMaxAllowedHeight;
+    }
+
+    function promptUpgradeForQuality(requestedQualityLabel) {
+        const message = [
+            `Chat luong ${requestedQualityLabel} chi danh cho goi cao hon.`,
+            `Goi hien tai cua ban: ${planQualityLabel}.`,
+            'Ban co muon nang cap VIP ngay khong?'
+        ].join('\n');
+        if (window.confirm(message)) {
+            window.location.href = upgradePackagesUrl;
+        }
+    }
+
+    function applyAutoQualityCapByPlan() {
+        if (!hls || !hls.levels || hls.levels.length === 0) {
+            return;
+        }
+
+        if (!Number.isFinite(planMaxAllowedHeight)) {
+            hls.autoLevelCapping = -1;
+            maxAllowedQualityLevelIndex = -1;
+            return;
+        }
+
+        let bestAllowedLevel = -1;
+        let bestAllowedHeight = -1;
+        hls.levels.forEach((level, index) => {
+            const height = getQualityHeight(level);
+            if (height <= planMaxAllowedHeight && height > bestAllowedHeight) {
+                bestAllowedLevel = index;
+                bestAllowedHeight = height;
+            }
+        });
+
+        maxAllowedQualityLevelIndex = bestAllowedLevel;
+        hls.autoLevelCapping = bestAllowedLevel;
+    }
+
     function updateQualityDisplay(currentLevelIndex = null) {
         if (isAutoQuality) {
             if (currentLevelIndex !== null && hls && hls.levels[currentLevelIndex]) {
@@ -592,7 +670,8 @@ const video = document.getElementById('video');
                 button.classList.toggle('active', isAutoQuality);
             } else {
                 const buttonLevel = Number(button.dataset.level);
-                button.classList.toggle('active', !isAutoQuality && buttonLevel === selectedManualLevel);
+                const isLocked = button.dataset.locked === 'true';
+                button.classList.toggle('active', !isLocked && !isAutoQuality && buttonLevel === selectedManualLevel);
             }
         });
     }
@@ -608,6 +687,12 @@ const video = document.getElementById('video');
 
     function applyQualitySelection(levelIndex) {
         if (!hls) return;
+
+        if (levelIndex !== -1 && isLevelIndexLockedByPlan(levelIndex)) {
+            const level = hls.levels[levelIndex];
+            promptUpgradeForQuality(getQualityLabel(level));
+            return;
+        }
 
         if (levelIndex === -1) {
             isAutoQuality = true;
@@ -646,12 +731,20 @@ const video = document.getElementById('video');
         });
 
         const qualityLevels = Array.from(dedupByHeight.values())
-            .sort((a, b) => b.height - a.height);
+            .sort((a, b) => b.height - a.height)
+            .map(item => ({
+                ...item,
+                locked: Number.isFinite(planMaxAllowedHeight) && item.height > planMaxAllowedHeight
+            }));
+
+        const highestAllowed = qualityLevels.find(item => !item.locked);
+        maxAllowedQualityLevelIndex = highestAllowed ? highestAllowed.index : -1;
+        applyAutoQualityCapByPlan();
 
         const html = [
             '<button class="settings-option active" data-quality="auto" data-level="-1" type="button">Auto</button>',
             ...qualityLevels.map(item => (
-                `<button class="settings-option" data-quality="manual" data-level="${item.index}" type="button">${item.label}</button>`
+                `<button class="settings-option${item.locked ? ' locked' : ''}" data-quality="manual" data-level="${item.index}" data-label="${item.label}" data-locked="${item.locked}" type="button"><span>${item.label}</span>${item.locked ? '<span class="quality-lock-crown" title="Can nang cap goi"><i class="fa-solid fa-crown"></i></span>' : ''}</button>`
             ))
         ].join('');
 
@@ -663,11 +756,24 @@ const video = document.getElementById('video');
                 if (!canControlPlayback()) {
                     return;
                 }
+                if (button.dataset.locked === 'true') {
+                    const requestedQualityLabel = button.dataset.label || button.textContent.trim();
+                    promptUpgradeForQuality(requestedQualityLabel);
+                    return;
+                }
                 const levelIndex = Number(button.dataset.level);
                 applyQualitySelection(levelIndex);
                 closeSettingsMenu();
             });
         });
+
+        if (!isAutoQuality && selectedManualLevel !== null && isLevelIndexLockedByPlan(selectedManualLevel)) {
+            if (maxAllowedQualityLevelIndex >= 0) {
+                applyQualitySelection(maxAllowedQualityLevelIndex);
+            } else {
+                applyQualitySelection(-1);
+            }
+        }
 
         refreshQualityActiveState();
         updateQualityDisplay();

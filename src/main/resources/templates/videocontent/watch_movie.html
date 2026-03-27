@@ -45,7 +45,6 @@
 
             <div class="control-group right-controls">
                 <button class="control-btn" id="nextBtn"><i class="fas fa-step-forward"></i></button>
-                <button class="control-btn" id="pipBtn"><i class="fas fa-external-link-alt"></i></button>
                 <div class="settings-control" id="settingsControl">
                     <button class="control-btn" id="settingsBtn" title="Tốc độ phát">
                         <i class="fas fa-cog"></i>
@@ -207,7 +206,10 @@
 
     window.watchMovieConfig = {
         videoId: /*[[${videoId}]]*/ '',
-        roomState: /*[[${roomState}]]*/ null
+        roomState: /*[[${roomState}]]*/ null,
+        maxAllowedHeight: /*[[${maxAllowedHeight}]]*/ 480,
+        planQualityLabel: /*[[${planQualityLabel}]]*/ 'SD (480p)',
+        upgradePackagesUrl: '/packages'
     };
 </script>
 <script src="/js/videocontent/watch_movie.js"></script>

@@ -163,7 +163,9 @@
             background: rgba(20, 20, 20, 0.95);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 8px;
-            min-width: 220px;
+            width: max-content;
+            min-width: 74px;
+            max-width: 184px;
             padding: 8px;
             display: none;
             flex-direction: column;
@@ -232,11 +234,44 @@
             color: #fff;
             background: rgba(255, 255, 255, 0.08);
             font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            position: relative;
         }
 
         .settings-option:hover,
         .settings-option.active {
             background: var(--primary-color);
+        }
+
+        .settings-option.locked {
+            background: rgba(255, 255, 255, 0.11);
+            color: #fbe8b8;
+            padding-right: 26px;
+        }
+
+        .settings-option.locked:hover {
+            background: rgba(255, 255, 255, 0.16);
+        }
+
+        .settings-option.locked.active {
+            background: rgba(255, 255, 255, 0.16);
+        }
+
+        .quality-lock-crown {
+            position: absolute;
+            top: -2px;
+            right: 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 14px;
+            height: 14px;
+            font-size: 0.6rem;
+            color: #ffcf62;
+            pointer-events: none;
         }
 
         .setting-summary {
@@ -334,8 +369,13 @@
             padding: 8px 14px;
             font-size: 0.9rem;
             cursor: pointer;
-            transition: background 0.2s ease, border-color 0.2s ease;
+            transition: background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
             white-space: nowrap;
+        }
+
+        .back-to-origin-btn.hidden-on-fullscreen {
+            opacity: 0;
+            pointer-events: none;
         }
 
         .back-to-origin-btn:hover {

@@ -25,4 +25,10 @@ public interface ServicePlanService {
 
     // Kiểm tra user có đang có gói ACTIVE không (dùng để hiển thị badge trên UI)
     boolean hasActiveSubscription(String userEmail);
+
+    // Lấy mức chất lượng tối đa user được phép chọn theo gói hiện tại (đơn vị: chiều cao, vd 480/720/1080)
+    int getMaxAllowedVideoHeight(String userEmail);
+
+    // Nhãn chất lượng gói hiện tại để hiển thị thông báo nâng cấp trên player
+    String getCurrentPlanQualityLabel(String userEmail);
 }
