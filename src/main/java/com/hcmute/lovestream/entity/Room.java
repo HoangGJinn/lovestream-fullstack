@@ -34,11 +34,11 @@ public class Room {
 
 
     @Column(name = "password")
-    private String password; // Mật khẩu cho phòng riêng (nếu có)
+    private String password; // Mật khẩu cho phòng riêng tư (nếu có)
 
     @Column(name = "max_participants")
     @Builder.Default
-    private int maxParticipants = 10; // Giới hạn số người xem chung
+    private int maxParticipants = 5; // Giới hạn số người xem chung
 
     // Trạng thái hiện tại của phòng (Mặc định là đang chờ)
     @Enumerated(EnumType.STRING)
