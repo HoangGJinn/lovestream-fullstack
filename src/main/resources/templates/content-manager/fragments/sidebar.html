@@ -3,7 +3,7 @@
 
 <body>
 <div th:fragment="sidebar(activeMenu)" class="admin-sidebar">
-    <div class="admin-logo">LoveStream Nội dung</div>
+    <div class="admin-logo">LoveStream Content</div>
     <div class="admin-menu">
         <a th:href="@{/content-manager/dashboard}" th:classappend="${activeMenu == 'dashboard'} ? 'active'">Tổng quan</a>
         <a th:href="@{/content-manager/web-content}" th:classappend="${activeMenu == 'web-content'} ? 'active'">Nội dung web</a>

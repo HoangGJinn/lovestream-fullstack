@@ -1,5 +1,6 @@
 package com.hcmute.lovestream.entity;
 
+import com.hcmute.lovestream.entity.enums.WebContentBannerTargetType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -30,10 +31,20 @@ public class WebContentBanner {
     private String imagePath;
 
     /**
-     * Optional link to navigate when clicking banner/CTA.
+     * Legacy raw URL from the old banner implementation.
      */
     @Column(name = "navigation_link")
     private String navigationLink;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "target_type", length = 30)
+    private WebContentBannerTargetType targetType;
+
+    @Column(name = "target_ref_id", length = 100)
+    private String targetRefId;
+
+    @Column(name = "external_url")
+    private String externalUrl;
 
     /**
      * Order for rendering on home slider (ascending).
@@ -51,5 +62,10 @@ public class WebContentBanner {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-}
 
+    @Transient
+    private String resolvedNavigationLink;
+
+    @Transient
+    private String resolvedTargetLabel;
+}

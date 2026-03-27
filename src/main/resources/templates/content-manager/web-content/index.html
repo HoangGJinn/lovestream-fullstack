@@ -42,7 +42,7 @@
                         <tr>
                             <th>Preview</th>
                             <th>Tiêu đề</th>
-                            <th>Link</th>
+                            <th>Điều hướng</th>
                             <th>Thứ tự</th>
                             <th>Trạng thái</th>
                             <th>Hành động</th>
@@ -65,10 +65,14 @@
                                 <strong th:text="${banner.title}">Tiêu đề</strong>
                             </td>
                             <td>
-                                <a th:if="${banner.navigationLink != null and !#strings.isEmpty(banner.navigationLink)}"
-                                   th:href="${banner.navigationLink}" target="_blank"
-                                   th:text="${#strings.length(banner.navigationLink) > 28 ? banner.navigationLink.substring(0, 28) + '...' : banner.navigationLink}">Link</a>
-                                <span th:if="${banner.navigationLink == null or #strings.isEmpty(banner.navigationLink)}">-</span>
+                                <div th:if="${banner.resolvedTargetLabel != null}" style="display:grid; gap:4px;">
+                                    <strong th:text="${banner.resolvedTargetLabel}">Điều hướng</strong>
+                                    <a th:if="${banner.resolvedNavigationLink != null and !#strings.isEmpty(banner.resolvedNavigationLink)}"
+                                       th:href="${banner.resolvedNavigationLink}" target="_blank"
+                                       th:text="${#strings.length(banner.resolvedNavigationLink) > 40 ? banner.resolvedNavigationLink.substring(0, 40) + '...' : banner.resolvedNavigationLink}">Link</a>
+                                    <span th:if="${banner.resolvedNavigationLink == null or #strings.isEmpty(banner.resolvedNavigationLink)}"
+                                          style="color: var(--netflix-light-grey);">Không có link khả dụng</span>
+                                </div>
                             </td>
                             <td>
                                 <input type="number" class="form-control order-input"
