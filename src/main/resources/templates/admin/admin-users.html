@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${pageTitle}">Quản lý Người dùng</title>
+
+    <link rel="stylesheet" th:href="@{/css/admin/admin-theme.css}" />
+
     <style>
         :root {
             --netflix-red: #E50914;
@@ -14,61 +17,12 @@
             --success-green: #46d369;
         }
 
-        body {
-            margin: 0;
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background-color: var(--netflix-black);
-            color: var(--text-white);
-            display: flex;
-        }
+        body { margin: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: var(--netflix-black); color: var(--text-white); display: flex; }
 
-        /* Sidebar */
-        .admin-sidebar {
-            width: 250px;
-            height: 100vh;
-            background-color: rgba(0, 0, 0, 0.9);
-            padding: 20px 0;
-            position: fixed;
-            border-right: 1px solid var(--netflix-dark-grey);
-        }
-
-        .admin-logo {
-            color: var(--netflix-red);
-            font-size: 28px;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 40px;
-            letter-spacing: 2px;
-        }
-
-        .admin-menu a {
-            display: block;
-            padding: 15px 25px;
-            color: var(--netflix-light-grey);
-            text-decoration: none;
-            font-size: 16px;
-            transition: all 0.3s;
-        }
-
-        .admin-menu a:hover, .admin-menu a.active {
-            color: var(--text-white);
-            background-color: var(--netflix-dark-grey);
-            border-left: 4px solid var(--netflix-red);
-        }
-
-        /* Main Content */
-        .admin-content {
-            margin-left: 250px;
-            padding: 30px;
-            width: calc(100% - 250px);
-        }
-
-        .admin-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
+        /* Sidebar & Layout */
+        .admin-sidebar { width: 250px; height: 100vh; background-color: rgba(0, 0, 0, 0.9); padding: 20px 0; position: fixed; border-right: 1px solid var(--netflix-dark-grey); }
+        .admin-content { margin-left: 250px; padding: 30px; width: calc(100% - 250px); }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
 
         /* Toolbar */
         .toolbar { display: flex; justify-content: space-between; margin-bottom: 20px; }
@@ -92,6 +46,8 @@
         .btn-action { background: none; border: 1px solid var(--netflix-light-grey); color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; margin-right: 5px;}
         .btn-action.block { border-color: #ff4d4d; color: #ff4d4d; }
         .btn-action.block:hover { background-color: rgba(255, 77, 77, 0.1); }
+        .btn-action.unlock { border-color: var(--success-green); color: var(--success-green); }
+        .btn-action.unlock:hover { background-color: rgba(70, 211, 105, 0.1); }
 
         /* Modal Tạo tài khoản CM */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000; }
@@ -115,16 +71,7 @@
 </head>
 <body>
 
-<div class="admin-sidebar">
-    <div class="admin-logo">NETFLIX ADMIN</div>
-    <div class="admin-menu">
-        <a href="/admin/dashboard">Dashboard</a>
-        <a href="/admin/users" class="active">Quản lý Người dùng</a>
-        <a href="/admin/plans">Quản lý Gói dịch vụ</a>
-        <a href="/admin/vouchers">Quản lý Voucher</a>
-        <a href="#" onclick="handleAdminLogout(event)" style="margin-top: 50px; color: var(--netflix-red);">Đăng xuất</a>
-    </div>
-</div>
+<div th:replace="~{admin/fragments/sidebar :: sidebar(activeMenu='users')}"></div>
 
 <div class="admin-content">
     <div class="admin-header">
@@ -226,15 +173,15 @@
             else if (u.role === 'CONTENT_MANAGER') roleClass += ' role-content';
 
             const actionBtn = isActive
-                ? `<button class="btn-action block" onclick="toggleStatus('${u.id}')">Khóa tài khoản</button>`
-                : `<button class="btn-action" onclick="toggleStatus('${u.id}')">Mở khóa</button>`;
+                ? `<button class="btn-action block" onclick="toggleLock('${u.id}', true)">Khóa tài khoản</button>`
+                : `<button class="btn-action unlock" onclick="toggleLock('${u.id}', false)">Mở khóa</button>`;
 
             const isSelf = u.role === 'ADMIN';
             const renderAction = isSelf ? `<span style="color:var(--netflix-light-grey); font-size:12px;">(Bạn)</span>` : actionBtn;
 
             tbody.innerHTML += `
                 <tr>
-                    <td style="color: var(--netflix-light-grey); font-size: 13px;">${u.id}</td>
+                    <td style="color: var(--netflix-light-grey); font-size: 13px;" title="${u.id}">${u.id.substring(0, 8)}...</td>
                     <td><strong>${u.email}</strong></td>
                     <td><span class="${roleClass}">${u.role}</span></td>
                     <td>${u.plan}</td>
@@ -252,15 +199,47 @@
         }
     }
 
-    function toggleStatus(id) {
-        if(confirm(`Xác nhận thay đổi trạng thái của người dùng này?`)) {
-            fetch(`/api/v1/admin/users/${id}/toggle-status`, { method: 'PUT' })
-            .then(res => res.json())
-            .then(data => {
-                alert(data.message);
-                loadUsers();
-            });
+    // ĐÃ NÂNG CẤP: Logic yêu cầu nhập lý do khi khóa
+    function toggleLock(userId, isCurrentlyActive) {
+        let lockReason = "";
+
+        if (isCurrentlyActive) {
+            // Hành động là KHÓA -> Yêu cầu nhập lý do
+            lockReason = prompt("⚠️ BẠN ĐANG KHÓA TÀI KHOẢN!\nVui lòng nhập lý do khóa (Người dùng sẽ thấy lý do này):");
+
+            if (lockReason === null) {
+                return; // Admin bấm Hủy (Cancel) trên hộp thoại prompt
+            }
+            if (lockReason.trim() === "") {
+                alert("❌ Lỗi: Bạn bắt buộc phải nhập lý do để khóa tài khoản!");
+                return;
+            }
+        } else {
+            // Hành động là MỞ KHÓA -> Chỉ cần xác nhận
+            if (!confirm("✅ Bạn muốn MỞ KHÓA cho tài khoản này?")) {
+                return;
+            }
         }
+
+        // Gửi API với body chứa lý do (reason)
+        fetch(`/api/v1/admin/users/${userId}/toggle-lock`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason: lockReason })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                alert("❌ Lỗi: " + data.error);
+            } else {
+                alert("✅ " + data.message);
+                loadUsers(); // Cập nhật lại danh sách ngay lập tức
+            }
+        })
+        .catch(err => {
+            console.error("Lỗi:", err);
+            alert("❌ Lỗi kết nối đến máy chủ!");
+        });
     }
 
     function openCmModal() {
@@ -278,7 +257,6 @@
         document.getElementById('cmErrorMsg').style.display = 'none';
     }
 
-    // ĐÃ CẬP NHẬT LOGIC GỌI API THẬT
     function submitCreateCm() {
         const fullName = document.getElementById('cmFullName').value.trim();
         const email = document.getElementById('cmEmail').value.trim();
@@ -317,24 +295,16 @@
                 errorMsg.innerText = data.error;
                 errorMsg.style.display = 'block';
             } else {
-                alert(' ' + data.message);
+                alert('✅ ' + data.message);
                 closeCmModal();
                 loadUsers();
             }
         })
         .catch(err => {
             console.error('Lỗi mạng:', err);
-            errorMsg.innerText = " Đã xảy ra lỗi kết nối!";
+            errorMsg.innerText = "Đã xảy ra lỗi kết nối!";
             errorMsg.style.display = 'block';
         });
-    }
-
-    function handleAdminLogout(event) {
-        event.preventDefault();
-        fetch('/api/v1/auth/logout', { method: 'POST' })
-        .then(response => response.json())
-        .then(data => window.location.href = data.redirectUrl ? data.redirectUrl : '/login')
-        .catch(() => window.location.href = '/login');
     }
 </script>
 </body>

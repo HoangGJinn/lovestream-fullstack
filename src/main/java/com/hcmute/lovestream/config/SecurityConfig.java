@@ -27,12 +27,15 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final GoogleOAuth2UserService googleOAuth2UserService;
     private final OAuth2AuthenticationSuccessHandler oauth2SuccessHandler;
+
+    // Lưu trạng thái OAuth2 vào Cookie thay vì Session → tiết kiệm RAM
     private final HttpCookieOAuth2AuthorizationRequestRepository cookieAuthorizationRequestRepository;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
+                // STATELESS hoàn toàn – OAuth2 state nằm ở Cookie phía trình duyệt
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
@@ -52,33 +55,37 @@ public class SecurityConfig {
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/account/change-password/backup").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/password/backup-change").permitAll()
+
+                        // 2. Trang công khai cho khách chưa đăng nhập (SEO)
                         .requestMatchers(HttpMethod.GET, "/", "/home").permitAll()
+                        // Trang tĩnh cho public
                         .requestMatchers(HttpMethod.GET, "/about", "/privacy-policy", "/terms").permitAll()
+                        // Trang danh sách phim, chi tiết phim
                         .requestMatchers(HttpMethod.GET, "/movies", "/movies/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/series", "/series/**").permitAll()
                         .requestMatchers("/videocontents", "/videocontents/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/plans", "/plans/**", "/packages", "/packages/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/comments/**", "/api/v1/ratings/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/v1/api/vnpay/payment-callback").permitAll()
-                        .requestMatchers("/admin", "/admin/dashboard")
-                        .hasAnyAuthority("ROLE_ADMIN", "ROLE_CONTENT_MANAGER", "ADMIN", "CONTENT_MANAGER")
+
+
+                        // 3. Admin modules: ADMIN only
+                        .requestMatchers("/admin", "/admin/dashboard", "/admin/**")
+                        .hasAnyAuthority("ROLE_ADMIN", "ADMIN")
+
+                        // 4. Content manager modules: CONTENT_MANAGER only
                         .requestMatchers(
-                                "/admin/movies",
-                                "/admin/movies/**",
-                                "/admin/series",
-                                "/admin/series/**",
-                                "/admin/genres",
-                                "/admin/genres/**",
-                                "/admin/web-content",
-                                "/admin/web-content/**"
+                                "/content-manager",
+                                "/content-manager/dashboard",
+                                "/content-manager/movies",
+                                "/content-manager/movies/**",
+                                "/content-manager/series",
+                                "/content-manager/series/**",
+                                "/content-manager/genres",
+                                "/content-manager/genres/**",
+                                "/content-manager/web-content",
+                                "/content-manager/web-content/**"
                         ).hasAnyAuthority("ROLE_CONTENT_MANAGER", "CONTENT_MANAGER")
-                        .requestMatchers(
-                                "/admin/users/**",
-                                "/admin/plans/**",
-                                "/admin/vouchers/**",
-                                "/admin/transactions/**"
-                        ).hasAnyAuthority("ROLE_ADMIN", "ADMIN")
-                        .requestMatchers("/admin/**").hasAnyAuthority("ROLE_ADMIN", "ADMIN")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exc -> exc.authenticationEntryPoint((request, response, authException) -> {

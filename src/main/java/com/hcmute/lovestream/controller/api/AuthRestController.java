@@ -86,7 +86,7 @@ public class AuthRestController {
             if ("ROLE_ADMIN".equals(role)) {
                 redirectUrl = "/admin/dashboard";
             } else if ("ROLE_CONTENT_MANAGER".equals(role)) {
-                redirectUrl = "/admin/movies";
+                redirectUrl = "/content-manager/dashboard";
             }
 
             return ResponseEntity.ok(Map.of(

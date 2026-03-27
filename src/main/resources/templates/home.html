@@ -18,19 +18,7 @@
 <body>
 
     <div class="navbar" id="navbar">
-        <div class="nav-left">
-            <a href="/" class="logo">LoveStream</a>
-            <ul class="nav-links">
-                <li><a href="#" class="active">Trang chủ</a></li>
-                <li><a href="/series">Series</a></li>
-                <li><a href="/movies">Phim</a></li>
-                <li><a href="#">Mới &amp; Phổ biến</a></li>
-                <li th:if="${currentUser != null}"><a href="#">Danh sách của tôi</a></li>
-                <li th:if="${currentUser != null}"><a href="/history">Lịch sử xem phim</a></li>
-                <li><a href="/packages">Gói dịch vụ</a></li>
-                <li th:if="${currentUser != null}"><a href="/watch-together">Xem chung</a></li>
-            </ul>
-        </div>
+                <div th:replace="~{fragments/top-navbar :: topNavLeft('home')}"></div>
         <div class="nav-right">
             <form id="homeSearchForm" class="nav-search" th:action="@{/videocontents/search}" method="get">
                 <button id="homeSearchToggle" class="nav-icon nav-search-toggle" type="button" aria-label="Tìm kiếm">

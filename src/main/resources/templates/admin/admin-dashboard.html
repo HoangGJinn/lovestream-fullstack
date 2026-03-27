@@ -1,287 +1,179 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${pageTitle}">Admin Dashboard</title>
+    <title>Admin Dashboard - LoveStream</title>
+    <link rel="stylesheet" th:href="@{/css/admin/admin-theme.css}" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root {
-            --netflix-red: #E50914;
-            --netflix-black: #141414;
-            --netflix-dark-grey: #2f2f2f;
-            --netflix-light-grey: #b3b3b3;
-            --text-white: #ffffff;
-        }
-
-        body {
-            margin: 0;
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background-color: var(--netflix-black);
-            color: var(--text-white);
-            display: flex;
-        }
-
-        /* Sidebar */
-        .admin-sidebar {
-            width: 250px;
-            height: 100vh;
-            background-color: rgba(0, 0, 0, 0.9);
-            padding: 20px 0;
-            position: fixed;
-            border-right: 1px solid var(--netflix-dark-grey);
-        }
-
-        .admin-logo {
-            color: var(--netflix-red);
-            font-size: 28px;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 40px;
-            letter-spacing: 2px;
-        }
-
-        .admin-menu a {
-            display: block;
-            padding: 15px 25px;
-            color: var(--netflix-light-grey);
-            text-decoration: none;
-            font-size: 16px;
-            transition: all 0.3s;
-        }
-
-        .admin-menu a:hover, .admin-menu a.active {
-            color: var(--text-white);
-            background-color: var(--netflix-dark-grey);
-            border-left: 4px solid var(--netflix-red);
-        }
-
-        /* Main Content */
-        .admin-content {
-            margin-left: 250px;
-            padding: 30px;
-            width: calc(100% - 250px);
-        }
-
-        .admin-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-
-        /* KPI Cards */
-        .kpi-container {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .kpi-card {
-            background-color: var(--netflix-dark-grey);
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-
+        .kpi-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
+        .kpi-card { background-color: var(--netflix-dark-grey); padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
         .kpi-title { color: var(--netflix-light-grey); font-size: 14px; margin-bottom: 10px;}
         .kpi-value { font-size: 28px; font-weight: bold; color: var(--text-white); }
-        .kpi-up { color: #46d369; font-size: 14px; margin-top: 5px;}
+        .kpi-up { color: var(--success-green); font-size: 13px; margin-top: 10px; }
 
-        /* Charts Container */
-        .charts-container {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
+        .charts-container { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 30px; }
+        .chart-box { background-color: var(--netflix-dark-grey); padding: 20px; border-radius: 8px; }
 
-        .chart-box {
-            background-color: var(--netflix-dark-grey);
-            padding: 20px;
-            border-radius: 8px;
-        }
-
-        /* Tables */
-        .table-container {
-            background-color: var(--netflix-dark-grey);
-            padding: 20px;
-            border-radius: 8px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-
-        th, td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #404040;
-        }
-
+        .table-container { background-color: var(--netflix-dark-grey); padding: 20px; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #404040; }
         th { color: var(--netflix-light-grey); font-weight: normal; }
-
-        .status-success {
-            background-color: rgba(70, 211, 105, 0.2);
-            color: #46d369;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-        }
+        .status-success { background-color: rgba(70, 211, 105, 0.2); color: #46d369; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
     </style>
 </head>
 <body>
 
-<div class="admin-sidebar">
-    <div class="admin-logo">LOVESTREAM ADMIN</div>
-    <div class="admin-menu">
-        <a href="/admin/dashboard" class="active">Dashboard</a>
-        <a href="/admin/users">Quản lý Người dùng</a>
-        <a href="/admin/plans">Quản lý Gói dịch vụ</a>
-        <a href="/admin/vouchers">Quản lý Voucher</a>
-        <a href="/admin/vouchers">Quản lý Giao dịch</a>
-
-        <a href="#" onclick="handleAdminLogout(event)" style="margin-top: 50px; color: var(--netflix-red);">Đăng xuất</a>
-    </div>
-</div>
+<div th:replace="~{admin/fragments/sidebar :: sidebar(activeMenu='dashboard')}"></div>
 
 <div class="admin-content">
     <div class="admin-header">
         <h2>Tổng quan hệ thống</h2>
-        <div>Xin chào, <b>Admin</b></div>
+        <div>Xin chào, <b sec:authentication="name">Admin</b> (<span sec:authentication="authorities">Role</span>)</div>
     </div>
 
-    <div class="kpi-container">
-        <div class="kpi-card">
-            <div class="kpi-title">Tổng Doanh Thu</div>
-            <div class="kpi-value">$1,250,000</div>
-            <div class="kpi-up">↑ +15% so với tháng trước</div>
+    <th:block sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ADMIN')">
+        <div class="kpi-container">
+            <div class="kpi-card">
+                <div class="kpi-title">Tổng Doanh Thu</div>
+                <div class="kpi-value" id="kpiRevenue">Đang tải...</div>
+                <div class="kpi-up" id="kpiRevenueDiff">Cập nhật lúc này</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Tổng Người Dùng</div>
+                <div class="kpi-value" id="kpiUsers">Đang tải...</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Giao Dịch Thành Công</div>
+                <div class="kpi-value" id="kpiTx">Đang tải...</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Gói Đang Kích Hoạt</div>
+                <div class="kpi-value" id="kpiActive" style="color: var(--netflix-red);">Đang tải...</div>
+            </div>
         </div>
-        <div class="kpi-card">
-            <div class="kpi-title">Tổng Người Dùng</div>
-            <div class="kpi-value">150,000</div>
-            <div class="kpi-up">↑ +5% user mới</div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-title">Giao Dịch Thành Công</div>
-            <div class="kpi-value">12,000</div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-title">Đang Có Gói (Active)</div>
-            <div class="kpi-value" style="color: var(--netflix-red);">80,000</div>
-        </div>
-    </div>
 
-    <div class="charts-container">
-        <div class="chart-box">
-            <h3 style="margin-top:0;">Xu hướng doanh thu (1 tháng)</h3>
-            <canvas id="revenueChart" height="100"></canvas>
+        <div class="charts-container">
+            <div class="chart-box">
+                <h3 style="margin-top:0;">Doanh thu năm nay (VNĐ)</h3>
+                <canvas id="revenueChart" height="100"></canvas>
+            </div>
+            <div class="chart-box">
+                <h3 style="margin-top:0;">Phân phối gói dịch vụ</h3>
+                <canvas id="planChart" height="220"></canvas>
+            </div>
         </div>
-        <div class="chart-box">
-            <h3 style="margin-top:0;">Phân phối gói dịch vụ</h3>
-            <canvas id="planChart" height="220"></canvas>
-        </div>
-    </div>
 
-    <div class="table-container">
-        <h3 style="margin-top:0;">Giao dịch mới nhất</h3>
-        <table>
-            <thead>
-            <tr>
-                <th>ID User</th>
-                <th>Tên Gói</th>
-                <th>Số tiền</th>
-                <th>Thời gian</th>
-                <th>Trạng thái</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr>
-                <td>9024020</td>
-                <td>Premium</td>
-                <td>$27.00</td>
-                <td>2026-03-22 14:30</td>
-                <td><span class="status-success">Thành công</span></td>
-            </tr>
-            <tr>
-                <td>8022088</td>
-                <td>Standard</td>
-                <td>$15.00</td>
-                <td>2026-03-22 14:15</td>
-                <td><span class="status-success">Thành công</span></td>
-            </tr>
-            </tbody>
-        </table>
-    </div>
+        <div class="table-container">
+            <h3 style="margin-top:0;">5 Giao dịch mới nhất</h3>
+            <table>
+                <thead>
+                <tr>
+                    <th>Mã GD</th>
+                    <th>ID User</th>
+                    <th>Tên Gói</th>
+                    <th>Số tiền</th>
+                    <th>Trạng thái</th>
+                </tr>
+                </thead>
+                <tbody id="recentTxTable">
+                <tr><td colspan="5" style="text-align: center;">Đang tải dữ liệu...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </th:block>
+
+    <th:block sec:authorize="hasAnyAuthority('ROLE_CONTENT_MANAGER', 'CONTENT_MANAGER')">
+        <div class="kpi-container">
+            <div class="kpi-card">
+                <div class="kpi-title">Quyền hạn</div>
+                <div class="kpi-value" style="font-size: 20px;">Quản lý nội dung phim</div>
+            </div>
+        </div>
+        <div class="table-container" style="text-align: center; color: var(--netflix-light-grey); padding: 50px;">
+            <h3>Chào mừng tới Content Management Dashboard</h3>
+            <p>Vui lòng chọn chức năng "Quản lý phim lẻ" ở Menu trái để bắt đầu thêm mới hoặc cập nhật thông tin phim.</p>
+        </div>
+    </th:block>
+
 </div>
 
-<script>
-    // Biểu đồ Doanh thu (Line Chart)
-    const ctxRev = document.getElementById('revenueChart').getContext('2d');
-    new Chart(ctxRev, {
-        type: 'line',
-        data: {
-            labels: ['1', '5', '10', '15', '20', '25', '30'],
-            datasets: [{
-                label: 'Doanh thu ($)',
-                data: [50000, 100000, 75000, 150000, 120000, 200000, 180000],
-                borderColor: '#E50914',
-                backgroundColor: 'rgba(229, 9, 20, 0.1)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.4
-            }]
-        },
-        options: {
-            plugins: { legend: { display: false } },
-            scales: {
-                y: { grid: { color: '#404040' }, ticks: { color: '#b3b3b3' } },
-                x: { grid: { display: false }, ticks: { color: '#b3b3b3' } }
-            }
-        }
+<script sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ADMIN')">
+    document.addEventListener("DOMContentLoaded", function() {
+        // GỌI API THEO ĐƯỜNG DẪN CỦA BƯỚC 2 TRƯỚC ĐÓ
+        fetch('/api/v1/admin/statistics/dashboard')
+            .then(res => {
+                if(!res.ok) throw new Error("API chưa kết nối được");
+                return res.json();
+            })
+            .then(data => {
+                const formatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
+
+                // ĐỔ SỐ LIỆU VÀO CÁC Ô ĐANG TẢI...
+                document.getElementById('kpiRevenue').innerText = formatter.format(data.kpi.totalRevenue);
+                document.getElementById('kpiUsers').innerText = data.kpi.totalUsers.toLocaleString();
+                document.getElementById('kpiTx').innerText = data.kpi.successfulTransactions.toLocaleString();
+                document.getElementById('kpiActive').innerText = data.kpi.activeSubscriptions.toLocaleString();
+
+                // VẼ BIỂU ĐỒ ĐƯỜNG (LINE)
+                new Chart(document.getElementById('revenueChart').getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
+                        datasets: [{
+                            label: 'Doanh thu',
+                            data: data.charts.monthlyRevenue,
+                            borderColor: '#E50914',
+                            backgroundColor: 'rgba(229, 9, 20, 0.1)',
+                            borderWidth: 3, fill: true, tension: 0.4
+                        }]
+                    },
+                    options: { plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#404040' }, ticks: { color: '#b3b3b3' } }, x: { grid: { display: false }, ticks: { color: '#b3b3b3' } } } }
+                });
+
+                // VẼ BIỂU ĐỒ BÁNH TRÒN (DOUGHNUT)
+                const planLabels = Object.keys(data.charts.planDistribution);
+                const planData = Object.values(data.charts.planDistribution);
+                new Chart(document.getElementById('planChart').getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: planLabels.length > 0 ? planLabels : ['Chưa có dữ liệu'],
+                        datasets: [{
+                            data: planData.length > 0 ? planData : [1],
+                            backgroundColor: ['#4287f5', '#f5a442', '#E50914', '#555555'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: { plugins: { legend: { position: 'right', labels: { color: '#b3b3b3' } } }, cutout: '70%' }
+                });
+
+                // TẠO 5 GIAO DỊCH DƯỚI CÙNG
+                const tbody = document.getElementById('recentTxTable');
+                tbody.innerHTML = '';
+                if(data.recentTransactions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Chưa có giao dịch nào</td></tr>';
+                } else {
+                    data.recentTransactions.forEach(tx => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td style="color: #b3b3b3; font-size: 13px;">${tx.id.substring(0,8)}...</td>
+                                <td>${tx.userId.substring(0,8)}...</td>
+                                <td><span style="background:#555; padding:3px 6px; border-radius:4px; font-size:12px;">${tx.planName}</span></td>
+                                <td><b>${formatter.format(tx.amount)}</b></td>
+                                <td><span class="status-success">Thành công</span></td>
+                            </tr>
+                        `;
+                    });
+                }
+            })
+            .catch(err => {
+                console.error("Lỗi tải thống kê:", err);
+                // BÁO ĐỎ NẾU CHƯA LÀM BACKEND
+                document.getElementById('kpiRevenue').innerText = "LỖI KẾT NỐI";
+                document.getElementById('kpiRevenue').style.color = "red";
+            });
     });
-
-    // Biểu đồ Phân phối gói (Doughnut Chart)
-    const ctxPlan = document.getElementById('planChart').getContext('2d');
-    new Chart(ctxPlan, {
-        type: 'doughnut',
-        data: {
-            labels: ['Basic', 'Standard', 'Premium', 'No Plan'],
-            datasets: [{
-                data: [30, 15, 25, 30],
-                backgroundColor: ['#4287f5', '#f5a442', '#E50914', '#555555'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            plugins: {
-                legend: { position: 'right', labels: { color: '#b3b3b3' } }
-            },
-            cutout: '70%'
-        }
-    });
-
-    // ĐÃ THÊM CHỖ NÀY: Hàm JavaScript xử lý Đăng xuất
-    function handleAdminLogout(event) {
-        event.preventDefault(); // Ngăn link tự nhảy
-
-        fetch('/api/v1/auth/logout', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-        })
-        .then(response => response.json())
-        .then(data => {
-            // Nhận JSON xong thì búng về trang login
-            window.location.href = data.redirectUrl ? data.redirectUrl : '/login';
-        })
-        .catch(error => {
-            console.error('Lỗi khi đăng xuất:', error);
-            window.location.href = '/login'; // Lỗi mạng cũng đá ra ngoài
-        });
-    }
 </script>
 </body>
 </html>

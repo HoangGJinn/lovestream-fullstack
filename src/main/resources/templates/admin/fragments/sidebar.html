@@ -1,57 +1,37 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
 
 <body>
-    <div th:fragment="sidebar(activeMenu)" class="admin-sidebar">
-        <div class="admin-logo">LoveStream Admin</div>
-        <div class="admin-menu">
-            <a th:href="@{/admin/dashboard}" th:classappend="${activeMenu == 'dashboard'} ? 'active'">Dashboard</a>
+<div th:fragment="sidebar(activeMenu)" class="admin-sidebar">
+    <div class="admin-logo">LoveStream Admin</div>
+    <div class="admin-menu">
+        <a th:href="@{/admin/dashboard}" th:classappend="${activeMenu == 'dashboard'} ? 'active'">Dashboard</a>
+        <a th:href="@{/admin/users}" th:classappend="${activeMenu == 'users'} ? 'active'">Quan ly nguoi dung</a>
+        <a th:href="@{/admin/plans}" th:classappend="${activeMenu == 'plans'} ? 'active'">Quan ly goi dich vu</a>
+        <a th:href="@{/admin/vouchers}" th:classappend="${activeMenu == 'vouchers'} ? 'active'">Quan ly voucher</a>
+        <a th:href="@{/admin/transactions}" th:classappend="${activeMenu == 'transactions'} ? 'active'">Quan ly giao dich</a>
 
-
-            <th:block sec:authorize="hasAnyAuthority('ROLE_CONTENT_MANAGER', 'CONTENT_MANAGER')">
-                <a th:href="@{/admin/web-content}"
-                    th:classappend="${activeMenu == 'web-content'} ? 'active'">Quản lý nội dung web</a>
-                <a th:href="@{/admin/movies}" th:classappend="${activeMenu == 'movies'} ? 'active'">Quản lý phim lẻ</a>
-                <a th:href="@{/admin/series}" th:classappend="${activeMenu == 'series'} ? 'active'">Quản lý TV Series</a>
-                <a th:href="@{/admin/genres}" th:classappend="${activeMenu == 'genres'} ? 'active'">Quản lý Thể loại</a>
-            </th:block>
-
-
-            <th:block sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ADMIN')">
-                <a th:href="@{/admin/users/content-managers}"
-                    th:classappend="${activeMenu == 'content-managers'} ? 'active'">Quản lý Content Manager</a>
-                <a th:href="@{/admin/users}" th:classappend="${activeMenu == 'users'} ? 'active'">Quản lý Người dùng</a>
-                <a th:href="@{/admin/plans}" th:classappend="${activeMenu == 'plans'} ? 'active'">Quản lý Gói dịch
-                    vụ</a>
-                <a th:href="@{/admin/vouchers}" th:classappend="${activeMenu == 'vouchers'} ? 'active'">Quản lý
-                    Voucher</a>
-
-                <a th:href="@{/admin/transactions}" th:classappend="${activeMenu == 'transactions'} ? 'active'">Quản lý
-                    Giao dịch</a>
-            </th:block>
-
-            <a href="#" onclick="handleAdminLogout(event)" style="margin-top: 50px; color: var(--netflix-red);">Đăng
-                xuất</a>
-        </div>
-
-        <script>
-            function handleAdminLogout(event) {
-                event.preventDefault();
-                fetch('/api/v1/auth/logout', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        window.location.href = data.redirectUrl ? data.redirectUrl : '/login';
-                    })
-                    .catch(error => {
-                        console.error('Lỗi khi đăng xuất:', error);
-                        window.location.href = '/login';
-                    });
-            }
-        </script>
+        <a href="#" onclick="handleAdminLogout(event)" style="margin-top: 50px; color: var(--netflix-red);">Dang xuat</a>
     </div>
+
+    <script>
+        function handleAdminLogout(event) {
+            event.preventDefault();
+            fetch('/api/v1/auth/logout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                window.location.href = data.redirectUrl ? data.redirectUrl : '/login';
+            })
+            .catch(error => {
+                console.error('Loi khi dang xuat:', error);
+                window.location.href = '/login';
+            });
+        }
+    </script>
+</div>
 </body>
 
 </html>
