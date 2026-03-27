@@ -27,6 +27,11 @@ public class Rating {
     @Column(columnDefinition = "TEXT")
     private String review; // Nhận xét về phim (tuỳ chọn)
 
+    @Column(name = "like_count", nullable = false)
+    private int likeCount = 0;
+    @Column(name = "dislike_count", nullable = false)
+    private int dislikeCount = 0;
+
     // Người đánh giá
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)

@@ -1231,6 +1231,15 @@ async function loadComments() {
                         <div class="rating-stars-display">${'★'.repeat(r.score)}${'☆'.repeat(5 - r.score)}</div>
                         ${r.review ? '<div class="review-text">' + escHtml(r.review) + '</div>' : ''}
                         <div class="comment-date">${formatDate(r.createdAt)}</div>
+                        <div class="comment-actions">
+                            <span class="comment-date">${formatDate(r.createdAt)}</span>
+                            <button class="vote-btn" onclick="voteRating('${r.id}', true)">
+                                <i class="fa-regular fa-thumbs-up"></i> <span>${r.likeCount || 0}</span>
+                            </button>
+                            <button class="vote-btn" onclick="voteRating('${r.id}', false)">
+                                <i class="fa-regular fa-thumbs-down"></i> <span>${r.dislikeCount || 0}</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             `).join('');
@@ -1410,3 +1419,21 @@ async function loadComments() {
         }
     }
 
+    // Thêm vào cuối file watch_movie.js
+    async function voteRating(ratingId, isLike) {
+        const action = isLike ? 'like' : 'dislike';
+        try {
+            const res = await fetch(`/api/v1/ratings/${ratingId}/${action}`, {
+                method: 'POST'
+            });
+
+            if (res.ok) {
+                loadRatings(); // Tải lại danh sách đánh giá để cập nhật số lượng
+            } else {
+                const msg = await res.text();
+                alert(msg || "Vui lòng đăng nhập để thực hiện tính năng này.");
+            }
+        } catch (err) {
+            console.error("Lỗi khi vote đánh giá:", err);
+        }
+    }
