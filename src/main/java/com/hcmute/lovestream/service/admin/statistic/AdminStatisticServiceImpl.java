@@ -1,4 +1,4 @@
-package com.hcmute.lovestream.service.admin.statistic.impl;
+package com.hcmute.lovestream.service.admin.statistic;
 
 import com.hcmute.lovestream.entity.Payment;
 import com.hcmute.lovestream.repository.PaymentRepository;
