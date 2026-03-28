@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết thông báo - LoveStream</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/home.css">
+    <link rel="stylesheet" href="/css/user-menu.css">
+    <style>
+        .notification-detail-page {
+            padding: 96px 4% 40px;
+            min-height: 100vh;
+        }
+
+        .detail-header {
+            margin-bottom: 24px;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #e50914;
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 16px;
+            transition: gap 0.2s ease;
+        }
+
+        .back-link:hover {
+            gap: 10px;
+        }
+
+        .detail-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .notification-detail-card {
+            background: linear-gradient(135deg, #1f1f1f 0%, #2a2a2a 100%);
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 28px;
+            margin-bottom: 20px;
+        }
+
+        .detail-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #333;
+        }
+
+        .detail-type-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .detail-type {
+            background: #e50914;
+            color: #fff;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            padding: 5px 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-time {
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        .detail-title {
+            margin: 0 0 16px;
+            font-size: 1.8rem;
+            font-weight: 800;
+            line-height: 1.3;
+        }
+
+        .detail-content {
+            margin: 0;
+            color: #e5e5e5;
+            line-height: 1.8;
+            font-size: 1rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .detail-footer {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #333;
+            display: flex;
+            gap: 12px;
+        }
+
+        .detail-footer-btn {
+            padding: 10px 16px;
+            border-radius: 6px;
+            border: 1px solid #555;
+            background: transparent;
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+        }
+
+        .detail-footer-btn:hover {
+            background: #e50914;
+            border-color: #e50914;
+        }
+
+        .status-badge {
+            display: inline-block;
+            background: rgba(140, 227, 173, 0.2);
+            color: #8ce3ad;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .error-message {
+            background: rgba(255, 100, 100, 0.15);
+            border: 1px solid rgba(255, 100, 100, 0.4);
+            color: #ff9999;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .notification-detail-page {
+                padding: 80px 16px 40px;
+            }
+
+            .notification-detail-card {
+                padding: 18px;
+            }
+
+            .detail-top {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .detail-title {
+                font-size: 1.4rem;
+            }
+
+            .detail-content {
+                font-size: 0.95rem;
+            }
+
+            .detail-footer {
+                flex-direction: column;
+            }
+
+            .detail-footer-btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="navbar" id="navbar">
+    <div th:replace="~{fragments/top-navbar :: topNavLeft('history')}"></div>
+    <div class="nav-right">
+        <a href="/notifications" class="nav-icon" aria-label="Thông báo"><i class="fa-regular fa-bell"></i></a>
+        <div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>
+    </div>
+</div>
+
+<div class="notification-detail-page">
+    <div class="detail-container">
+        <div class="detail-header">
+            <a href="/notifications" class="back-link">
+                <i class="fa-solid fa-chevron-left"></i>
+                <span>Quay lại danh sách</span>
+            </a>
+        </div>
+
+        <div th:if="${notification != null}" class="notification-detail-card">
+            <div class="detail-top">
+                <div class="detail-type-section">
+                    <span class="detail-type" th:text="${notification.type}"></span>
+                    <span class="detail-time" th:text="${#temporals.format(notification.sentAt, 'dd/MM/yyyy HH:mm')}"></span>
+                </div>
+                <span class="status-badge">Đã đọc</span>
+            </div>
+
+            <h1 class="detail-title" th:text="${notification.title}"></h1>
+
+            <div class="detail-content" th:text="${notification.content}"></div>
+
+            <div class="detail-footer">
+                <button class="detail-footer-btn" onclick="copyToClipboard(event)">
+                    <i class="fa-solid fa-copy"></i> Sao chép nội dung
+                </button>
+                <form method="post" th:action="@{|/notifications/${notification.id}/delete|}" style="flex: 1;">
+                    <button class="detail-footer-btn" type="submit" style="width: 100%; border-color: #e50914; color: #ff9999;">
+                        <i class="fa-solid fa-trash"></i> Xóa thông báo
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div th:if="${notification == null}" class="error-message">
+            <i class="fa-solid fa-exclamation-circle"></i>
+            <span>Không tìm thấy thông báo này.</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.addEventListener('scroll', () => {
+        const navbar = document.getElementById('navbar');
+        if (window.scrollY > 50) navbar.classList.add('scrolled');
+        else navbar.classList.remove('scrolled');
+    });
+
+    function copyToClipboard(event) {
+        event.preventDefault();
+        const contentEl = document.querySelector('.detail-content');
+        if (contentEl) {
+            const text = contentEl.innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = event.target.closest('.detail-footer-btn');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã sao chép';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                }, 2000);
+            }).catch(() => {
+                alert('Không thể sao chép nội dung.');
+            });
+        }
+    }
+</script>
+</body>
+</html>
+
