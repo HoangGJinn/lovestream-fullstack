@@ -1437,3 +1437,6 @@ async function loadComments() {
             console.error("Lỗi khi vote đánh giá:", err);
         }
     }
+
+
+// Lưu ý: Logic chia sẻ đã được chuyển sang /js/share.js để dùng chung
