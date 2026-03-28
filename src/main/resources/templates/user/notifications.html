@@ -147,9 +147,13 @@
         .notification-actions {
             display: flex;
             align-items: center;
+            gap: 10px;
         }
 
         .mark-read-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             background: transparent;
             color: #fff;
             border: 1px solid #555;
@@ -157,6 +161,7 @@
             padding: 8px 10px;
             cursor: pointer;
             white-space: nowrap;
+            text-decoration: none;
         }
 
         .mark-read-btn:hover {
@@ -180,7 +185,10 @@
 <div class="navbar" id="navbar">
             <div th:replace="~{fragments/top-navbar :: topNavLeft('history')}"></div>
         <div class="nav-right">
-        <a href="/notifications" class="nav-icon" aria-label="Thong bao"><i class="fa-regular fa-bell"></i></a>
+        <a href="/notifications" class="nav-icon notification-link" aria-label="Thong bao">
+            <i class="fa-regular fa-bell"></i>
+            <span th:if="${unreadCount > 0}" class="notification-badge" th:text="${unreadCount > 99 ? '99+' : unreadCount}">0</span>
+        </a>
         <div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>
     </div>
 </div>
@@ -219,6 +227,11 @@
                 <p class="notification-content" th:text="${notification.content}"></p>
             </div>
             <div class="notification-actions">
+                <a th:if="${notification.targetUrl != null and !#strings.isEmpty(notification.targetUrl)}"
+                   class="mark-read-btn"
+                   th:href="@{|/notifications/${notification.id}/open|}">
+                    Mo noi dung
+                </a>
                 <form th:if="${notification.status.name() == 'UNREAD'}" method="post"
                       th:action="@{|/notifications/${notification.id}/read|}">
                     <input type="hidden" name="filter" th:value="${selectedFilter}">

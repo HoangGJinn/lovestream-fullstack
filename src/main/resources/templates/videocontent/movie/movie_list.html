@@ -84,7 +84,10 @@
             <div th:replace="~{fragments/top-navbar :: topNavLeft('movies')}"></div>
         <div class="nav-right">
         <i class="fa-solid fa-magnifying-glass nav-icon"></i>
-        <a href="/notifications" class="nav-icon" aria-label="Thong bao"><i class="fa-regular fa-bell"></i></a>
+        <a href="/notifications" class="nav-icon notification-link" aria-label="Thong bao">
+            <i class="fa-regular fa-bell"></i>
+            <span th:if="${unreadCount > 0}" class="notification-badge" th:text="${unreadCount > 99 ? '99+' : unreadCount}">0</span>
+        </a>
         <div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>
     </div>
 </div>

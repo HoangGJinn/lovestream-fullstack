@@ -17,4 +17,6 @@ public interface NotificationRepository extends JpaRepository<Notification, Stri
 	long countByUser_IdAndStatus(String userId, UserNotificationStatus status);
 
 	Optional<Notification> findByIdAndUser_Id(String id, String userId);
+
+	boolean existsByUser_IdAndDedupeKey(String userId, String dedupeKey);
 }
