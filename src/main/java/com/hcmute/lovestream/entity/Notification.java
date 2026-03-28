@@ -35,6 +35,12 @@ public class Notification {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
+    @Column(name = "target_url")
+    private String targetUrl;
+
+    @Column(name = "dedupe_key", length = 200)
+    private String dedupeKey;
+
     // Trạng thái thông báo (Mặc định khi nhận được là Chưa đọc)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

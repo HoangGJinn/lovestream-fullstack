@@ -27,8 +27,10 @@
                 <input id="homeSearchInput" class="nav-search-input" name="keyword" type="text"
                     placeholder="Tìm phim, series..." autocomplete="off">
             </form>
-            <a th:if="${currentUser != null}" href="/notifications" class="nav-icon" aria-label="Thông báo"><i
-                    class="fa-regular fa-bell"></i></a>
+            <a th:if="${currentUser != null}" href="/notifications" class="nav-icon notification-link" aria-label="Thong bao">
+                <i class="fa-regular fa-bell"></i>
+                <span th:if="${unreadCount > 0}" class="notification-badge" th:text="${unreadCount > 99 ? '99+' : unreadCount}">0</span>
+            </a>
             <div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>
         </div>
     </div>
@@ -48,16 +50,16 @@
                              class="banner-slide-img"/>
                     </div>
 
-                    <th:block th:if="${banner.navigationLink != null and !#strings.isEmpty(banner.navigationLink)}">
-                        <a th:href="${banner.navigationLink}" class="banner-slide-link"
+                    <th:block th:if="${banner.resolvedNavigationLink != null and !#strings.isEmpty(banner.resolvedNavigationLink)}">
+                        <a th:href="${banner.resolvedNavigationLink}" class="banner-slide-link"
                            th:aria-label="'Đi tới: ' + ${banner.title}"></a>
                     </th:block>
 
                     <div class="banner-slide-overlay">
                         <h1 class="movie-title" th:text="${banner.title}">Tiêu đề banner</h1>
-                        <div th:if="${banner.navigationLink != null and !#strings.isEmpty(banner.navigationLink)}"
+                        <div th:if="${banner.resolvedNavigationLink != null and !#strings.isEmpty(banner.resolvedNavigationLink)}"
                              class="banner-cta-row">
-                            <a th:href="${banner.navigationLink}" class="banner-cta">Xem ngay</a>
+                            <a th:href="${banner.resolvedNavigationLink}" class="banner-cta">Xem ngay</a>
                         </div>
                     </div>
                 </div>

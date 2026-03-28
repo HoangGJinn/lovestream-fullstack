@@ -2,15 +2,13 @@ package com.hcmute.lovestream.service.rating;
 
 import com.hcmute.lovestream.dto.request.RatingRequest;
 import com.hcmute.lovestream.entity.Rating;
+import com.hcmute.lovestream.entity.RatingVote;
 import com.hcmute.lovestream.entity.enums.ContentStatus;
 import com.hcmute.lovestream.entity.enums.SubscriptionStatus;
 
 import com.hcmute.lovestream.entity.User;
 import com.hcmute.lovestream.entity.VideoContent;
-import com.hcmute.lovestream.repository.RatingRepository;
-import com.hcmute.lovestream.repository.SubscriptionRepository;
-import com.hcmute.lovestream.repository.UserRepository;
-import com.hcmute.lovestream.repository.VideoContentRepository;
+import com.hcmute.lovestream.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +23,7 @@ public class RatingService {
     private final VideoContentRepository videoRepository;
     private final UserRepository userRepository;
     private final SubscriptionRepository subscriptionRepository;
+    private final RatingVoteRepository ratingVoteRepository;
 
     @Transactional
     public String processRating(String email, RatingRequest request) {
@@ -83,6 +82,41 @@ public class RatingService {
         video.setTotalRatings(count);
 
         videoRepository.save(video);
+    }
+
+    @Transactional
+    public void voteRating(String email, String ratingId, boolean isLike) {
+        User user = userRepository.findByEmail(email).orElseThrow();
+        boolean hasActive = subscriptionRepository.existsByUser_IdAndStatusAndEndDateAfter(
+                user.getId(), SubscriptionStatus.ACTIVE, LocalDateTime.now());
+        if (!hasActive) {
+            throw new RuntimeException("Bạn cần mua gói dịch vụ để thực hiện tính năng này.");
+        }
+        Rating rating = ratingRepository.findById(ratingId).orElseThrow();
+        var existingVote = ratingVoteRepository.findTop1ByUserAndRating(user, rating);
+        if (existingVote.isPresent()) {
+            RatingVote vote = existingVote.get();
+            if (vote.isLike() == isLike) {
+                ratingVoteRepository.delete(vote);
+                if (isLike) rating.setLikeCount(Math.max(0, rating.getLikeCount() - 1));
+                else rating.setDislikeCount(Math.max(0, rating.getDislikeCount() - 1));
+            } else {
+                vote.setLike(isLike);
+                ratingVoteRepository.save(vote);
+                if (isLike) {
+                    rating.setLikeCount(rating.getLikeCount() + 1);
+                    rating.setDislikeCount(Math.max(0, rating.getDislikeCount() - 1));
+                } else {
+                    rating.setDislikeCount(rating.getDislikeCount() + 1);
+                    rating.setLikeCount(Math.max(0, rating.getLikeCount() - 1));
+                }
+            }
+        } else {
+            ratingVoteRepository.save(RatingVote.builder().user(user).rating(rating).isLike(isLike).build());
+            if (isLike) rating.setLikeCount(rating.getLikeCount() + 1);
+            else rating.setDislikeCount(rating.getDislikeCount() + 1);
+        }
+        ratingRepository.save(rating);
     }
 
 }

@@ -153,31 +153,6 @@
             word-break: break-word;
         }
 
-        .notification-actions {
-            display: flex;
-            align-items: center;
-        }
-
-        .mark-read-btn {
-            background: transparent;
-            color: #fff;
-            border: 1px solid #555;
-            border-radius: 4px;
-            padding: 8px 10px;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        .mark-read-btn:hover {
-            border-color: #fff;
-        }
-
-        .status-read {
-            color: #8f8f8f;
-            font-size: 0.85rem;
-            white-space: nowrap;
-        }
-
         .empty-notifications {
             color: #b3b3b3;
             font-size: 1rem;
@@ -328,6 +303,11 @@
             cursor: pointer;
             transition: all 0.2s ease;
             font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            text-decoration: none;
         }
 
         .notification-modal-btn:hover {
@@ -344,6 +324,10 @@
             background: rgba(229, 9, 20, 0.2);
             border-color: #ff5555;
             color: #ff9999;
+        }
+
+        .notification-modal-btn[hidden] {
+            display: none !important;
         }
 
         @keyframes fadeIn {
@@ -367,7 +351,10 @@
 <div class="navbar" id="navbar">
             <div th:replace="~{fragments/top-navbar :: topNavLeft('history')}"></div>
         <div class="nav-right">
-        <a href="/notifications" class="nav-icon" aria-label="Thong bao"><i class="fa-regular fa-bell"></i></a>
+        <a href="/notifications" class="nav-icon notification-link" aria-label="Thong bao">
+            <i class="fa-regular fa-bell"></i>
+            <span th:if="${unreadCount > 0}" class="notification-badge" th:text="${unreadCount > 99 ? '99+' : unreadCount}">0</span>
+        </a>
         <div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>
     </div>
 </div>
@@ -406,7 +393,7 @@
     <div class="notification-list" th:if="${not #lists.isEmpty(notifications)}">
         <div th:each="notification : ${notifications}"
            class="notification-card"
-           th:attr="data-notification-id=${notification.id},data-title=${notification.title},data-type=${notification.type},data-content=${notification.content},data-time=${#temporals.format(notification.sentAt, 'dd/MM/yyyy HH:mm')},data-sent-at=${#temporals.format(notification.sentAt, 'yyyy-MM-dd HH:mm')}"
+           th:attr="data-notification-id=${notification.id},data-title=${notification.title},data-type=${notification.type},data-content=${notification.content},data-time=${#temporals.format(notification.sentAt, 'dd/MM/yyyy HH:mm')},data-sent-at=${#temporals.format(notification.sentAt, 'yyyy-MM-dd HH:mm')},data-target-url=${notification.targetUrl}"
            th:classappend="${notification.status.name() == 'UNREAD'} ? ' notification-card--unread' : ''">
             <div class="notification-main">
                 <div class="notification-top">
@@ -435,6 +422,9 @@
                 </div>
                 <div class="notification-modal-content" id="modalContent"></div>
                 <div class="notification-modal-footer">
+                    <a href="#" class="notification-modal-btn" id="modalOpenTargetBtn" hidden>
+                        <i class="fa-solid fa-up-right-from-square"></i> Mở nội dung liên quan
+                    </a>
                     <button type="button" class="notification-modal-btn" id="modalCopyBtn">
                         <i class="fa-solid fa-copy"></i> Sao chép nội dung
                     </button>
@@ -454,11 +444,13 @@
     const closeModalBtn = document.getElementById('closeModalBtn');
     const modalCopyBtn = document.getElementById('modalCopyBtn');
     const modalDeleteBtn = document.getElementById('modalDeleteBtn');
+    const modalOpenTargetBtn = document.getElementById('modalOpenTargetBtn');
     let currentNotificationId = null;
+    let currentCard = null;
 
     // Open modal - Load from data attributes instantly
     document.querySelectorAll('.notification-card').forEach(card => {
-        card.addEventListener('click', (e) => {
+        card.addEventListener('click', () => {
             const notificationId = card.getAttribute('data-notification-id');
             if (!notificationId) return;
 
@@ -467,13 +459,23 @@
             const type = card.getAttribute('data-type');
             const content = card.getAttribute('data-content');
             const time = card.getAttribute('data-time');
+            const targetUrl = card.getAttribute('data-target-url');
 
             document.getElementById('modalTitle').textContent = title;
             document.getElementById('modalType').textContent = type;
             document.getElementById('modalTime').textContent = time;
             document.getElementById('modalContent').textContent = content;
 
+            if (targetUrl && targetUrl.trim() !== '') {
+                modalOpenTargetBtn.hidden = false;
+                modalOpenTargetBtn.href = `/notifications/${notificationId}/open`;
+            } else {
+                modalOpenTargetBtn.hidden = true;
+                modalOpenTargetBtn.removeAttribute('href');
+            }
+
             currentNotificationId = notificationId;
+            currentCard = card;
             modalOverlay.classList.add('show');
 
             // Mark as read in background (async, no need to wait)
@@ -488,6 +490,9 @@
                 method: 'GET',
                 credentials: 'include'
             });
+            if (currentCard) {
+                currentCard.classList.remove('notification-card--unread');
+            }
         } catch (error) {
             console.error('Error marking notification as read:', error);
         }
@@ -497,12 +502,14 @@
     closeModalBtn.addEventListener('click', () => {
         modalOverlay.classList.remove('show');
         currentNotificationId = null;
+        currentCard = null;
     });
 
     modalOverlay.addEventListener('click', (e) => {
         if (e.target === modalOverlay) {
             modalOverlay.classList.remove('show');
             currentNotificationId = null;
+            currentCard = null;
         }
     });
 
@@ -511,6 +518,7 @@
         if (e.key === 'Escape' && modalOverlay.classList.contains('show')) {
             modalOverlay.classList.remove('show');
             currentNotificationId = null;
+            currentCard = null;
         }
     });
 

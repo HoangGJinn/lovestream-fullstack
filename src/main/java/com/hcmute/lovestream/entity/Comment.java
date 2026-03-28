@@ -30,6 +30,14 @@ public class Comment {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    // Thêm 2 trường này vào file Comment.java
+    @Column(name = "like_count", nullable = false)
+    private int likeCount = 0;
+
+    @Column(name = "dislike_count", nullable = false)
+    private int dislikeCount = 0;
+
+
     // 4. Quan hệ n - 1 với User (Ai là người bình luận?)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)

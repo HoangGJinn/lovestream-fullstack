@@ -19,7 +19,7 @@ public class EmailService {
     private String senderEmail;
 
     /**
-     * Gửi email chứa mã OTP Xác nhận đăng ký
+     * Gửi email chứa mã OTP xác nhận đăng ký
      */
     @Async
     public void sendVerificationEmail(String toEmail, String otp) {
@@ -57,6 +57,16 @@ public class EmailService {
     }
 
     /**
+     * Gửi email xác nhận xóa tài khoản
+     */
+    @Async
+    public void sendAccountDeletionConfirmationEmail(String toEmail, String confirmLink) {
+        String subject = "Xác nhận xóa tài khoản LoveStream";
+        String htmlContent = buildAccountDeletionTemplate(confirmLink);
+        sendHtmlEmail(toEmail, subject, htmlContent);
+    }
+
+    /**
      * Hàm dùng chung để gửi email HTML
      */
     private void sendHtmlEmail(String to, String subject, String htmlBody) {
@@ -67,7 +77,7 @@ public class EmailService {
             helper.setFrom(senderEmail);
             helper.setTo(to);
             helper.setSubject(subject);
-            helper.setText(htmlBody, true); // Set true để Spring Boot hiểu đây là HTML
+            helper.setText(htmlBody, true);
 
             mailSender.send(message);
         } catch (MessagingException e) {
@@ -106,6 +116,25 @@ public class EmailService {
                 + "<p style=\"color: #8f8f8f; font-size: 12px; line-height: 1.5; word-break: break-all;\">"
                 + "Hoặc mở trực tiếp link này: " + backupLink
                 + "</p>"
+                + "</div>"
+                + "</div>";
+    }
+
+    private String buildAccountDeletionTemplate(String confirmLink) {
+        return "<div style=\"font-family: Arial, sans-serif; background-color: #141414; color: #ffffff; padding: 40px 20px; text-align: center;\">"
+                + "<div style=\"max-width: 560px; margin: auto; background-color: #000000; padding: 30px; border-radius: 8px; border: 1px solid #333;\">"
+                + "<h1 style=\"color: #e50914; margin-bottom: 20px; font-weight: 900; letter-spacing: -1px;\">LoveStream</h1>"
+                + "<h2 style=\"color: #ffffff; font-size: 22px; margin-bottom: 10px;\">Xác nhận xóa tài khoản</h2>"
+                + "<p style=\"color: #b3b3b3; font-size: 15px; line-height: 1.6; margin-bottom: 24px;\">"
+                + "Chúng tôi đã nhận yêu cầu xóa tài khoản của bạn. Nếu đây là bạn, vui lòng bấm nút bên dưới để xác nhận. Liên kết có hiệu lực trong 1 ngày."
+                + "</p>"
+                + "<a href=\"" + confirmLink + "\" style=\"display: inline-block; background-color: #e50914; color: #fff; text-decoration: none; padding: 12px 18px; border-radius: 4px; font-weight: bold; margin-bottom: 18px;\">"
+                + "Xác nhận xóa tài khoản"
+                + "</a>"
+                + "<p style=\"color: #8f8f8f; font-size: 12px; line-height: 1.5; word-break: break-all;\">"
+                + "Hoặc mở trực tiếp link này: " + confirmLink
+                + "</p>"
+                + "<p style=\"color: #8f8f8f; font-size: 12px; line-height: 1.5;\">Nếu bạn không thực hiện thao tác này, vui lòng bỏ qua email.</p>"
                 + "</div>"
                 + "</div>";
     }

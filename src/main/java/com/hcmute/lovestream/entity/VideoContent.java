@@ -75,6 +75,7 @@ public abstract class VideoContent {
     @OneToMany(mappedBy = "videoContent", cascade = CascadeType.ALL)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @BatchSize(size = 100)
     private List<ContentCredit> contentCredits;
 
     // 1-N với MediaAsset

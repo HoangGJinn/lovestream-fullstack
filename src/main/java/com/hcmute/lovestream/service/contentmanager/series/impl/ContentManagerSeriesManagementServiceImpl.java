@@ -14,8 +14,10 @@ import com.hcmute.lovestream.repository.MediaAssetRepository;
 import com.hcmute.lovestream.repository.PersonRepository;
 import com.hcmute.lovestream.repository.SeasonRepository;
 import com.hcmute.lovestream.repository.TVSeriesRepository;
+import com.hcmute.lovestream.repository.UserSeriesWatchStateRepository;
 import com.hcmute.lovestream.repository.WatchHistoryRepository;
 import com.hcmute.lovestream.service.contentmanager.series.ContentManagerSeriesManagementService;
+import com.hcmute.lovestream.service.notification.SeriesReleaseNotificationService;
 import com.hcmute.lovestream.service.storage.CloudinaryFolderTarget;
 import com.hcmute.lovestream.service.storage.MediaStorageService;
 import lombok.RequiredArgsConstructor;
@@ -40,10 +42,12 @@ public class ContentManagerSeriesManagementServiceImpl implements ContentManager
     private final EpisodeRepository episodeRepository;
     private final GenreRepository genreRepository;
     private final WatchHistoryRepository watchHistoryRepository;
+    private final UserSeriesWatchStateRepository userSeriesWatchStateRepository;
     private final MediaAssetRepository mediaAssetRepository;
     private final PersonRepository personRepository;
     private final ContentCreditRepository contentCreditRepository;
     private final MediaStorageService mediaStorageService;
+    private final SeriesReleaseNotificationService seriesReleaseNotificationService;
 
     // =====================================================================
     // TV Series CRUD
@@ -114,6 +118,7 @@ public class ContentManagerSeriesManagementServiceImpl implements ContentManager
         log.info("Deleting TV Series ID: {} (cascade: seasons, episodes, assets, watch_history)", id);
         // Xóa lịch sử xem trước để tránh lỗi ràng buộc khóa ngoại
         watchHistoryRepository.deleteByVideoContentId(series.getId());
+        userSeriesWatchStateRepository.deleteBySeries_Id(series.getId());
         tvSeriesRepository.delete(series);
     }
 
@@ -169,6 +174,7 @@ public class ContentManagerSeriesManagementServiceImpl implements ContentManager
     public void deleteSeason(String id) {
         Season season = getSeasonById(id);
         log.info("Deleting Season ID: {} (cascade: episodes, assets)", id);
+        userSeriesWatchStateRepository.clearLastWatchedEpisodeBySeasonId(season.getId());
         seasonRepository.delete(season);
     }
 
@@ -230,6 +236,7 @@ public class ContentManagerSeriesManagementServiceImpl implements ContentManager
     public void deleteEpisode(String id) {
         Episode episode = getEpisodeById(id);
         log.info("Deleting Episode ID: {}", id);
+        userSeriesWatchStateRepository.clearLastWatchedEpisode(episode.getId());
         episodeRepository.delete(episode);
     }
 
@@ -291,7 +298,9 @@ public class ContentManagerSeriesManagementServiceImpl implements ContentManager
         asset.setAssetUrl(url);
         asset.setEpisode(episode);
         log.info("Saving EPISODE_VIDEO URL to Episode ID: {}", episodeId);
-        return mediaAssetRepository.save(asset);
+        MediaAsset savedAsset = mediaAssetRepository.save(asset);
+        seriesReleaseNotificationService.notifyEpisodeAvailable(episode);
+        return savedAsset;
     }
 
     // =====================================================================
