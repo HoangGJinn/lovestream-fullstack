@@ -2,6 +2,7 @@ package com.hcmute.lovestream.service.notification;
 
 import com.hcmute.lovestream.entity.Notification;
 import com.hcmute.lovestream.entity.User;
+import com.hcmute.lovestream.entity.enums.TypeNotification;
 import com.hcmute.lovestream.entity.enums.UserNotificationStatus;
 import com.hcmute.lovestream.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +42,45 @@ public class NotificationService {
     }
 
     @Transactional
+    public Notification createNotification(User user,
+                                           TypeNotification type,
+                                           String title,
+                                           String content,
+                                           String targetUrl,
+                                           String dedupeKey) {
+        if (user == null) {
+            throw new IllegalArgumentException("User khong duoc de trong khi tao notification");
+        }
+        if (type == null) {
+            throw new IllegalArgumentException("Type notification khong duoc de trong");
+        }
+        if (!hasText(title)) {
+            throw new IllegalArgumentException("Title notification khong duoc de trong");
+        }
+        if (!hasText(content)) {
+            throw new IllegalArgumentException("Content notification khong duoc de trong");
+        }
+
+        String normalizedDedupeKey = normalizeNullable(dedupeKey);
+        if (normalizedDedupeKey != null
+                && notificationRepository.existsByUser_IdAndDedupeKey(user.getId(), normalizedDedupeKey)) {
+            return null;
+        }
+
+        Notification notification = Notification.builder()
+                .user(user)
+                .type(type)
+                .title(title.trim())
+                .content(content.trim())
+                .targetUrl(normalizeNullable(targetUrl))
+                .dedupeKey(normalizedDedupeKey)
+                .status(UserNotificationStatus.UNREAD)
+                .build();
+
+        return notificationRepository.save(notification);
+    }
+
+    @Transactional
     public void markAsRead(String notificationId, String userId) {
         notificationRepository.findByIdAndUser_Id(notificationId, userId)
                 .ifPresent(notification -> {
@@ -48,6 +88,18 @@ public class NotificationService {
                         notification.setStatus(UserNotificationStatus.READ);
                     }
                 });
+    }
+
+    @Transactional
+    public String openNotification(String notificationId, String userId) {
+        return notificationRepository.findByIdAndUser_Id(notificationId, userId)
+                .map(notification -> {
+                    if (notification.getStatus() == UserNotificationStatus.UNREAD) {
+                        notification.setStatus(UserNotificationStatus.READ);
+                    }
+                    return hasText(notification.getTargetUrl()) ? notification.getTargetUrl() : "/notifications";
+                })
+                .orElse("/notifications");
     }
 
     @Transactional
@@ -61,5 +113,15 @@ public class NotificationService {
             }
         }
     }
-}
 
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
+    }
+
+    private String normalizeNullable(String value) {
+        if (!hasText(value)) {
+            return null;
+        }
+        return value.trim();
+    }
+}
