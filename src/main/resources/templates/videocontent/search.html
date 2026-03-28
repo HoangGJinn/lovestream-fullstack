@@ -29,7 +29,10 @@
                 <input type="hidden" id="searchType" name="type" th:value="${searchRequest.type}">
                 <input type="hidden" id="searchSeason" name="season" th:value="${searchRequest.season}">
             </form>
-            <i th:if="${currentUser != null}" class="fa-regular fa-bell nav-icon"></i>
+            <a th:if="${currentUser != null}" href="/notifications" class="nav-icon notification-link" aria-label="Thong bao">
+                <i class="fa-regular fa-bell"></i>
+                <span th:if="${unreadCount > 0}" class="notification-badge" th:text="${unreadCount > 99 ? '99+' : unreadCount}">0</span>
+            </a>
             <div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>
         </div>
     </div>

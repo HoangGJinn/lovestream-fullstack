@@ -119,6 +119,7 @@
 
     let hls;
     let controlsHideTimer;
+    let hasTrackedWatchingState = false;
 
     // ---- Controls visibility ----
     function showControls() {
@@ -183,12 +184,33 @@
     });
     video.addEventListener('waiting', () => spinner.classList.remove('hidden'));
     video.addEventListener('playing', () => spinner.classList.add('hidden'));
+    video.addEventListener('playing', touchWatchingState);
 
     // ---- Load video from API ----
     function showError(msg) {
         spinner.classList.add('hidden');
         errorMsg.textContent = msg;
         errorMsg.style.display = 'block';
+    }
+
+    async function touchWatchingState() {
+        if (!episodeId || hasTrackedWatchingState) {
+            return;
+        }
+
+        hasTrackedWatchingState = true;
+        try {
+            const response = await fetch(`/api/v1/series-watch-state/episodes/${episodeId}/touch`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+
+            if (!response.ok && response.status !== 401) {
+                hasTrackedWatchingState = false;
+            }
+        } catch (_error) {
+            hasTrackedWatchingState = false;
+        }
     }
 
     async function loadEpisode(epId) {

@@ -41,6 +41,13 @@ public class NotificationWebController {
         return "redirect:/notifications?filter=" + filter;
     }
 
+    @GetMapping("/notifications/{id}/open")
+    public String openNotification(@PathVariable("id") String id,
+                                   Authentication authentication) {
+        User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
+        return "redirect:" + notificationService.openNotification(id, currentUser.getId());
+    }
+
     @PostMapping("/notifications/read-all")
     public String markAllAsRead(@RequestParam(name = "filter", defaultValue = "all") String filter,
                                 Authentication authentication) {
