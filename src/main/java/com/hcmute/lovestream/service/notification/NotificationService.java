@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -60,6 +61,20 @@ public class NotificationService {
                 notification.setStatus(UserNotificationStatus.READ);
             }
         }
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Notification> getNotificationDetail(String notificationId, String userId) {
+        return notificationRepository.findByIdAndUser_Id(notificationId, userId);
+    }
+
+    @Transactional
+    public void deleteNotification(String notificationId, String userId) {
+        notificationRepository.findByIdAndUser_Id(notificationId, userId)
+                .ifPresent(notification -> {
+                    notification.setStatus(UserNotificationStatus.DELETED);
+                    notificationRepository.save(notification);
+                });
     }
 }
 

@@ -98,6 +98,15 @@
             display: flex;
             justify-content: space-between;
             gap: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .notification-card:hover {
+            border-color: #e50914;
+            background: #262626;
+            box-shadow: 0 4px 16px rgba(229, 9, 20, 0.2);
         }
 
         .notification-card--unread {
@@ -174,6 +183,184 @@
             font-size: 1rem;
             margin-top: 8px;
         }
+
+        .alert-message {
+            padding: 14px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+        }
+
+        .alert-success {
+            background: rgba(140, 227, 173, 0.15);
+            border: 1px solid rgba(140, 227, 173, 0.4);
+            color: #8ce3ad;
+        }
+
+        .alert-error {
+            background: rgba(255, 100, 100, 0.15);
+            border: 1px solid rgba(255, 100, 100, 0.4);
+            color: #ff9999;
+        }
+
+        .notification-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(2px);
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .notification-modal-overlay.show {
+            display: flex;
+        }
+
+        .notification-modal {
+            background: linear-gradient(135deg, #1f1f1f 0%, #2a2a2a 100%);
+            border: 1px solid #333;
+            border-radius: 14px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            animation: slideUp 0.3s ease-out;
+        }
+
+        .notification-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 24px;
+            border-bottom: 1px solid #333;
+            gap: 16px;
+        }
+
+        .notification-modal-title {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .notification-modal-close {
+            background: transparent;
+            border: none;
+            color: #aaa;
+            font-size: 1.8rem;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .notification-modal-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .notification-modal-body {
+            padding: 24px;
+        }
+
+        .notification-modal-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .notification-modal-type {
+            background: #e50914;
+            color: #fff;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            padding: 5px 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .notification-modal-time {
+            color: #aaa;
+            font-size: 0.85rem;
+        }
+
+        .notification-modal-content {
+            color: #e5e5e5;
+            line-height: 1.8;
+            font-size: 0.95rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #333;
+        }
+
+        .notification-modal-footer {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .notification-modal-btn {
+            padding: 10px 16px;
+            border-radius: 6px;
+            border: 1px solid #555;
+            background: transparent;
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+
+        .notification-modal-btn:hover {
+            background: #e50914;
+            border-color: #e50914;
+        }
+
+        .notification-modal-btn.danger {
+            border-color: #e50914;
+            color: #ff9999;
+        }
+
+        .notification-modal-btn.danger:hover {
+            background: rgba(229, 9, 20, 0.2);
+            border-color: #ff5555;
+            color: #ff9999;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
     </style>
 </head>
 <body>
@@ -186,6 +373,15 @@
 </div>
 
 <div class="notifications-page">
+    <div th:if="${successMessage}" class="alert-message alert-success">
+        <i class="fa-solid fa-check-circle"></i>
+        <span th:text="${successMessage}"></span>
+    </div>
+    <div th:if="${errorMessage}" class="alert-message alert-error">
+        <i class="fa-solid fa-exclamation-circle"></i>
+        <span th:text="${errorMessage}"></span>
+    </div>
+
     <div class="notifications-header">
         <div>
             <h1 class="notifications-title">Thong bao</h1>
@@ -208,8 +404,10 @@
     </div>
 
     <div class="notification-list" th:if="${not #lists.isEmpty(notifications)}">
-        <div class="notification-card" th:each="notification : ${notifications}"
-             th:classappend="${notification.status.name() == 'UNREAD'} ? ' notification-card--unread' : ''">
+        <div th:each="notification : ${notifications}"
+           class="notification-card"
+           th:attr="data-notification-id=${notification.id},data-title=${notification.title},data-type=${notification.type},data-content=${notification.content},data-time=${#temporals.format(notification.sentAt, 'dd/MM/yyyy HH:mm')},data-sent-at=${#temporals.format(notification.sentAt, 'yyyy-MM-dd HH:mm')}"
+           th:classappend="${notification.status.name() == 'UNREAD'} ? ' notification-card--unread' : ''">
             <div class="notification-main">
                 <div class="notification-top">
                     <span class="notification-type" th:text="${notification.type}"></span>
@@ -218,13 +416,32 @@
                 <h3 class="notification-title" th:text="${notification.title}"></h3>
                 <p class="notification-content" th:text="${notification.content}"></p>
             </div>
-            <div class="notification-actions">
-                <form th:if="${notification.status.name() == 'UNREAD'}" method="post"
-                      th:action="@{|/notifications/${notification.id}/read|}">
-                    <input type="hidden" name="filter" th:value="${selectedFilter}">
-                    <button class="mark-read-btn" type="submit">Đánh dấu đã đọc</button>
-                </form>
-                <span class="status-read" th:if="${notification.status.name() != 'UNREAD'}">Đã đọc</span>
+        </div>
+    </div>
+
+    <!-- Modal Notification Detail -->
+    <div id="notificationModalOverlay" class="notification-modal-overlay">
+        <div class="notification-modal">
+            <div class="notification-modal-header">
+                <h2 class="notification-modal-title" id="modalTitle">Chi tiết thông báo</h2>
+                <button type="button" class="notification-modal-close" id="closeModalBtn" aria-label="Đóng">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="notification-modal-body">
+                <div class="notification-modal-meta">
+                    <span class="notification-modal-type" id="modalType"></span>
+                    <span class="notification-modal-time" id="modalTime"></span>
+                </div>
+                <div class="notification-modal-content" id="modalContent"></div>
+                <div class="notification-modal-footer">
+                    <button type="button" class="notification-modal-btn" id="modalCopyBtn">
+                        <i class="fa-solid fa-copy"></i> Sao chép nội dung
+                    </button>
+                    <button type="button" class="notification-modal-btn danger" id="modalDeleteBtn">
+                        <i class="fa-solid fa-trash"></i> Xóa thông báo
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -233,6 +450,106 @@
 </div>
 
 <script>
+    const modalOverlay = document.getElementById('notificationModalOverlay');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const modalCopyBtn = document.getElementById('modalCopyBtn');
+    const modalDeleteBtn = document.getElementById('modalDeleteBtn');
+    let currentNotificationId = null;
+
+    // Open modal - Load from data attributes instantly
+    document.querySelectorAll('.notification-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            const notificationId = card.getAttribute('data-notification-id');
+            if (!notificationId) return;
+
+            // Load data from attributes instantly - no AJAX delay
+            const title = card.getAttribute('data-title');
+            const type = card.getAttribute('data-type');
+            const content = card.getAttribute('data-content');
+            const time = card.getAttribute('data-time');
+
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalType').textContent = type;
+            document.getElementById('modalTime').textContent = time;
+            document.getElementById('modalContent').textContent = content;
+
+            currentNotificationId = notificationId;
+            modalOverlay.classList.add('show');
+
+            // Mark as read in background (async, no need to wait)
+            markNotificationAsReadAsync(notificationId);
+        });
+    });
+
+    // Mark as read in background
+    async function markNotificationAsReadAsync(notificationId) {
+        try {
+            await fetch(`/api/v1/notifications/${notificationId}`, {
+                method: 'GET',
+                credentials: 'include'
+            });
+        } catch (error) {
+            console.error('Error marking notification as read:', error);
+        }
+    }
+
+    // Close modal
+    closeModalBtn.addEventListener('click', () => {
+        modalOverlay.classList.remove('show');
+        currentNotificationId = null;
+    });
+
+    modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) {
+            modalOverlay.classList.remove('show');
+            currentNotificationId = null;
+        }
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modalOverlay.classList.contains('show')) {
+            modalOverlay.classList.remove('show');
+            currentNotificationId = null;
+        }
+    });
+
+    // Copy content
+    modalCopyBtn.addEventListener('click', async () => {
+        const content = document.getElementById('modalContent').textContent;
+        try {
+            await navigator.clipboard.writeText(content);
+            const originalText = modalCopyBtn.innerHTML;
+            modalCopyBtn.innerHTML = '<i class="fa-solid fa-check"></i> Đã sao chép';
+            setTimeout(() => {
+                modalCopyBtn.innerHTML = originalText;
+            }, 2000);
+        } catch (error) {
+            alert('Không thể sao chép nội dung.');
+        }
+    });
+
+    // Delete notification
+    modalDeleteBtn.addEventListener('click', async () => {
+        if (!currentNotificationId || !confirm('Bạn có chắc muốn xóa thông báo này?')) {
+            return;
+        }
+        try {
+            const response = await fetch(`/notifications/${currentNotificationId}/delete`, {
+                method: 'POST'
+            });
+            if (response.ok) {
+                modalOverlay.classList.remove('show');
+                location.reload();
+            } else {
+                alert('Không thể xóa thông báo.');
+            }
+        } catch (error) {
+            console.error('Error deleting notification:', error);
+            alert('Lỗi kết nối khi xóa thông báo.');
+        }
+    });
+
     window.addEventListener('scroll', () => {
         const navbar = document.getElementById('navbar');
         if (window.scrollY > 50) navbar.classList.add('scrolled');
