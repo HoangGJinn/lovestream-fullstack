@@ -42,6 +42,44 @@ public class NotificationService {
         return notificationRepository.countByUser_IdAndStatus(userId, UserNotificationStatus.UNREAD);
     }
 
+
+    @Transactional
+    public void markAsRead(String notificationId, String userId) {
+        notificationRepository.findByIdAndUser_Id(notificationId, userId)
+                .ifPresent(notification -> {
+                    if (notification.getStatus() == UserNotificationStatus.UNREAD) {
+                        notification.setStatus(UserNotificationStatus.READ);
+                    }
+                });
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Notification> getNotificationDetail(String notificationId, String userId) {
+        return notificationRepository.findByIdAndUser_Id(notificationId, userId);
+    }
+
+    @Transactional
+    public void deleteNotification(String notificationId, String userId) {
+        notificationRepository.findByIdAndUser_Id(notificationId, userId)
+                .ifPresent(notification -> {
+                    notification.setStatus(UserNotificationStatus.DELETED);
+                    notificationRepository.save(notification);
+                });
+    }
+
+
+    @Transactional
+    public void markAllAsRead(User user) {
+        List<Notification> notifications = notificationRepository
+                .findByUser_IdAndStatusNotOrderBySentAtDesc(user.getId(), UserNotificationStatus.DELETED);
+
+        for (Notification notification : notifications) {
+            if (notification.getStatus() == UserNotificationStatus.UNREAD) {
+                notification.setStatus(UserNotificationStatus.READ);
+            }
+        }
+    }
+
     @Transactional
     public Notification createNotification(User user,
                                            TypeNotification type,
@@ -81,15 +119,6 @@ public class NotificationService {
         return notificationRepository.save(notification);
     }
 
-    @Transactional
-    public void markAsRead(String notificationId, String userId) {
-        notificationRepository.findByIdAndUser_Id(notificationId, userId)
-                .ifPresent(notification -> {
-                    if (notification.getStatus() == UserNotificationStatus.UNREAD) {
-                        notification.setStatus(UserNotificationStatus.READ);
-                    }
-                });
-    }
 
     @Transactional
     public String openNotification(String notificationId, String userId) {
@@ -103,35 +132,13 @@ public class NotificationService {
                 .orElse("/notifications");
     }
 
-    @Transactional
-    public void markAllAsRead(User user) {
-        List<Notification> notifications = notificationRepository
-                .findByUser_IdAndStatusNotOrderBySentAtDesc(user.getId(), UserNotificationStatus.DELETED);
 
-        for (Notification notification : notifications) {
-            if (notification.getStatus() == UserNotificationStatus.UNREAD) {
-                notification.setStatus(UserNotificationStatus.READ);
-            }
-        }
-    }
 
     private boolean hasText(String value) {
         return value != null && !value.trim().isEmpty();
     }
 
-    @Transactional(readOnly = true)
-    public Optional<Notification> getNotificationDetail(String notificationId, String userId) {
-        return notificationRepository.findByIdAndUser_Id(notificationId, userId);
-    }
 
-    @Transactional
-    public void deleteNotification(String notificationId, String userId) {
-        notificationRepository.findByIdAndUser_Id(notificationId, userId)
-                .ifPresent(notification -> {
-                    notification.setStatus(UserNotificationStatus.DELETED);
-                    notificationRepository.save(notification);
-                });
-    }
 
     private String normalizeNullable(String value) {
         if (!hasText(value)) {

@@ -49,40 +49,12 @@ public class NotificationWebController {
         return "redirect:/notifications?filter=" + normalizeFilter(filter);
     }
 
-    @GetMapping("/notifications/{id}/open")
-    public String openNotification(@PathVariable("id") String id,
-                                   Authentication authentication) {
-        User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
-        return "redirect:" + notificationService.openNotification(id, currentUser.getId());
-    }
-
     @PostMapping("/notifications/read-all")
     public String markAllAsRead(@RequestParam(name = "filter", defaultValue = "all") String filter,
                                 Authentication authentication) {
         User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
         notificationService.markAllAsRead(currentUser);
         return "redirect:/notifications?filter=" + normalizeFilter(filter);
-    }
-
-    @GetMapping("/notifications/{id}/detail")
-    public String viewNotificationDetail(@PathVariable("id") String id,
-                                         Authentication authentication,
-                                         Model model,
-                                         RedirectAttributes redirectAttributes) {
-        User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
-        Optional<Notification> notificationOpt = notificationService.getNotificationDetail(id, currentUser.getId());
-
-        if (notificationOpt.isEmpty()) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Thông báo không được tìm thấy.");
-            return "redirect:/notifications";
-        }
-
-        Notification notification = notificationOpt.get();
-        notificationService.markAsRead(id, currentUser.getId());
-
-        model.addAttribute("notification", notification);
-        model.addAttribute("currentUser", currentUser);
-        return "user/notification-detail";
     }
 
     @PostMapping("/notifications/{id}/delete")
@@ -99,5 +71,17 @@ public class NotificationWebController {
         String normalized = filter == null ? "all" : filter.trim().toLowerCase(Locale.ROOT);
         return ALLOWED_FILTERS.contains(normalized) ? normalized : "all";
     }
+
+
+    @GetMapping("/notifications/{id}/open")
+    public String openNotification(@PathVariable("id") String id,
+                                   Authentication authentication) {
+        User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
+        return "redirect:" + notificationService.openNotification(id, currentUser.getId());
+    }
+
+
+
+
 }
 

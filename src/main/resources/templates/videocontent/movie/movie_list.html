@@ -76,6 +76,12 @@
             color: #b3b3b3;
             font-size: 1rem;
         }
+        .error-movies {
+            margin: 16px 4% 0;
+            color: #ff6b6b;
+            font-size: 1rem;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -110,6 +116,8 @@
                 <option value="duration_asc" th:selected="${selectedSort == 'duration_asc'}">Thời lượng: ngắn → dài</option>
                 <option value="duration_desc" th:selected="${selectedSort == 'duration_desc'}">Thời lượng: dài → ngắn</option>
             </select>
+            <input id="keyword" name="keyword" class="movie-filter-input" type="text"
+                   placeholder="Tìm theo tên phim..." th:value="${currentKeyword}">
             <button class="movie-filter-btn" type="submit">Áp dụng</button>
         </form>
     </header>
@@ -117,6 +125,12 @@
     <div class="main-content">
         <div class="categories-container" th:if="${#lists.isEmpty(movieRows)}">
             <p class="empty-movies">Chưa có phim để hiển thị.</p>
+        <div class="categories-container" th:if="${errorMessage != null}">
+            <p class="error-movies" th:text="${errorMessage}">Không thể kết nối hệ thống. Vui lòng thử lại sau.</p>
+        </div>
+
+        <div class="categories-container" th:if="${#lists.isEmpty(movieRows) and errorMessage == null}">
+            <p class="empty-movies" th:text="${emptyMessage != null ? emptyMessage : 'Hiện chưa có phim nào'}">Hiện chưa có phim nào</p>
         </div>
 
         <div class="categories-container" th:each="row, rowStat : ${movieRows}">

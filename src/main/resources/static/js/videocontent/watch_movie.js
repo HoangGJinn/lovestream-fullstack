@@ -978,7 +978,7 @@ const video = document.getElementById('video');
                 keepalive: isFinalSync
             });
         } catch (error) {
-            console.warn('Khong the dong bo lich su xem', error);
+            console.warn('Không thể đồng bộ lịch sử', error);
         }
     }
 
