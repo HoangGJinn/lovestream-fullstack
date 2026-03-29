@@ -372,39 +372,43 @@
     <div class="notifications-header">
         <div>
             <h1 class="notifications-title">Thong bao</h1>
-            <p class="notifications-meta" th:text="|Bạn có ${unreadCount} thông báo chưa đọc.|"></p>
+            <p class="notifications-meta"
+               id="notificationsMeta"
+               th:attr="data-unread-count=${unreadCount}"
+               th:text="|Bạn có ${unreadCount} thông báo chưa đọc.|">Bạn có 0 thông báo chưa đọc.</p>
 
-            <form method="get" action="/notifications" class="notifications-filter">
+            <div class="notifications-filter">
                 <label class="filter-label" for="filter">Lọc theo trạng thái</label>
                 <select id="filter" name="filter" class="filter-select">
                     <option value="all" th:selected="${selectedFilter == 'all'}">Tất cả</option>
                     <option value="unread" th:selected="${selectedFilter == 'unread'}">Chưa đọc</option>
                     <option value="read" th:selected="${selectedFilter == 'read'}">Đã đọc</option>
                 </select>
-                <button class="filter-btn" type="submit">Áp dụng</button>
-            </form>
+                <button class="filter-btn" type="button" id="applyFilterBtn">Áp dụng</button>
+            </div>
         </div>
-        <form method="post" action="/notifications/read-all" th:if="${unreadCount > 0}">
-            <input type="hidden" name="filter" th:value="${selectedFilter}">
-            <button class="mark-all-btn" type="submit">Đánh dấu tất cả đã đọc</button>
-        </form>
+        <button class="mark-all-btn" type="button" id="markAllReadBtn" th:hidden="${unreadCount <= 0}">Đánh dấu tất cả đã đọc</button>
     </div>
 
-    <div class="notification-list" th:if="${not #lists.isEmpty(notifications)}">
+    <div class="notification-list"
+         id="notificationList"
+         th:attr="data-page=${initialPage},data-size=${pageSize},data-has-next=${hasNextPage}">
         <div th:each="notification : ${notifications}"
-           class="notification-card"
-           th:attr="data-notification-id=${notification.id},data-title=${notification.title},data-type=${notification.type},data-content=${notification.content},data-time=${#temporals.format(notification.sentAt, 'dd/MM/yyyy HH:mm')},data-sent-at=${#temporals.format(notification.sentAt, 'yyyy-MM-dd HH:mm')},data-target-url=${notification.targetUrl}"
-           th:classappend="${notification.status.name() == 'UNREAD'} ? ' notification-card--unread' : ''">
+             class="notification-card"
+             th:with="preview=${#strings.length(notification.content) > 180 ? #strings.substring(notification.content, 0, 180) + '...' : notification.content}"
+             th:attr="data-notification-id=${notification.id},data-title=${notification.title},data-type=${notification.type},data-content-preview=${preview},data-time=${#temporals.format(notification.sentAt, 'dd/MM/yyyy HH:mm')},data-target-url=${notification.targetUrl}"
+             th:classappend="${notification.status.name() == 'UNREAD'} ? ' notification-card--unread' : ''">
             <div class="notification-main">
                 <div class="notification-top">
                     <span class="notification-type" th:text="${notification.type}"></span>
                     <span class="notification-time" th:text="${#temporals.format(notification.sentAt, 'dd/MM/yyyy HH:mm')}"></span>
                 </div>
                 <h3 class="notification-title" th:text="${notification.title}"></h3>
-                <p class="notification-content" th:text="${notification.content}"></p>
+                <p class="notification-content" th:text="${preview}"></p>
             </div>
         </div>
     </div>
+    <button class="filter-btn" id="loadMoreBtn" type="button" th:hidden="${!hasNextPage}">Tải thêm</button>
 
     <!-- Modal Notification Detail -->
     <div id="notificationModalOverlay" class="notification-modal-overlay">
@@ -436,10 +440,17 @@
         </div>
     </div>
 
-    <p class="empty-notifications" th:if="${#lists.isEmpty(notifications)}">Bạn chưa có thông báo nào.</p>
+    <p class="empty-notifications" id="emptyNotifications" th:hidden="${not #lists.isEmpty(notifications)}">Bạn chưa có thông báo nào.</p>
 </div>
 
 <script>
+    const notificationList = document.getElementById('notificationList');
+    const emptyNotifications = document.getElementById('emptyNotifications');
+    const notificationsMeta = document.getElementById('notificationsMeta');
+    const filterSelect = document.getElementById('filter');
+    const applyFilterBtn = document.getElementById('applyFilterBtn');
+    const markAllReadBtn = document.getElementById('markAllReadBtn');
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
     const modalOverlay = document.getElementById('notificationModalOverlay');
     const closeModalBtn = document.getElementById('closeModalBtn');
     const modalCopyBtn = document.getElementById('modalCopyBtn');
@@ -447,56 +458,276 @@
     const modalOpenTargetBtn = document.getElementById('modalOpenTargetBtn');
     let currentNotificationId = null;
     let currentCard = null;
+    let currentPage = Number(notificationList.dataset.page || 0);
+    let pageSize = Number(notificationList.dataset.size || 20);
+    let hasNextPage = String(notificationList.dataset.hasNext || 'false') === 'true';
+    const listCache = new Map();
 
-    // Open modal - Load from data attributes instantly
-    document.querySelectorAll('.notification-card').forEach(card => {
-        card.addEventListener('click', () => {
-            const notificationId = card.getAttribute('data-notification-id');
-            if (!notificationId) return;
+    function getCacheKey(filter, page, size) {
+        return `${filter}|${page}|${size}`;
+    }
 
-            // Load data from attributes instantly - no AJAX delay
-            const title = card.getAttribute('data-title');
-            const type = card.getAttribute('data-type');
-            const content = card.getAttribute('data-content');
-            const time = card.getAttribute('data-time');
-            const targetUrl = card.getAttribute('data-target-url');
+    function clearListCache() {
+        listCache.clear();
+    }
 
-            document.getElementById('modalTitle').textContent = title;
-            document.getElementById('modalType').textContent = type;
-            document.getElementById('modalTime').textContent = time;
-            document.getElementById('modalContent').textContent = content;
+    function updateLoadMoreVisibility() {
+        loadMoreBtn.hidden = !hasNextPage;
+    }
 
-            if (targetUrl && targetUrl.trim() !== '') {
-                modalOpenTargetBtn.hidden = false;
-                modalOpenTargetBtn.href = `/notifications/${notificationId}/open`;
-            } else {
-                modalOpenTargetBtn.hidden = true;
-                modalOpenTargetBtn.removeAttribute('href');
+    function toPreview(content) {
+        if (!content) {
+            return '';
+        }
+        if (content.length <= 180) {
+            return content;
+        }
+        return `${content.slice(0, 180)}...`;
+    }
+
+    function formatDateTime(value) {
+        if (!value) {
+            return '';
+        }
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+            return '';
+        }
+        const pad = (number) => String(number).padStart(2, '0');
+        return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+
+    function setUnreadMeta(unreadCount) {
+        notificationsMeta.textContent = `Bạn có ${unreadCount} thông báo chưa đọc.`;
+        markAllReadBtn.hidden = unreadCount <= 0;
+    }
+
+    function createNotificationCard(item) {
+        const card = document.createElement('div');
+        card.className = 'notification-card';
+        if (item.status === 'UNREAD') {
+            card.classList.add('notification-card--unread');
+        }
+
+        card.dataset.notificationId = item.id || '';
+        card.dataset.title = item.title || '';
+        card.dataset.type = item.type || '';
+        card.dataset.contentPreview = item.contentPreview || toPreview(item.content || '');
+        card.dataset.time = formatDateTime(item.sentAt);
+        card.dataset.targetUrl = item.targetUrl || '';
+
+        const main = document.createElement('div');
+        main.className = 'notification-main';
+
+        const top = document.createElement('div');
+        top.className = 'notification-top';
+
+        const type = document.createElement('span');
+        type.className = 'notification-type';
+        type.textContent = item.type || '';
+
+        const time = document.createElement('span');
+        time.className = 'notification-time';
+        time.textContent = formatDateTime(item.sentAt);
+
+        const title = document.createElement('h3');
+        title.className = 'notification-title';
+        title.textContent = item.title || '';
+
+        const content = document.createElement('p');
+        content.className = 'notification-content';
+        content.textContent = item.contentPreview || toPreview(item.content || '');
+
+        top.appendChild(type);
+        top.appendChild(time);
+        main.appendChild(top);
+        main.appendChild(title);
+        main.appendChild(content);
+        card.appendChild(main);
+
+        return card;
+    }
+
+    async function fetchNotifications(page = 0, append = false) {
+        const filter = filterSelect.value || 'all';
+        const cacheKey = getCacheKey(filter, page, pageSize);
+        let payload = listCache.get(cacheKey);
+
+        if (!payload) {
+            const response = await fetch(`/api/v1/notifications?filter=${encodeURIComponent(filter)}&page=${page}&size=${pageSize}`, {
+                method: 'GET'
+            });
+            if (!response.ok) {
+                throw new Error('Không thể tải danh sách thông báo');
             }
 
-            currentNotificationId = notificationId;
-            currentCard = card;
-            modalOverlay.classList.add('show');
+            payload = await response.json();
+            listCache.set(cacheKey, payload);
+        }
+        const items = payload.items || [];
 
-            // Mark as read in background (async, no need to wait)
-            markNotificationAsReadAsync(notificationId);
-        });
+        if (!append) {
+            notificationList.innerHTML = '';
+        }
+        items.forEach(item => notificationList.appendChild(createNotificationCard(item)));
+
+        if (!append) {
+            emptyNotifications.hidden = items.length > 0;
+        }
+        if (typeof payload.unreadCount === 'number') {
+            setUnreadMeta(payload.unreadCount);
+        }
+        currentPage = Number(payload.page || 0);
+        pageSize = Number(payload.size || pageSize);
+        hasNextPage = !!payload.hasNext;
+        updateLoadMoreVisibility();
+
+        const url = new URL(window.location.href);
+        url.searchParams.set('filter', filter);
+        window.history.replaceState({}, '', url.toString());
+    }
+
+    notificationList.addEventListener('click', (event) => {
+        const card = event.target.closest('.notification-card');
+        if (!card) {
+            return;
+        }
+
+        const notificationId = card.dataset.notificationId;
+        if (!notificationId) {
+            return;
+        }
+
+        document.getElementById('modalTitle').textContent = card.dataset.title || '';
+        document.getElementById('modalType').textContent = card.dataset.type || '';
+        document.getElementById('modalTime').textContent = card.dataset.time || '';
+        document.getElementById('modalContent').textContent = card.dataset.contentPreview || '';
+
+        if ((card.dataset.targetUrl || '').trim() !== '') {
+            modalOpenTargetBtn.hidden = false;
+            modalOpenTargetBtn.dataset.notificationId = notificationId;
+        } else {
+            modalOpenTargetBtn.hidden = true;
+            modalOpenTargetBtn.dataset.notificationId = '';
+        }
+
+        currentNotificationId = notificationId;
+        currentCard = card;
+        modalOverlay.classList.add('show');
+        loadNotificationDetail(notificationId);
+        markNotificationAsReadAsync(notificationId);
     });
 
-    // Mark as read in background
+    async function loadNotificationDetail(notificationId) {
+        try {
+            const response = await fetch(`/api/v1/notifications/${notificationId}`, { method: 'GET' });
+            if (!response.ok) {
+                return;
+            }
+
+            const payload = await response.json();
+            if (!currentNotificationId || currentNotificationId !== notificationId) {
+                return;
+            }
+
+            document.getElementById('modalTitle').textContent = payload.title || '';
+            document.getElementById('modalType').textContent = payload.type || '';
+            document.getElementById('modalTime').textContent = formatDateTime(payload.sentAt);
+            document.getElementById('modalContent').textContent = payload.content || payload.contentPreview || '';
+        } catch (error) {
+            console.error('Error loading notification detail:', error);
+        }
+    }
+
     async function markNotificationAsReadAsync(notificationId) {
         try {
-            await fetch(`/api/v1/notifications/${notificationId}`, {
-                method: 'GET',
-                credentials: 'include'
+            const response = await fetch(`/api/v1/notifications/${notificationId}/read`, {
+                method: 'PATCH'
             });
-            if (currentCard) {
+            if (!response.ok) {
+                return;
+            }
+
+            const payload = await response.json();
+            if (currentCard && currentCard.dataset.notificationId === notificationId) {
                 currentCard.classList.remove('notification-card--unread');
             }
+            setUnreadMeta(payload.unreadCount || 0);
+            clearListCache();
         } catch (error) {
             console.error('Error marking notification as read:', error);
         }
     }
+
+    applyFilterBtn.addEventListener('click', async () => {
+        try {
+            await fetchNotifications(0, false);
+        } catch (error) {
+            alert('Không thể tải danh sách thông báo.');
+        }
+    });
+
+    loadMoreBtn.addEventListener('click', async () => {
+        if (!hasNextPage) {
+            return;
+        }
+
+        try {
+            await fetchNotifications(currentPage + 1, true);
+        } catch (error) {
+            alert('Không thể tải thêm thông báo.');
+        }
+    });
+
+    markAllReadBtn.addEventListener('click', async () => {
+        try {
+            const response = await fetch('/api/v1/notifications/read-all', {
+                method: 'PATCH'
+            });
+            if (!response.ok) {
+                throw new Error('Không thể đánh dấu tất cả đã đọc');
+            }
+
+            const payload = await response.json();
+            setUnreadMeta(payload.unreadCount || 0);
+            notificationList.querySelectorAll('.notification-card--unread')
+                .forEach(card => card.classList.remove('notification-card--unread'));
+            clearListCache();
+
+            if ((filterSelect.value || 'all') === 'unread') {
+                notificationList.innerHTML = '';
+                emptyNotifications.hidden = false;
+                hasNextPage = false;
+                updateLoadMoreVisibility();
+            }
+        } catch (error) {
+            alert('Không thể đánh dấu tất cả đã đọc.');
+        }
+    });
+
+    modalOpenTargetBtn.addEventListener('click', async (event) => {
+        event.preventDefault();
+        const notificationId = modalOpenTargetBtn.dataset.notificationId;
+        if (!notificationId) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/v1/notifications/${notificationId}/open`, {
+                method: 'POST'
+            });
+            if (!response.ok) {
+                throw new Error('Không thể mở thông báo');
+            }
+
+            const payload = await response.json();
+            if (payload.redirectUrl) {
+                window.location.href = payload.redirectUrl;
+            }
+        } catch (error) {
+            alert('Không thể mở nội dung liên quan.');
+        }
+    });
 
     // Close modal
     closeModalBtn.addEventListener('click', () => {
@@ -543,12 +774,21 @@
             return;
         }
         try {
-            const response = await fetch(`/notifications/${currentNotificationId}/delete`, {
-                method: 'POST'
+            const response = await fetch(`/api/v1/notifications/${currentNotificationId}`, {
+                method: 'DELETE'
             });
             if (response.ok) {
                 modalOverlay.classList.remove('show');
-                location.reload();
+                const removedCard = currentCard;
+                currentNotificationId = null;
+                currentCard = null;
+                if (removedCard) {
+                    removedCard.remove();
+                }
+                if (!notificationList.querySelector('.notification-card')) {
+                    emptyNotifications.hidden = false;
+                }
+                clearListCache();
             } else {
                 alert('Không thể xóa thông báo.');
             }
@@ -563,6 +803,10 @@
         if (window.scrollY > 50) navbar.classList.add('scrolled');
         else navbar.classList.remove('scrolled');
     });
+
+    const initialUnreadCount = Number(notificationsMeta.dataset.unreadCount || 0);
+    setUnreadMeta(initialUnreadCount);
+    updateLoadMoreVisibility();
 </script>
 </body>
 </html>

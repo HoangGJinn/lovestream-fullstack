@@ -920,7 +920,7 @@ const video = document.getElementById('video');
                     backBufferLength: 0,
 
                     maxBufferHole: 0.3,
-                    startLevel: 0 // 🔥 load nhanh hơn
+                    startLevel: 0
                 });
 
                 hls.on(Hls.Events.MANIFEST_PARSED, () => {
