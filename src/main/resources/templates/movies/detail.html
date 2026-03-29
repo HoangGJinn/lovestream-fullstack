@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="/css/home.css">
     <link rel="stylesheet" href="/css/user-menu.css">
     <link rel="stylesheet" href="/css/videocontents.css">
-    <link rel="stylesheet" href="/css/share.css">
     <style>
         .vc-detail-page {
             padding-top: 96px;
@@ -99,16 +98,12 @@
             }
         }
     </style>
-
 </head>
 <body>
 <div class="navbar scrolled" id="navbar">
     <div th:replace="~{fragments/top-navbar :: topNavLeft('movies')}"></div>
     <div class="nav-right">
-        <a th:if="${currentUser != null}" href="/notifications" class="nav-icon notification-link" aria-label="Thong bao">
-            <i class="fa-regular fa-bell"></i>
-            <span th:if="${unreadCount > 0}" class="notification-badge" th:text="${unreadCount > 99 ? '99+' : unreadCount}">0</span>
-        </a>
+        <a th:if="${currentUser != null}" href="/notifications" class="nav-icon" aria-label="Thong bao"><i class="fa-regular fa-bell"></i></a>
         <div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>
     </div>
 </div>
@@ -176,13 +171,6 @@
                         <i class="fa-solid fa-plus"></i> Thêm vào yêu thích
                     </span>
                 </button>
-
-                <!-- Nút Chia sẻ (VIP) -->
-                <button th:if="${hasActiveSub}" id="btn-share-trigger" class="vc-buy-btn vc-buy-btn--ghost" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2);">
-                    <i class="fa-solid fa-share-nodes"></i> Chia sẻ phim
-                </button>
-
-
             </div>
         </div>
     </article>
@@ -325,6 +313,7 @@
     async function voteRatingOnDetail(ratingId, isLike) {
         const action = isLike ? 'like' : 'dislike';
         try {
+            // SỬA DÒNG NÀY: Bỏ các dấu \ đi
             const res = await fetch(`/api/v1/ratings/${ratingId}/${action}`, { method: 'POST' });
 
             if (res.ok) {
@@ -339,10 +328,6 @@
     }
 
 </script>
-
-
-<!-- Giao diện Chia sẻ (Fragment dùng chung) -->
-<div th:replace="~{fragments/share-modal :: shareModal}"></div>
 
 
 </body>

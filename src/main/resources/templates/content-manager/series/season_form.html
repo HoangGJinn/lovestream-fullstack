@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${seasonUpsertRequest.id != null} ? 'Sửa Season' : 'Thêm Season mới'">Form Season</title>
+    <title th:text="${not #strings.isEmpty(seasonUpsertRequest.id)} ? 'Sửa Season' : 'Thêm Season mới'">Form Season</title>
     <link rel="stylesheet" th:href="@{/css/content-manager/content-manager-theme.css}" />
     <link rel="stylesheet" th:href="@{/css/content-manager/movies.css}" />
 </head>
@@ -13,27 +13,26 @@
 
 <div class="admin-content">
     <header class="admin-header">
-        <h1 th:text="${seasonUpsertRequest.id != null} ? 'Cập nhật Season' : 'Thêm Season mới'">Form Season</h1>
+        <h1 th:text="${not #strings.isEmpty(seasonUpsertRequest.id)} ? 'Cập nhật Season' : 'Thêm Season mới'">Form Season</h1>
         <div class="header-actions">
-            <a th:href="@{/content-manager/series/{id}/edit(id=${series.id})}" class="btn btn-secondary">
+            <a th:href="@{/content-manager/series/{id}/edit(id=${series.id})}"
+               class="btn btn-secondary js-guarded-navigation">
                 ← Quay lại Series: <span th:text="${series.title}"></span>
             </a>
         </div>
     </header>
 
     <div class="admin-content">
-
         <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
         <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
-        <!-- ── FORM: Season metadata ── -->
         <div class="form-card">
-            <form th:action="${seasonUpsertRequest.id != null}
+            <form th:action="${not #strings.isEmpty(seasonUpsertRequest.id)}
                     ? @{/content-manager/series/seasons/{id}(id=${seasonUpsertRequest.id})}
                     : @{/content-manager/series/{seriesId}/seasons(seriesId=${series.id})}"
-                  th:object="${seasonUpsertRequest}" method="post"
-                  onchange="window.__formDirty = true"
-                  onsubmit="window.__formDirty = false">
+                  th:object="${seasonUpsertRequest}"
+                  method="post"
+                  class="js-dirty-form">
 
                 <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger">
                     <p th:each="err : ${#fields.globalErrors()}" th:text="${err}"></p>
@@ -68,15 +67,18 @@
                 </div>
 
                 <div class="form-actions">
-                    <a th:href="@{/content-manager/series/{id}/edit(id=${series.id})}" class="btn btn-secondary">Hủy</a>
+                    <button type="button"
+                            class="btn btn-secondary js-cancel-navigation"
+                            th:attr="data-cancel-url=@{/content-manager/series/{id}/edit(id=${series.id})}">
+                        Hủy
+                    </button>
                     <button type="submit" class="btn btn-primary"
-                            th:text="${seasonUpsertRequest.id != null} ? 'Lưu thay đổi' : 'Tạo mùa'">Lưu</button>
+                            th:text="${not #strings.isEmpty(seasonUpsertRequest.id)} ? 'Lưu thay đổi' : 'Tạo mùa'">Lưu</button>
                 </div>
             </form>
-        </div><!-- /.form-card metadata -->
+        </div>
 
-        <!-- ── Episode List (only when editing) ── -->
-        <div class="form-card" th:if="${seasonUpsertRequest.id != null}">
+        <div class="form-card" th:if="${not #strings.isEmpty(seasonUpsertRequest.id)}">
             <div class="form-section-title">Danh sách tập phim (Episode)</div>
 
             <div th:if="${episodes == null or #lists.isEmpty(episodes)}" style="color:#b3b3b3;margin-bottom:16px;">
@@ -98,7 +100,8 @@
                         <td th:text="${ep.title}">Tập 1</td>
                         <td th:text="${ep.durationInMinutes} + ' phút'">45 phút</td>
                         <td class="actions">
-                            <a th:href="@{/content-manager/series/episodes/{id}/edit(id=${ep.id})}" class="btn btn-secondary btn-sm">Sửa</a>
+                            <a th:href="@{/content-manager/series/episodes/{id}/edit(id=${ep.id})}"
+                               class="btn btn-secondary btn-sm js-guarded-navigation">Sửa</a>
                             <form th:action="@{/content-manager/series/episodes/{id}/delete(id=${ep.id})}" method="post" style="display:inline;"
                                   onsubmit="return confirm('Xóa tập phim này?')">
                                 <button class="btn btn-danger btn-sm" type="submit">Xóa</button>
@@ -109,21 +112,14 @@
             </table>
 
             <div style="margin-top:16px;">
-                <a th:href="@{/content-manager/series/seasons/{id}/episodes/new(id=${seasonUpsertRequest.id})}" class="btn btn-primary">+ Thêm Episode</a>
+                <a th:href="@{/content-manager/series/seasons/{id}/episodes/new(id=${seasonUpsertRequest.id})}"
+                   class="btn btn-primary js-guarded-navigation">+ Thêm Episode</a>
             </div>
         </div>
+    </div>
+</div>
 
-    </div><!-- /.admin-content inner -->
-</div><!-- /.admin-content outer -->
-
-<script>
-window.addEventListener('beforeunload', function(e) {
-    if (window.__formDirty) {
-        e.preventDefault();
-        e.returnValue = '';
-    }
-});
-</script>
+<script th:src="@{/js/content-manager/series-form.js}"></script>
 
 </body>
 </html>
