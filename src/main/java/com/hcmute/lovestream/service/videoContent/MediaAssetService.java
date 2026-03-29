@@ -15,12 +15,8 @@ public class MediaAssetService {
     @Autowired
     private VideoContentRepository videoContentRepository;
 
-    /**
-     * Trả URL video cho phim. Chỉ cho phép nếu phim ACTIVE.
-     * Guard này chặn cả API GET /api/video/watch/{id} và JS player trong watch_movie.html.
-     */
+
     public String getVideoUrl(String videoContentId) {
-        // Guard: chặn truy cập nếu phim bị ẩn / không tồn tại
         videoContentRepository.findByIdAndStatus(videoContentId, ContentStatus.ACTIVE)
                 .orElseThrow(() -> new RuntimeException(
                         "Nội dung không tồn tại hoặc đã bị ẩn"));

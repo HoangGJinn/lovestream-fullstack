@@ -15,8 +15,6 @@ import java.time.LocalDateTime;
 @Builder
 public class Notification {
 
-    // CHÚ Ý: Dùng UUID thay vì IDENTITY cho cột String
-    // Không gặp lỗi "Incorrect column specifier"!
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
