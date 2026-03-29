@@ -3,7 +3,13 @@ package com.hcmute.lovestream.service.contentmanager.series.impl;
 import com.hcmute.lovestream.dto.request.contentmanager.series.EpisodeUpsertRequest;
 import com.hcmute.lovestream.dto.request.contentmanager.series.SeasonUpsertRequest;
 import com.hcmute.lovestream.dto.request.contentmanager.series.TVSeriesUpsertRequest;
-import com.hcmute.lovestream.entity.*;
+import com.hcmute.lovestream.entity.ContentCredit;
+import com.hcmute.lovestream.entity.Episode;
+import com.hcmute.lovestream.entity.Genre;
+import com.hcmute.lovestream.entity.MediaAsset;
+import com.hcmute.lovestream.entity.Person;
+import com.hcmute.lovestream.entity.Season;
+import com.hcmute.lovestream.entity.TVSeries;
 import com.hcmute.lovestream.entity.enums.AssetType;
 import com.hcmute.lovestream.entity.enums.ContentStatus;
 import com.hcmute.lovestream.entity.enums.CreditType;
@@ -29,13 +35,33 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class ContentManagerSeriesManagementServiceImpl implements ContentManagerSeriesManagementService {
+
+    private static final long MAX_SERIES_POSTER_SIZE_BYTES = 5L * 1024 * 1024;
+    private static final Set<String> ALLOWED_SERIES_POSTER_CONTENT_TYPES = Set.of(
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+    );
+    private static final Set<String> ALLOWED_SERIES_POSTER_EXTENSIONS = Set.of(
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".webp"
+    );
 
     private final TVSeriesRepository tvSeriesRepository;
     private final SeasonRepository seasonRepository;
@@ -48,10 +74,6 @@ public class ContentManagerSeriesManagementServiceImpl implements ContentManager
     private final ContentCreditRepository contentCreditRepository;
     private final MediaStorageService mediaStorageService;
     private final SeriesReleaseNotificationService seriesReleaseNotificationService;
-
-    // =====================================================================
-    // TV Series CRUD
-    // =====================================================================
 
     @Override
     @Transactional(readOnly = true)
@@ -116,15 +138,10 @@ public class ContentManagerSeriesManagementServiceImpl implements ContentManager
     public void deleteSeries(String id) {
         TVSeries series = getSeriesById(id);
         log.info("Deleting TV Series ID: {} (cascade: seasons, episodes, assets, watch_history)", id);
-        // Xóa lịch sử xem trước để tránh lỗi ràng buộc khóa ngoại
         watchHistoryRepository.deleteByVideoContentId(series.getId());
         userSeriesWatchStateRepository.deleteBySeries_Id(series.getId());
         tvSeriesRepository.delete(series);
     }
-
-    // =====================================================================
-    // Season CRUD
-    // =====================================================================
 
     @Override
     @Transactional(readOnly = true)
@@ -156,10 +173,9 @@ public class ContentManagerSeriesManagementServiceImpl implements ContentManager
     public Season updateSeason(String id, SeasonUpsertRequest request) {
         Season season = getSeasonById(id);
 
-        if (season.getSeasonNumber() != request.getSeasonNumber()) {
-            if (seasonRepository.existsByTvSeriesAndSeasonNumber(season.getTvSeries(), request.getSeasonNumber())) {
-                throw new RuntimeException("Số mùa " + request.getSeasonNumber() + " đã tồn tại trong series này!");
-            }
+        if (season.getSeasonNumber() != request.getSeasonNumber()
+                && seasonRepository.existsByTvSeriesAndSeasonNumber(season.getTvSeries(), request.getSeasonNumber())) {
+            throw new RuntimeException("Số mùa " + request.getSeasonNumber() + " đã tồn tại trong series này!");
         }
 
         season.setSeasonNumber(request.getSeasonNumber());
@@ -177,10 +193,6 @@ public class ContentManagerSeriesManagementServiceImpl implements ContentManager
         userSeriesWatchStateRepository.clearLastWatchedEpisodeBySeasonId(season.getId());
         seasonRepository.delete(season);
     }
-
-    // =====================================================================
-    // Episode CRUD
-    // =====================================================================
 
     @Override
     @Transactional(readOnly = true)
@@ -215,10 +227,9 @@ public class ContentManagerSeriesManagementServiceImpl implements ContentManager
     public Episode updateEpisode(String id, EpisodeUpsertRequest request) {
         Episode episode = getEpisodeById(id);
 
-        if (episode.getEpisodeNumber() != request.getEpisodeNumber()) {
-            if (episodeRepository.existsBySeasonAndEpisodeNumber(episode.getSeason(), request.getEpisodeNumber())) {
-                throw new RuntimeException("Số tập " + request.getEpisodeNumber() + " đã tồn tại trong mùa này!");
-            }
+        if (episode.getEpisodeNumber() != request.getEpisodeNumber()
+                && episodeRepository.existsBySeasonAndEpisodeNumber(episode.getSeason(), request.getEpisodeNumber())) {
+            throw new RuntimeException("Số tập " + request.getEpisodeNumber() + " đã tồn tại trong mùa này!");
         }
 
         episode.setEpisodeNumber(request.getEpisodeNumber());
@@ -240,20 +251,15 @@ public class ContentManagerSeriesManagementServiceImpl implements ContentManager
         episodeRepository.delete(episode);
     }
 
-    // =====================================================================
-    // Asset Management
-    // =====================================================================
-
     @Override
     @Transactional
     public MediaAsset uploadSeriesPoster(String seriesId, MultipartFile file) throws IOException {
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("File upload không được để trống!");
-        }
+        validateSeriesPosterUpload(file);
         String publicUrl = mediaStorageService.upload(file, CloudinaryFolderTarget.SERIES_POSTER);
 
         TVSeries series = getSeriesById(seriesId);
-        MediaAsset asset = series.getMediaAssets().stream()
+        List<MediaAsset> assets = series.getMediaAssets() == null ? List.of() : series.getMediaAssets();
+        MediaAsset asset = assets.stream()
                 .filter(a -> a.getAssetType() == AssetType.POSTER)
                 .findFirst()
                 .orElse(new MediaAsset());
@@ -270,8 +276,9 @@ public class ContentManagerSeriesManagementServiceImpl implements ContentManager
     public MediaAsset addSeriesTrailerFromUrl(String seriesId, String url) {
         validateCloudinaryUrl(url);
         TVSeries series = getSeriesById(seriesId);
+        List<MediaAsset> assets = series.getMediaAssets() == null ? List.of() : series.getMediaAssets();
 
-        MediaAsset asset = series.getMediaAssets().stream()
+        MediaAsset asset = assets.stream()
                 .filter(a -> a.getAssetType() == AssetType.TRAILER)
                 .findFirst()
                 .orElse(new MediaAsset());
@@ -288,8 +295,9 @@ public class ContentManagerSeriesManagementServiceImpl implements ContentManager
     public MediaAsset addEpisodeVideoFromUrl(String episodeId, String url) {
         validateCloudinaryUrl(url);
         Episode episode = getEpisodeById(episodeId);
+        List<MediaAsset> assets = episode.getMediaAssets() == null ? List.of() : episode.getMediaAssets();
 
-        MediaAsset asset = episode.getMediaAssets().stream()
+        MediaAsset asset = assets.stream()
                 .filter(a -> a.getAssetType() == AssetType.EPISODE_VIDEO)
                 .findFirst()
                 .orElse(new MediaAsset());
@@ -302,10 +310,6 @@ public class ContentManagerSeriesManagementServiceImpl implements ContentManager
         seriesReleaseNotificationService.notifyEpisodeAvailable(episode);
         return savedAsset;
     }
-
-    // =====================================================================
-    // Helpers
-    // =====================================================================
 
     private void mapRequestToSeries(TVSeriesUpsertRequest request, TVSeries target) {
         target.setTitle(request.getTitle());
@@ -341,7 +345,9 @@ public class ContentManagerSeriesManagementServiceImpl implements ContentManager
     }
 
     private List<ContentCredit> buildCredits(TVSeries series, String namesRaw, CreditType creditType) {
-        if (namesRaw == null || namesRaw.isBlank()) return Collections.emptyList();
+        if (namesRaw == null || namesRaw.isBlank()) {
+            return Collections.emptyList();
+        }
 
         return Arrays.stream(namesRaw.split(","))
                 .map(String::trim)
@@ -366,6 +372,31 @@ public class ContentManagerSeriesManagementServiceImpl implements ContentManager
                     return credit;
                 })
                 .collect(Collectors.toList());
+    }
+
+    private void validateSeriesPosterUpload(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File poster không được để trống!");
+        }
+
+        if (file.getSize() > MAX_SERIES_POSTER_SIZE_BYTES) {
+            throw new IllegalArgumentException("Poster không được vượt quá 5MB.");
+        }
+
+        String contentType = Optional.ofNullable(file.getContentType())
+                .map(type -> type.toLowerCase(Locale.ROOT))
+                .orElse("");
+        String originalFilename = Optional.ofNullable(file.getOriginalFilename())
+                .map(name -> name.toLowerCase(Locale.ROOT))
+                .orElse("");
+
+        boolean validContentType = ALLOWED_SERIES_POSTER_CONTENT_TYPES.contains(contentType);
+        boolean validExtension = ALLOWED_SERIES_POSTER_EXTENSIONS.stream()
+                .anyMatch(originalFilename::endsWith);
+
+        if (!validContentType && !validExtension) {
+            throw new IllegalArgumentException("Poster chỉ hỗ trợ định dạng JPG, PNG hoặc WEBP.");
+        }
     }
 
     private void validateCloudinaryUrl(String url) {
