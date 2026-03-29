@@ -387,16 +387,13 @@
                 <button class="filter-btn" type="button" id="applyFilterBtn">Áp dụng</button>
             </div>
         </div>
-        <button class="mark-all-btn" type="button" id="markAllReadBtn" th:hidden="${unreadCount <= 0}">Đánh dấu tất cả đã đọc</button>
     </div>
 
-    <div class="notification-list"
-         id="notificationList"
-         th:attr="data-page=${initialPage},data-size=${pageSize},data-has-next=${hasNextPage}">
+    <div class="notification-list" id="notificationList">
         <div th:each="notification : ${notifications}"
              class="notification-card"
              th:with="preview=${#strings.length(notification.content) > 180 ? #strings.substring(notification.content, 0, 180) + '...' : notification.content}"
-             th:attr="data-notification-id=${notification.id},data-title=${notification.title},data-type=${notification.type},data-content-preview=${preview},data-time=${#temporals.format(notification.sentAt, 'dd/MM/yyyy HH:mm')},data-target-url=${notification.targetUrl}"
+             th:attr="data-notification-id=${notification.id},data-title=${notification.title},data-type=${notification.type},data-content-preview=${preview},data-time=${#temporals.format(notification.sentAt, 'dd/MM/yyyy HH:mm')}"
              th:classappend="${notification.status.name() == 'UNREAD'} ? ' notification-card--unread' : ''">
             <div class="notification-main">
                 <div class="notification-top">
@@ -408,7 +405,6 @@
             </div>
         </div>
     </div>
-    <button class="filter-btn" id="loadMoreBtn" type="button" th:hidden="${!hasNextPage}">Tải thêm</button>
 
     <!-- Modal Notification Detail -->
     <div id="notificationModalOverlay" class="notification-modal-overlay">
@@ -426,9 +422,6 @@
                 </div>
                 <div class="notification-modal-content" id="modalContent"></div>
                 <div class="notification-modal-footer">
-                    <a href="#" class="notification-modal-btn" id="modalOpenTargetBtn" hidden>
-                        <i class="fa-solid fa-up-right-from-square"></i> Mở nội dung liên quan
-                    </a>
                     <button type="button" class="notification-modal-btn" id="modalCopyBtn">
                         <i class="fa-solid fa-copy"></i> Sao chép nội dung
                     </button>
@@ -449,31 +442,12 @@
     const notificationsMeta = document.getElementById('notificationsMeta');
     const filterSelect = document.getElementById('filter');
     const applyFilterBtn = document.getElementById('applyFilterBtn');
-    const markAllReadBtn = document.getElementById('markAllReadBtn');
-    const loadMoreBtn = document.getElementById('loadMoreBtn');
     const modalOverlay = document.getElementById('notificationModalOverlay');
     const closeModalBtn = document.getElementById('closeModalBtn');
     const modalCopyBtn = document.getElementById('modalCopyBtn');
     const modalDeleteBtn = document.getElementById('modalDeleteBtn');
-    const modalOpenTargetBtn = document.getElementById('modalOpenTargetBtn');
     let currentNotificationId = null;
     let currentCard = null;
-    let currentPage = Number(notificationList.dataset.page || 0);
-    let pageSize = Number(notificationList.dataset.size || 20);
-    let hasNextPage = String(notificationList.dataset.hasNext || 'false') === 'true';
-    const listCache = new Map();
-
-    function getCacheKey(filter, page, size) {
-        return `${filter}|${page}|${size}`;
-    }
-
-    function clearListCache() {
-        listCache.clear();
-    }
-
-    function updateLoadMoreVisibility() {
-        loadMoreBtn.hidden = !hasNextPage;
-    }
 
     function toPreview(content) {
         if (!content) {
@@ -499,7 +473,6 @@
 
     function setUnreadMeta(unreadCount) {
         notificationsMeta.textContent = `Bạn có ${unreadCount} thông báo chưa đọc.`;
-        markAllReadBtn.hidden = unreadCount <= 0;
     }
 
     function createNotificationCard(item) {
@@ -514,7 +487,6 @@
         card.dataset.type = item.type || '';
         card.dataset.contentPreview = item.contentPreview || toPreview(item.content || '');
         card.dataset.time = formatDateTime(item.sentAt);
-        card.dataset.targetUrl = item.targetUrl || '';
 
         const main = document.createElement('div');
         main.className = 'notification-main';
@@ -548,39 +520,25 @@
         return card;
     }
 
-    async function fetchNotifications(page = 0, append = false) {
+    async function fetchNotifications() {
         const filter = filterSelect.value || 'all';
-        const cacheKey = getCacheKey(filter, page, pageSize);
-        let payload = listCache.get(cacheKey);
-
-        if (!payload) {
-            const response = await fetch(`/api/v1/notifications?filter=${encodeURIComponent(filter)}&page=${page}&size=${pageSize}`, {
-                method: 'GET'
-            });
-            if (!response.ok) {
-                throw new Error('Không thể tải danh sách thông báo');
-            }
-
-            payload = await response.json();
-            listCache.set(cacheKey, payload);
+        const response = await fetch(`/api/v1/notifications?filter=${encodeURIComponent(filter)}`, {
+            method: 'GET'
+        });
+        if (!response.ok) {
+            throw new Error('Không thể tải danh sách thông báo');
         }
+
+        const payload = await response.json();
         const items = payload.items || [];
 
-        if (!append) {
-            notificationList.innerHTML = '';
-        }
+        notificationList.innerHTML = '';
         items.forEach(item => notificationList.appendChild(createNotificationCard(item)));
 
-        if (!append) {
-            emptyNotifications.hidden = items.length > 0;
-        }
+        emptyNotifications.hidden = items.length > 0;
         if (typeof payload.unreadCount === 'number') {
             setUnreadMeta(payload.unreadCount);
         }
-        currentPage = Number(payload.page || 0);
-        pageSize = Number(payload.size || pageSize);
-        hasNextPage = !!payload.hasNext;
-        updateLoadMoreVisibility();
 
         const url = new URL(window.location.href);
         url.searchParams.set('filter', filter);
@@ -602,14 +560,6 @@
         document.getElementById('modalType').textContent = card.dataset.type || '';
         document.getElementById('modalTime').textContent = card.dataset.time || '';
         document.getElementById('modalContent').textContent = card.dataset.contentPreview || '';
-
-        if ((card.dataset.targetUrl || '').trim() !== '') {
-            modalOpenTargetBtn.hidden = false;
-            modalOpenTargetBtn.dataset.notificationId = notificationId;
-        } else {
-            modalOpenTargetBtn.hidden = true;
-            modalOpenTargetBtn.dataset.notificationId = '';
-        }
 
         currentNotificationId = notificationId;
         currentCard = card;
@@ -653,7 +603,6 @@
                 currentCard.classList.remove('notification-card--unread');
             }
             setUnreadMeta(payload.unreadCount || 0);
-            clearListCache();
         } catch (error) {
             console.error('Error marking notification as read:', error);
         }
@@ -661,71 +610,9 @@
 
     applyFilterBtn.addEventListener('click', async () => {
         try {
-            await fetchNotifications(0, false);
+            await fetchNotifications();
         } catch (error) {
             alert('Không thể tải danh sách thông báo.');
-        }
-    });
-
-    loadMoreBtn.addEventListener('click', async () => {
-        if (!hasNextPage) {
-            return;
-        }
-
-        try {
-            await fetchNotifications(currentPage + 1, true);
-        } catch (error) {
-            alert('Không thể tải thêm thông báo.');
-        }
-    });
-
-    markAllReadBtn.addEventListener('click', async () => {
-        try {
-            const response = await fetch('/api/v1/notifications/read-all', {
-                method: 'PATCH'
-            });
-            if (!response.ok) {
-                throw new Error('Không thể đánh dấu tất cả đã đọc');
-            }
-
-            const payload = await response.json();
-            setUnreadMeta(payload.unreadCount || 0);
-            notificationList.querySelectorAll('.notification-card--unread')
-                .forEach(card => card.classList.remove('notification-card--unread'));
-            clearListCache();
-
-            if ((filterSelect.value || 'all') === 'unread') {
-                notificationList.innerHTML = '';
-                emptyNotifications.hidden = false;
-                hasNextPage = false;
-                updateLoadMoreVisibility();
-            }
-        } catch (error) {
-            alert('Không thể đánh dấu tất cả đã đọc.');
-        }
-    });
-
-    modalOpenTargetBtn.addEventListener('click', async (event) => {
-        event.preventDefault();
-        const notificationId = modalOpenTargetBtn.dataset.notificationId;
-        if (!notificationId) {
-            return;
-        }
-
-        try {
-            const response = await fetch(`/api/v1/notifications/${notificationId}/open`, {
-                method: 'POST'
-            });
-            if (!response.ok) {
-                throw new Error('Không thể mở thông báo');
-            }
-
-            const payload = await response.json();
-            if (payload.redirectUrl) {
-                window.location.href = payload.redirectUrl;
-            }
-        } catch (error) {
-            alert('Không thể mở nội dung liên quan.');
         }
     });
 
@@ -788,7 +675,7 @@
                 if (!notificationList.querySelector('.notification-card')) {
                     emptyNotifications.hidden = false;
                 }
-                clearListCache();
+                await fetchNotifications();
             } else {
                 alert('Không thể xóa thông báo.');
             }
@@ -806,7 +693,6 @@
 
     const initialUnreadCount = Number(notificationsMeta.dataset.unreadCount || 0);
     setUnreadMeta(initialUnreadCount);
-    updateLoadMoreVisibility();
 </script>
 </body>
 </html>
