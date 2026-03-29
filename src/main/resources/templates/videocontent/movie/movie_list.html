@@ -125,6 +125,7 @@
     <div class="main-content">
         <div class="categories-container" th:if="${#lists.isEmpty(movieRows)}">
             <p class="empty-movies">Chưa có phim để hiển thị.</p>
+        </div>
         <div class="categories-container" th:if="${errorMessage != null}">
             <p class="error-movies" th:text="${errorMessage}">Không thể kết nối hệ thống. Vui lòng thử lại sau.</p>
         </div>
