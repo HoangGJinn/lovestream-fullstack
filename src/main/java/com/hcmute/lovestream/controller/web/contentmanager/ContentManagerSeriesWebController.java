@@ -9,13 +9,12 @@ import com.hcmute.lovestream.entity.Genre;
 import com.hcmute.lovestream.entity.Season;
 import com.hcmute.lovestream.entity.TVSeries;
 import com.hcmute.lovestream.entity.enums.AgeRating;
-import com.hcmute.lovestream.entity.enums.AssetType;
 import com.hcmute.lovestream.entity.enums.ContentStatus;
 import com.hcmute.lovestream.entity.enums.CreditType;
 import com.hcmute.lovestream.entity.enums.Quality;
+import com.hcmute.lovestream.repository.EpisodeRepository;
 import com.hcmute.lovestream.repository.GenreRepository;
 import com.hcmute.lovestream.repository.SeasonRepository;
-import com.hcmute.lovestream.repository.EpisodeRepository;
 import com.hcmute.lovestream.service.contentmanager.series.ContentManagerSeriesManagementService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +25,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -40,12 +44,13 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ContentManagerSeriesWebController {
 
+    private static final String SERIES_POSTER_UPLOAD_ERROR_MESSAGE = "seriesPosterUploadErrorMessage";
+    private static final String SERIES_POSTER_UPLOAD_SUCCESS_MESSAGE = "seriesPosterUploadSuccessMessage";
+
     private final ContentManagerSeriesManagementService seriesService;
     private final GenreRepository genreRepository;
     private final SeasonRepository seasonRepository;
     private final EpisodeRepository episodeRepository;
-
-    // ---- Global model attributes ----
 
     @ModelAttribute("allGenres")
     public List<Genre> populateGenres() {
@@ -66,12 +71,6 @@ public class ContentManagerSeriesWebController {
     public ContentStatus[] populateStatuses() {
         return ContentStatus.values();
     }
-
-    // @ModelAttribute("seriesAssetTypes") is removed as it's no longer used in the unified UI
-
-    // =====================================================================
-    //  TV Series endpoints
-    // =====================================================================
 
     @GetMapping
     public String listSeries(
@@ -118,10 +117,10 @@ public class ContentManagerSeriesWebController {
         try {
             TVSeries created = seriesService.createSeries(request);
             redirectAttributes.addFlashAttribute("successMessage",
-                    "T\u1EA1o TV Series th\u00e0nh c\u00f4ng! Ti\u1EBFp t\u1EE5c th\u00eam poster/trailer n\u1EBFu c\u1EA7n.");
+                    "Tạo TV Series thành công! Tiếp tục thêm poster/trailer nếu cần.");
             return "redirect:/content-manager/series/" + created.getId() + "/edit";
         } catch (RuntimeException e) {
-            log.error("L\u1ED7i khi t\u1EA1o TV Series: ", e);
+            log.error("Lỗi khi tạo TV Series", e);
             bindingResult.reject("error.series", e.getMessage());
             return "content-manager/series/form";
         }
@@ -131,44 +130,13 @@ public class ContentManagerSeriesWebController {
     public String showEditSeriesForm(@PathVariable String id, Model model, RedirectAttributes redirectAttributes) {
         try {
             TVSeries series = seriesService.getSeriesById(id);
-
             if (!model.containsAttribute("tvSeriesUpsertRequest")) {
-                // Extract director/cast names for the form
-                List<ContentCredit> credits = series.getContentCredits();
-                String directorNames = credits == null ? "" : credits.stream()
-                        .filter(c -> c.getCreditType() == CreditType.DIRECTOR)
-                        .map(c -> c.getPerson().getFullName())
-                        .collect(Collectors.joining(", "));
-                String castNames = credits == null ? "" : credits.stream()
-                        .filter(c -> c.getCreditType() == CreditType.CAST)
-                        .map(c -> c.getPerson().getFullName())
-                        .collect(Collectors.joining(", "));
-
-                TVSeriesUpsertRequest req = TVSeriesUpsertRequest.builder()
-                        .id(series.getId())
-                        .title(series.getTitle())
-                        .description(series.getDescription())
-                        .releaseYear(series.getReleaseYear())
-                        .ageRating(series.getAgeRating())
-                        .quality(series.getQuality())
-                        .status(series.getStatus())
-                        .durationMinutes(series.getDurationMinutes())
-                        .genreIds(series.getGenres().stream().map(Genre::getId).collect(Collectors.toList()))
-                        .directorNames(directorNames)
-                        .castNames(castNames)
-                        .build();
-
-                model.addAttribute("tvSeriesUpsertRequest", req);
+                model.addAttribute("tvSeriesUpsertRequest", buildSeriesUpsertRequest(series));
             }
-
-            // Pass seasons list for this series
-            List<Season> seasons = seasonRepository.findByTvSeriesOrderBySeasonNumberAsc(series);
-            model.addAttribute("seasons", seasons);
-            model.addAttribute("series", series);
-
+            populateSeriesEditModel(model, series);
             return "content-manager/series/form";
         } catch (RuntimeException e) {
-            log.error("Kh\u00f4ng t\u00ecm th\u1EA5y Series \u0111\u1EC3 s\u1EEDa: ", e);
+            log.error("Không tìm thấy Series để sửa", e);
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
             return "redirect:/content-manager/series";
         }
@@ -183,24 +151,18 @@ public class ContentManagerSeriesWebController {
             Model model) {
 
         if (bindingResult.hasErrors()) {
-            TVSeries series = seriesService.getSeriesById(id);
-            List<Season> seasons = seasonRepository.findByTvSeriesOrderBySeasonNumberAsc(series);
-            model.addAttribute("seasons", seasons);
-            model.addAttribute("series", series);
+            populateSeriesEditModel(model, seriesService.getSeriesById(id));
             return "content-manager/series/form";
         }
 
         try {
             seriesService.updateSeries(id, request);
-            redirectAttributes.addFlashAttribute("successMessage", "C\u1EADp nh\u1EADt TV Series th\u00e0nh c\u00f4ng!");
+            redirectAttributes.addFlashAttribute("successMessage", "Cập nhật TV Series thành công!");
             return "redirect:/content-manager/series/" + id + "/edit";
         } catch (RuntimeException e) {
-            log.error("L\u1ED7i khi update TV Series: ", e);
+            log.error("Lỗi khi update TV Series", e);
             bindingResult.reject("error.series", e.getMessage());
-            TVSeries series = seriesService.getSeriesById(id);
-            List<Season> seasons = seasonRepository.findByTvSeriesOrderBySeasonNumberAsc(series);
-            model.addAttribute("seasons", seasons);
-            model.addAttribute("series", series);
+            populateSeriesEditModel(model, seriesService.getSeriesById(id));
             return "content-manager/series/form";
         }
     }
@@ -209,9 +171,9 @@ public class ContentManagerSeriesWebController {
     public String toggleSeriesStatus(@PathVariable String id, RedirectAttributes redirectAttributes) {
         try {
             seriesService.toggleSeriesStatus(id);
-            redirectAttributes.addFlashAttribute("successMessage", "\u0110\u00e3 thay \u0111\u1ED5i tr\u1EA1ng th\u00e1i series.");
+            redirectAttributes.addFlashAttribute("successMessage", "Đã thay đổi trạng thái series.");
         } catch (RuntimeException e) {
-            log.error("L\u1ED7i toggle status series: ", e);
+            log.error("Lỗi toggle status series", e);
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
         return "redirect:/content-manager/series";
@@ -221,15 +183,14 @@ public class ContentManagerSeriesWebController {
     public String deleteSeries(@PathVariable String id, RedirectAttributes redirectAttributes) {
         try {
             seriesService.deleteSeries(id);
-            redirectAttributes.addFlashAttribute("successMessage", "\u0110\u00e3 x\u00f3a TV Series v\u00e0 to\u00e0n b\u1ED9 m\u00f9a/t\u1EADp b\u00ean trong.");
+            redirectAttributes.addFlashAttribute("successMessage", "Đã xóa TV Series và toàn bộ mùa/tập bên trong.");
         } catch (RuntimeException e) {
-            log.error("L\u1ED7i x\u00f3a series: ", e);
+            log.error("Lỗi xóa series", e);
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
         return "redirect:/content-manager/series";
     }
 
-    // Asset endpoints for series (Streamlined)
     @PostMapping("/{id}/trailer/url")
     public String addSeriesTrailerFromUrl(
             @PathVariable String id,
@@ -241,7 +202,7 @@ public class ContentManagerSeriesWebController {
         } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         } catch (Exception e) {
-            log.error("Lỗi gắn trailer series: ", e);
+            log.error("Lỗi gắn trailer series", e);
             redirectAttributes.addFlashAttribute("errorMessage", "Gắn trailer thất bại: " + e.getMessage());
         }
         return "redirect:/content-manager/series/" + id + "/edit";
@@ -254,24 +215,22 @@ public class ContentManagerSeriesWebController {
             RedirectAttributes redirectAttributes) {
         try {
             seriesService.uploadSeriesPoster(id, file);
-            redirectAttributes.addFlashAttribute("successMessage", "Tải lên poster thành công!");
+            redirectAttributes.addFlashAttribute(SERIES_POSTER_UPLOAD_SUCCESS_MESSAGE, "Tải lên poster thành công!");
         } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute(SERIES_POSTER_UPLOAD_ERROR_MESSAGE, e.getMessage());
         } catch (IOException e) {
-            log.error("Lỗi upload poster series: ", e);
-            redirectAttributes.addFlashAttribute("errorMessage", "Tải lên thất bại do lỗi hệ thống lưu trữ.");
+            log.error("Lỗi upload poster series", e);
+            redirectAttributes.addFlashAttribute(
+                    SERIES_POSTER_UPLOAD_ERROR_MESSAGE,
+                    "Tải lên thất bại do lỗi hệ thống lưu trữ.");
         } catch (Exception e) {
-            log.error("Lỗi khi upload poster series: ", e);
-            redirectAttributes.addFlashAttribute("errorMessage", "Tải lên thất bại: " + e.getMessage());
+            log.error("Lỗi khi upload poster series", e);
+            redirectAttributes.addFlashAttribute(
+                    SERIES_POSTER_UPLOAD_ERROR_MESSAGE,
+                    "Tải lên thất bại: " + e.getMessage());
         }
         return "redirect:/content-manager/series/" + id + "/edit";
     }
-
-    // Season assets removed per business rule
-
-    // =====================================================================
-    //  Season endpoints
-    // =====================================================================
 
     @GetMapping("/{seriesId}/seasons/new")
     public String showCreateSeasonForm(@PathVariable String seriesId, Model model, RedirectAttributes redirectAttributes) {
@@ -306,10 +265,10 @@ public class ContentManagerSeriesWebController {
 
         try {
             Season created = seriesService.createSeason(request);
-            redirectAttributes.addFlashAttribute("successMessage", "T\u1EA1o m\u00f9a th\u00e0nh c\u00f4ng!");
+            redirectAttributes.addFlashAttribute("successMessage", "Tạo mùa thành công!");
             return "redirect:/content-manager/series/seasons/" + created.getId() + "/edit";
         } catch (RuntimeException e) {
-            log.error("L\u1ED7i t\u1EA1o Season: ", e);
+            log.error("Lỗi tạo Season", e);
             bindingResult.reject("error.season", e.getMessage());
             model.addAttribute("series", seriesService.getSeriesById(seriesId));
             return "content-manager/series/season_form";
@@ -334,13 +293,11 @@ public class ContentManagerSeriesWebController {
 
             model.addAttribute("season", season);
             model.addAttribute("series", season.getTvSeries());
-
-            List<Episode> episodes = episodeRepository.findBySeasonOrderByEpisodeNumberAsc(season);
-            model.addAttribute("episodes", episodes);
+            model.addAttribute("episodes", episodeRepository.findBySeasonOrderByEpisodeNumberAsc(season));
 
             return "content-manager/series/season_form";
         } catch (RuntimeException e) {
-            log.error("Kh\u00f4ng t\u00ecm th\u1EA5y Season: ", e);
+            log.error("Không tìm thấy Season", e);
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
             return "redirect:/content-manager/series";
         }
@@ -364,10 +321,10 @@ public class ContentManagerSeriesWebController {
 
         try {
             seriesService.updateSeason(seasonId, request);
-            redirectAttributes.addFlashAttribute("successMessage", "C\u1EADp nh\u1EADt m\u00f9a th\u00e0nh c\u00f4ng!");
+            redirectAttributes.addFlashAttribute("successMessage", "Cập nhật mùa thành công!");
             return "redirect:/content-manager/series/seasons/" + seasonId + "/edit";
         } catch (RuntimeException e) {
-            log.error("L\u1ED7i update Season: ", e);
+            log.error("Lỗi update Season", e);
             bindingResult.reject("error.season", e.getMessage());
             Season season = seriesService.getSeasonById(seasonId);
             model.addAttribute("season", season);
@@ -384,20 +341,14 @@ public class ContentManagerSeriesWebController {
             Season season = seriesService.getSeasonById(seasonId);
             seriesId = season.getTvSeries().getId();
             seriesService.deleteSeason(seasonId);
-            redirectAttributes.addFlashAttribute("successMessage", "\u0110\u00e3 x\u00f3a m\u00f9a v\u00e0 to\u00e0n b\u1ED9 t\u1EADp b\u00ean trong.");
+            redirectAttributes.addFlashAttribute("successMessage", "Đã xóa mùa và toàn bộ tập bên trong.");
         } catch (RuntimeException e) {
-            log.error("L\u1ED7i x\u00f3a Season: ", e);
+            log.error("Lỗi xóa Season", e);
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
             return "redirect:/content-manager/series";
         }
         return "redirect:/content-manager/series/" + seriesId + "/edit";
     }
-
-    // Season assets removed per business rule
-
-    // =====================================================================
-    //  Episode endpoints
-    // =====================================================================
 
     @GetMapping("/seasons/{seasonId}/episodes/new")
     public String showCreateEpisodeForm(@PathVariable String seasonId, Model model, RedirectAttributes redirectAttributes) {
@@ -435,10 +386,10 @@ public class ContentManagerSeriesWebController {
 
         try {
             Episode created = seriesService.createEpisode(request);
-            redirectAttributes.addFlashAttribute("successMessage", "T\u1EA1o t\u1EADp phim th\u00e0nh c\u00f4ng!");
+            redirectAttributes.addFlashAttribute("successMessage", "Tạo tập phim thành công!");
             return "redirect:/content-manager/series/episodes/" + created.getId() + "/edit";
         } catch (RuntimeException e) {
-            log.error("L\u1ED7i t\u1EA1o Episode: ", e);
+            log.error("Lỗi tạo Episode", e);
             bindingResult.reject("error.episode", e.getMessage());
             Season season = seriesService.getSeasonById(seasonId);
             model.addAttribute("season", season);
@@ -472,7 +423,7 @@ public class ContentManagerSeriesWebController {
 
             return "content-manager/series/episode_form";
         } catch (RuntimeException e) {
-            log.error("Kh\u00f4ng t\u00ecm th\u1EA5y Episode: ", e);
+            log.error("Không tìm thấy Episode", e);
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
             return "redirect:/content-manager/series";
         }
@@ -496,10 +447,10 @@ public class ContentManagerSeriesWebController {
 
         try {
             seriesService.updateEpisode(episodeId, request);
-            redirectAttributes.addFlashAttribute("successMessage", "C\u1EADp nh\u1EADt t\u1EADp phim th\u00e0nh c\u00f4ng!");
+            redirectAttributes.addFlashAttribute("successMessage", "Cập nhật tập phim thành công!");
             return "redirect:/content-manager/series/episodes/" + episodeId + "/edit";
         } catch (RuntimeException e) {
-            log.error("L\u1ED7i update Episode: ", e);
+            log.error("Lỗi update Episode", e);
             bindingResult.reject("error.episode", e.getMessage());
             Episode ep = seriesService.getEpisodeById(episodeId);
             model.addAttribute("episode", ep);
@@ -516,9 +467,9 @@ public class ContentManagerSeriesWebController {
             Episode episode = seriesService.getEpisodeById(episodeId);
             seasonId = episode.getSeason().getId();
             seriesService.deleteEpisode(episodeId);
-            redirectAttributes.addFlashAttribute("successMessage", "\u0110\u00e3 x\u00f3a t\u1EADp phim.");
+            redirectAttributes.addFlashAttribute("successMessage", "Đã xóa tập phim.");
         } catch (RuntimeException e) {
-            log.error("L\u1ED7i x\u00f3a Episode: ", e);
+            log.error("Lỗi xóa Episode", e);
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
             return "redirect:/content-manager/series";
         }
@@ -536,9 +487,40 @@ public class ContentManagerSeriesWebController {
         } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         } catch (Exception e) {
-            log.error("Lỗi gắn video tập phim: ", e);
+            log.error("Lỗi gắn video tập phim", e);
             redirectAttributes.addFlashAttribute("errorMessage", "Gắn video thất bại: " + e.getMessage());
         }
         return "redirect:/content-manager/series/episodes/" + episodeId + "/edit";
+    }
+
+    private TVSeriesUpsertRequest buildSeriesUpsertRequest(TVSeries series) {
+        List<ContentCredit> credits = series.getContentCredits();
+        String directorNames = credits == null ? "" : credits.stream()
+                .filter(c -> c.getCreditType() == CreditType.DIRECTOR)
+                .map(c -> c.getPerson().getFullName())
+                .collect(Collectors.joining(", "));
+        String castNames = credits == null ? "" : credits.stream()
+                .filter(c -> c.getCreditType() == CreditType.CAST)
+                .map(c -> c.getPerson().getFullName())
+                .collect(Collectors.joining(", "));
+
+        return TVSeriesUpsertRequest.builder()
+                .id(series.getId())
+                .title(series.getTitle())
+                .description(series.getDescription())
+                .releaseYear(series.getReleaseYear())
+                .ageRating(series.getAgeRating())
+                .quality(series.getQuality())
+                .status(series.getStatus())
+                .durationMinutes(series.getDurationMinutes())
+                .genreIds(series.getGenres().stream().map(Genre::getId).collect(Collectors.toList()))
+                .directorNames(directorNames)
+                .castNames(castNames)
+                .build();
+    }
+
+    private void populateSeriesEditModel(Model model, TVSeries series) {
+        model.addAttribute("seasons", seasonRepository.findByTvSeriesOrderBySeasonNumberAsc(series));
+        model.addAttribute("series", series);
     }
 }
