@@ -111,6 +111,11 @@
                 <i class="fa-solid fa-comment-dots"></i>
                 <span>Bình luận</span>
             </div>
+            <!-- Nút Chia sẻ (VIP) -->
+            <button th:if="${hasActiveSub}" id="btn-share-watch-trigger" class="action-item" style="background: none; border: none; color: inherit; font-size: inherit; display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer;">
+                <i class="fa-solid fa-share-nodes"></i>
+                <span>Chia sẻ</span>
+            </button>
             <div class="rating-badge-blue">
                 <i class="fa-solid fa-star"></i>
                 <span id="m-rating" style="margin: 0 5px;">0</span>
@@ -213,6 +218,12 @@
     };
 </script>
 <script src="/js/videocontent/watch_movie.js"></script>
+
+<!-- Giao diện Chia sẻ (Fragment dùng chung) -->
+<div th:replace="~{fragments/share-modal :: shareModal}"></div>
+
+
+
 </body>
 </html>
 

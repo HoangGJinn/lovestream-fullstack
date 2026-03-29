@@ -16,7 +16,7 @@
         <header class="admin-header">
             <h1 th:text="${movieUpsertRequest.id != null} ? 'Cập nhật thông tin phim' : 'Tạo phim mới'">Form Phim</h1>
             <div class="header-actions">
-                <a th:href="@{/content-manager/movies}" class="btn btn-secondary">Danh sách phim</a>
+                <a th:href="@{/content-manager/movies}" class="btn btn-secondary js-guarded-navigation">Danh sách phim</a>
             </div>
         </header>
 
@@ -26,7 +26,9 @@
             <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
             <div class="form-card">
-                <form th:action="${movieUpsertRequest.id != null}
+                <form id="movieMetadataForm"
+                      class="js-dirty-form"
+                      th:action="${movieUpsertRequest.id != null}
                         ? @{/content-manager/movies/{id}(id=${movieUpsertRequest.id})}
                         : @{/content-manager/movies}"
                       th:object="${movieUpsertRequest}"
@@ -177,7 +179,12 @@
                     </div>
 
                     <div class="form-actions">
-                        <a th:href="@{/content-manager/movies}" class="btn btn-secondary">Hủy</a>
+                        <button type="button"
+                                id="cancelMovieForm"
+                                class="btn btn-secondary"
+                                th:attr="data-cancel-url=@{/content-manager/movies}">
+                            Hủy
+                        </button>
                         <button type="submit" class="btn btn-primary">
                             <span th:text="${movieUpsertRequest.id != null} ? 'Lưu thay đổi' : 'Tạo phim'"></span>
                         </button>
@@ -187,37 +194,89 @@
             </div>
 
             <div class="form-card" th:if="${movieUpsertRequest.id != null}">
-                <form th:action="@{/content-manager/movies/{id}/poster/upload(id=${movieUpsertRequest.id})}"
-                      method="post"
-                      enctype="multipart/form-data"
-                      class="upload-section">
+                <div class="asset-status" th:if="${currentPosterAsset != null}">
+                    <div class="asset-status__main">
+                        <img class="asset-preview asset-preview--poster"
+                             th:src="${currentPosterAsset.assetUrl}"
+                             alt="Poster hiện tại" />
+                        <div class="asset-status__content">
+                            <span class="asset-badge asset-badge--ready">Đã có poster hiện tại</span>
+                            <a class="asset-link" th:href="${currentPosterAsset.assetUrl}" target="_blank" rel="noopener">
+                                Mở poster hiện tại
+                            </a>
+                            <p class="asset-help">Tải file mới lên để thay thế poster cũ nếu cần.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="asset-status asset-status--empty" th:if="${currentPosterAsset == null}">
+                    <span class="asset-badge asset-badge--missing">Chưa có poster</span>
+                    <p class="asset-help">Phim chưa có poster. Tải lên file ảnh để hoàn thiện hiển thị.</p>
+                </div>
 
-                    <div class="form-section-title">Ủy quyền File Tài nguyên (POSTER)</div>
+                <form th:if="${currentPosterAsset != null}"
+                      th:action="@{/content-manager/movies/{movieId}/assets/{assetId}/delete(movieId=${movieUpsertRequest.id}, assetId=${currentPosterAsset.id})}"
+                      method="post"
+                      class="asset-delete-form"
+                      onsubmit="return confirm('Bạn có chắc muốn xóa poster hiện tại?')">
+                    <button type="submit" class="btn btn-danger btn-sm">Xóa poster</button>
+                </form>
+
+                <form id="moviePosterForm"
+                      class="upload-section js-dirty-form"
+                      th:action="@{/content-manager/movies/{id}/poster/upload(id=${movieUpsertRequest.id})}"
+                      method="post"
+                      enctype="multipart/form-data">
+
+                    <div class="form-section-title">Tài nguyên Poster</div>
 
                     <div class="form-row">
                         <div class="form-group">
                             <label for="uploadFile">Chọn file ảnh poster <span class="required">*</span></label>
                             <input id="uploadFile" type="file" name="file" class="form-control" required
                                    accept="image/*" />
-                            <p style="margin: 8px 0 0 0; color: #b3b3b3; font-size: 14px;">
+                            <p class="asset-help">
                                 Poster được tải trực tiếp từ máy và chỉ chấp nhận file ảnh.
                             </p>
                         </div>
                     </div>
-                    <div style="text-align: right; margin-top: 15px;">
-                        <button type="submit" class="btn btn-primary">Tải lên poster</button>
+                    <div class="asset-action-row">
+                        <button type="submit" class="btn btn-primary"
+                                th:text="${currentPosterAsset != null} ? 'Thay thế poster' : 'Tải lên poster'"></button>
                     </div>
 
                 </form>
             </div>
 
             <div class="form-card" th:if="${movieUpsertRequest.id != null}">
-                <form th:action="@{/content-manager/movies/{id}/trailer/url(id=${movieUpsertRequest.id})}"
-                      method="post"
-                      class="upload-section">
+                <div class="asset-status" th:if="${currentTrailerAsset != null}">
+                    <div class="asset-status__content">
+                        <span class="asset-badge asset-badge--ready">Đã có trailer hiện tại</span>
+                        <a class="asset-link" th:href="${currentTrailerAsset.assetUrl}" target="_blank" rel="noopener">
+                            Mở trailer hiện tại
+                        </a>
+                        <div class="asset-url" th:text="${currentTrailerAsset.assetUrl}"></div>
+                    </div>
+                </div>
+                <div class="asset-status asset-status--empty" th:if="${currentTrailerAsset == null}">
+                    <span class="asset-badge asset-badge--missing">Chưa có trailer</span>
+                    <p class="asset-help">Nhập Cloudinary URL để gắn trailer cho phim.</p>
+                </div>
 
-                    <div class="form-section-title">Ủy quyền File Tài nguyên (TRAILER)</div>
-                    <p style="margin: 0 0 15px 0; color: #b3b3b3; font-size: 14px;">
+                <form th:if="${currentTrailerAsset != null}"
+                      th:action="@{/content-manager/movies/{movieId}/assets/{assetId}/delete(movieId=${movieUpsertRequest.id}, assetId=${currentTrailerAsset.id})}"
+                      method="post"
+                      class="asset-delete-form"
+                      onsubmit="return confirm('Bạn có chắc muốn xóa trailer hiện tại?')">
+                    <button type="submit" class="btn btn-danger btn-sm">Xóa trailer</button>
+                </form>
+
+                <form id="movieTrailerForm"
+                      class="upload-section js-dirty-form"
+                      th:action="@{/content-manager/movies/{id}/trailer/url(id=${movieUpsertRequest.id})}"
+                      method="post">
+
+                    <div class="form-section-title">Tài nguyên Trailer</div>
+                    <p class="asset-help">
                         Trailer dùng đường dẫn <code>Secure URL</code> từ Cloudinary, giống luồng gắn
                         <code>FULL_VIDEO</code>.
                     </p>
@@ -225,36 +284,71 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="trailerUrl">Đường dẫn URL Cloudinary <span class="required">*</span></label>
-                            <input id="trailerUrl" type="url" name="assetUrl" class="form-control" required
+                            <input id="trailerUrl"
+                                   type="url"
+                                   name="assetUrl"
+                                   class="form-control"
+                                   required
+                                   th:value="${currentTrailerAsset != null ? currentTrailerAsset.assetUrl : ''}"
                                    placeholder="VD: https://res.cloudinary.com/.../video/upload/v1234/trailer.mp4" />
                         </div>
                     </div>
-                    <div style="text-align: right; margin-top: 15px;">
-                        <button type="submit" class="btn btn-secondary">Lưu URL trailer</button>
+                    <div class="asset-action-row">
+                        <button type="submit" class="btn btn-secondary"
+                                th:text="${currentTrailerAsset != null} ? 'Cập nhật trailer' : 'Lưu URL trailer'"></button>
                     </div>
 
                 </form>
             </div>
 
             <div class="form-card" th:if="${movieUpsertRequest.id != null}">
-                <form th:action="@{/content-manager/movies/{id}/video/url(id=${movieUpsertRequest.id})}"
-                      method="post"
-                      class="upload-section">
+                <div class="asset-status" th:if="${currentVideoAsset != null}">
+                    <div class="asset-status__content">
+                        <span class="asset-badge asset-badge--ready">Đã có video phim hiện tại</span>
+                        <a class="asset-link" th:href="${currentVideoAsset.assetUrl}" target="_blank" rel="noopener">
+                            Mở video hiện tại
+                        </a>
+                        <div class="asset-url" th:text="${currentVideoAsset.assetUrl}"></div>
+                    </div>
+                </div>
+                <div class="asset-status asset-status--empty" th:if="${currentVideoAsset == null}">
+                    <span class="asset-badge asset-badge--missing">Chưa có full video</span>
+                    <p class="asset-help">Nhập Cloudinary URL để gắn video phim đầy đủ.</p>
+                </div>
 
-                    <div class="form-section-title">Ủy quyền File theo Link URL (FULL_VIDEO)</div>
-                    <p style="margin: 0 0 15px 0; color: #b3b3b3; font-size: 14px;">
+                <form th:if="${currentVideoAsset != null}"
+                      th:action="@{/content-manager/movies/{movieId}/assets/{assetId}/delete(movieId=${movieUpsertRequest.id}, assetId=${currentVideoAsset.id})}"
+                      method="post"
+                      class="asset-delete-form"
+                      onsubmit="return confirm('Bạn có chắc muốn xóa full video hiện tại?')">
+                    <button type="submit" class="btn btn-danger btn-sm">Xóa full video</button>
+                </form>
+
+                <form id="movieVideoForm"
+                      class="upload-section js-dirty-form"
+                      th:action="@{/content-manager/movies/{id}/video/url(id=${movieUpsertRequest.id})}"
+                      method="post">
+
+                    <div class="form-section-title">Tài nguyên Full Video</div>
+                    <p class="asset-help">
                         Nhập đường dẫn <code>Secure URL</code> video từ Cloudinary để gắn file phim đầy đủ.
                     </p>
 
                     <div class="form-row">
                         <div class="form-group">
                             <label for="videoUrl">Đường dẫn URL Cloudinary <span class="required">*</span></label>
-                            <input id="videoUrl" type="url" name="assetUrl" class="form-control" required
+                            <input id="videoUrl"
+                                   type="url"
+                                   name="assetUrl"
+                                   class="form-control"
+                                   required
+                                   th:value="${currentVideoAsset != null ? currentVideoAsset.assetUrl : ''}"
                                    placeholder="VD: https://res.cloudinary.com/.../video/upload/v1234/movie.mp4" />
                         </div>
                     </div>
-                    <div style="text-align: right; margin-top: 15px;">
-                        <button type="submit" class="btn btn-secondary">Lưu URL video</button>
+                    <div class="asset-action-row">
+                        <button type="submit" class="btn btn-secondary"
+                                th:text="${currentVideoAsset != null} ? 'Cập nhật video' : 'Lưu URL video'"></button>
                     </div>
 
                 </form>
@@ -269,6 +363,78 @@
 
         </div>
     </div>
+
+    <script>
+        (() => {
+            const confirmMessage = 'Dữ liệu chưa được lưu. Bạn có chắc muốn thoát?';
+            const dirtyForms = Array.from(document.querySelectorAll('.js-dirty-form'));
+            const initialSnapshots = new Map();
+            let intentionalNavigation = false;
+
+            const serializeForm = (form) => {
+                const data = new FormData(form);
+                const entries = [];
+
+                for (const [key, value] of data.entries()) {
+                    if (value instanceof File) {
+                        entries.push(`${key}:${value.name}:${value.size}`);
+                    } else {
+                        entries.push(`${key}:${value}`);
+                    }
+                }
+
+                return entries.join('|');
+            };
+
+            dirtyForms.forEach((form) => {
+                initialSnapshots.set(form, serializeForm(form));
+                form.addEventListener('submit', () => {
+                    intentionalNavigation = true;
+                });
+            });
+
+            const hasUnsavedChanges = () => {
+                if (intentionalNavigation) {
+                    return false;
+                }
+
+                return dirtyForms.some((form) => serializeForm(form) !== initialSnapshots.get(form));
+            };
+
+            const confirmLeave = () => !hasUnsavedChanges() || window.confirm(confirmMessage);
+
+            const cancelButton = document.getElementById('cancelMovieForm');
+            if (cancelButton) {
+                cancelButton.addEventListener('click', () => {
+                    if (!confirmLeave()) {
+                        return;
+                    }
+                    intentionalNavigation = true;
+                    window.location.href = cancelButton.dataset.cancelUrl;
+                });
+            }
+
+            document.querySelectorAll('.js-guarded-navigation').forEach((link) => {
+                link.addEventListener('click', (event) => {
+                    if (confirmLeave()) {
+                        intentionalNavigation = true;
+                        return;
+                    }
+
+                    event.preventDefault();
+                });
+            });
+
+            window.addEventListener('beforeunload', (event) => {
+                if (!hasUnsavedChanges()) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.returnValue = '';
+            });
+        })();
+    </script>
 </body>
 
 </html>

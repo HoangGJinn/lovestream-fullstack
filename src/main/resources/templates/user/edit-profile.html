@@ -24,7 +24,7 @@
             <li><a href="/account/favorites" class="menu-item"><i class="fa-solid fa-heart"></i> Yêu thích</a></li>
             <li><a href="/account" class="menu-item"><i class="fa-solid fa-house"></i> Tổng quan</a></li>
             <li><a href="#" class="menu-item"><i class="fa-regular fa-credit-card"></i> Tư cách thành viên</a></li>
-            <li><a href="#" class="menu-item"><i class="fa-solid fa-shield-halved"></i> Bảo mật</a></li>
+            <li><a href="/account/security" class="menu-item"><i class="fa-solid fa-shield-halved"></i> Bảo mật</a></li>
             <li><a href="#" class="menu-item"><i class="fa-solid fa-laptop-mobile"></i> Thiết bị</a></li>
             <li><a href="/profile" class="menu-item active"><i class="fa-solid fa-users"></i> Hồ sơ</a></li>
         </ul>
@@ -37,7 +37,8 @@
         <div class="edit-form-card">
             <div class="success-alert" th:if="${successMessage}" th:text="${successMessage}">Cập nhật thành công</div>
 
-            <form th:action="@{/profile/edit}" th:object="${profileForm}" method="post" class="edit-form">
+            <form th:action="@{/profile/edit}" th:object="${profileForm}" method="post" class="edit-form"
+                  onsubmit="return confirm('Bạn có chắc chắn muốn lưu thay đổi thông tin hồ sơ không?');">
                 <div class="form-group">
                     <label for="fullName">Họ và tên</label>
                     <input id="fullName" type="text" th:field="*{fullName}" placeholder="Nhập họ và tên">
@@ -76,3 +77,4 @@
 
 </body>
 </html>
+

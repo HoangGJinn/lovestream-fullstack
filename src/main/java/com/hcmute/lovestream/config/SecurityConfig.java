@@ -54,6 +54,7 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/account/change-password/backup").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/account/delete/confirm").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/password/backup-change").permitAll()
 
                         // 2. Trang công khai cho khách chưa đăng nhập (SEO)

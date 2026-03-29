@@ -1,12 +1,15 @@
 package com.hcmute.lovestream.controller.web;
 
 import com.hcmute.lovestream.dto.request.UpdateProfileRequest;
+import com.hcmute.lovestream.entity.Payment;
 import com.hcmute.lovestream.entity.User;
 import com.hcmute.lovestream.entity.enums.Gender;
 import com.hcmute.lovestream.entity.Subscription;
 import com.hcmute.lovestream.entity.enums.SubscriptionStatus;
 import com.hcmute.lovestream.service.user.UserProfileService;
 import com.hcmute.lovestream.service.plan.ServicePlanService;
+import com.hcmute.lovestream.repository.GenreRepository;
+import com.hcmute.lovestream.repository.PaymentRepository;
 import com.hcmute.lovestream.repository.SubscriptionRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +29,8 @@ public class UserWebController {
     private final UserProfileService userProfileService;
     private final ServicePlanService servicePlanService;
     private final SubscriptionRepository subscriptionRepository;
+    private final PaymentRepository paymentRepository;
+    private final GenreRepository genreRepository;
 
     @GetMapping("/profile")
     public String profilePage(Authentication authentication, Model model) {
@@ -106,10 +111,19 @@ public class UserWebController {
         return "user/membership";
     }
 
+    @GetMapping("/account/payments")
+    public String paymentHistoryPage(Authentication authentication, Model model) {
+        User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
+        java.util.List<Payment> payments = paymentRepository.findByUserOrderByCreatedAtDesc(currentUser);
+        model.addAttribute("payments", payments);
+        return "user/payment-history";
+    }
+
     @GetMapping("/account/favorites")
     public String getFavoritesPage(Authentication authentication, Model model) {
         User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
         model.addAttribute("currentUser", currentUser);
+        model.addAttribute("genres", genreRepository.findAll());
         return "user/favorites";
     }
 
