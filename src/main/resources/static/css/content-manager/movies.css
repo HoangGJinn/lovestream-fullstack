@@ -20,3 +20,121 @@
 .upload-section {
     width: 100%;
 }
+
+.asset-status {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.asset-status--empty {
+    display: block;
+}
+
+.asset-status__main {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.asset-status__content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.asset-preview {
+    display: block;
+    border-radius: 10px;
+    background: #222;
+}
+
+.asset-preview--poster {
+    width: 120px;
+    height: 180px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.asset-badge {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.asset-badge--ready {
+    color: #9ef0b7;
+    background: rgba(42, 138, 72, 0.24);
+}
+
+.asset-badge--missing {
+    color: #ffd59a;
+    background: rgba(171, 109, 23, 0.22);
+}
+
+.asset-link {
+    color: #7bc1ff;
+    text-decoration: none;
+    word-break: break-word;
+}
+
+.asset-link:hover {
+    text-decoration: underline;
+}
+
+.asset-url {
+    color: #c9c9c9;
+    font-size: 13px;
+    line-height: 1.5;
+    word-break: break-all;
+}
+
+.asset-help {
+    margin: 8px 0 0;
+    color: #b3b3b3;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.asset-delete-form {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+}
+
+.asset-action-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 15px;
+}
+
+@media (max-width: 768px) {
+    .asset-status__main {
+        flex-direction: column;
+    }
+
+    .asset-preview--poster {
+        width: 100px;
+        height: 150px;
+    }
+
+    .asset-delete-form,
+    .asset-action-row {
+        justify-content: stretch;
+    }
+
+    .asset-delete-form .btn,
+    .asset-action-row .btn {
+        width: 100%;
+    }
+}
