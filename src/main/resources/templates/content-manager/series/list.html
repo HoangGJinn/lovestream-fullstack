@@ -78,15 +78,15 @@
                         <td th:text="${series.releaseYear}">2024</td>
                         <td>
                             <span class="badge"
-                                  th:classappend="${series.status == T(com.hcmute.lovestream.entity.enums.ContentStatus).ACTIVE} ? 'badge-active' : 'badge-hidden'"
-                                  th:text="${series.status == T(com.hcmute.lovestream.entity.enums.ContentStatus).ACTIVE} ? 'Đang chiếu' : 'Đã ẩn'">
+                                  th:classappend="${series.status != null and series.status.name() == 'ACTIVE'} ? 'badge-active' : 'badge-hidden'"
+                                  th:text="${series.status != null and series.status.name() == 'ACTIVE'} ? 'Đang chiếu' : 'Đã ẩn'">
                             </span>
                         </td>
                         <td class="actions">
                             <a th:href="@{/content-manager/series/{id}/edit(id=${series.id})}" class="btn btn-secondary btn-sm">Sửa</a>
                             <form th:action="@{/content-manager/series/{id}/toggle-status(id=${series.id})}" method="post" style="display:inline;">
-                                <button class="btn btn-sm" th:classappend="${series.status == T(com.hcmute.lovestream.entity.enums.ContentStatus).ACTIVE} ? 'btn-warning' : 'btn-success'"
-                                        type="submit" th:text="${series.status == T(com.hcmute.lovestream.entity.enums.ContentStatus).ACTIVE} ? 'Ẩn' : 'Hiện'"></button>
+                                <button class="btn btn-sm" th:classappend="${series.status != null and series.status.name() == 'ACTIVE'} ? 'btn-warning' : 'btn-success'"
+                                        type="submit" th:text="${series.status != null and series.status.name() == 'ACTIVE'} ? 'Ẩn' : 'Hiện'"></button>
                             </form>
                             <form th:action="@{/content-manager/series/{id}/delete(id=${series.id})}" method="post" style="display:inline;"
                                   onsubmit="return confirm('CẢNH BÁO: Xóa series sẽ xóa toàn bộ SEASON và EPISODE bên trong. Bạn có chắc chắn?')">

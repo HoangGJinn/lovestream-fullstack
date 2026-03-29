@@ -42,30 +42,54 @@ public class MovieService {
 
     @Transactional(readOnly = true)
     public List<MovieResponse> getMoviesForListing(String sortKey, String userEmail) {
-        // 1. Lấy toàn bộ danh sách Movie ACTIVE
-        List<Movie> movies = new ArrayList<>(movieRepository.findAllByStatusOrderByTitleAsc(ContentStatus.ACTIVE));
+        return getMoviesForListing(sortKey, userEmail, null);
+    }
 
-        if (movies.isEmpty()) {
-            return List.of();
+    @Transactional(readOnly = true)
+    public List<MovieResponse> getMoviesForListing(String sortKey, String userEmail, String keyword) {
+        try {
+            List<Movie> movies = new ArrayList<>(movieRepository.findAllByStatusOrderByTitleAsc(ContentStatus.ACTIVE));
+
+            String normalizedKeyword = Optional.ofNullable(keyword)
+                    .map(String::trim)
+                    .orElse("");
+            if (!normalizedKeyword.isEmpty()) {
+                String loweredKeyword = normalizedKeyword.toLowerCase(Locale.ROOT);
+                movies = movies.stream()
+                        .filter(movie -> safeTitle(movie.getTitle()).contains(loweredKeyword))
+                        .collect(Collectors.toCollection(ArrayList::new));
+            }
+
+            if (movies.isEmpty()) {
+                return List.of();
+            }
+
+            List<String> movieIds = movies.stream().map(Movie::getId).toList();
+            Map<String, Double> averageRatings = buildAverageRatingMap(movieIds);
+            Map<String, Long> ratingCounts = buildRatingCountMap(movieIds);
+            Map<String, Long> favoriteCounts = buildFavoriteCountMap(movieIds);
+
+            String normalizedSort = Optional.ofNullable(sortKey)
+                    .map(s -> s.trim().toLowerCase(Locale.ROOT))
+                    .filter(s -> !s.isEmpty())
+                    .orElse("default");
+
+            Comparator<Movie> comparator = buildComparator(normalizedSort, userEmail, averageRatings, ratingCounts,
+                    favoriteCounts);
+            movies.sort(comparator);
+
+            return movies.stream()
+                    .map(movieMapper::toMovieResponse)
+                    .collect(Collectors.toList());
+        } catch (org.springframework.dao.DataAccessException e) {
+            // lỗi DB
+            throw new RuntimeException("Không thể kết nối hệ thống", e);
         }
+    }
 
-        List<String> movieIds = movies.stream().map(Movie::getId).toList();
-        Map<String, Double> averageRatings = buildAverageRatingMap(movieIds);
-        Map<String, Long> ratingCounts = buildRatingCountMap(movieIds);
-        Map<String, Long> favoriteCounts = buildFavoriteCountMap(movieIds);
-
-        String normalizedSort = Optional.ofNullable(sortKey)
-                .map(s -> s.trim().toLowerCase(Locale.ROOT))
-                .filter(s -> !s.isEmpty())
-                .orElse("default");
-
-        Comparator<Movie> comparator = buildComparator(normalizedSort, userEmail, averageRatings, ratingCounts,
-                favoriteCounts);
-        movies.sort(comparator);
-
-        return movies.stream()
-                .map(movieMapper::toMovieResponse)
-                .collect(Collectors.toList());
+    @Transactional(readOnly = true)
+    public boolean hasAnyActiveMovies() {
+        return movieRepository.countByStatus(ContentStatus.ACTIVE) > 0;
     }
 
     private Comparator<Movie> buildComparator(String sortKey,
@@ -101,7 +125,7 @@ public class MovieService {
             default -> buildRecommendedComparator(userEmail, averageRatings, ratingCounts, favoriteCounts);
         };
     }
-
+    // dựa trên sở thích thể loại của user, điểm cá nhân user đã chấm cho phim, điểm trung bình, độ phổ biến của phim để tính điểm đề xuất
     private Comparator<Movie> buildRecommendedComparator(String userEmail,
             Map<String, Double> averageRatings,
             Map<String, Long> ratingCounts,

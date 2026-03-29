@@ -52,6 +52,11 @@
             min-width: 260px;
         }
 
+        /* Giữ keyword nhưng không hiển thị input search cố định trong filter bar */
+        .movie-filter-hidden {
+            display: none;
+        }
+
         .movie-filter-btn {
             background: #e50914;
             color: #fff;
@@ -76,6 +81,12 @@
             color: #b3b3b3;
             font-size: 1rem;
         }
+        .error-movies {
+            margin: 16px 4% 0;
+            color: #ff6b6b;
+            font-size: 1rem;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -83,8 +94,18 @@
 <div class="navbar" id="navbar">
             <div th:replace="~{fragments/top-navbar :: topNavLeft('movies')}"></div>
         <div class="nav-right">
-        <i class="fa-solid fa-magnifying-glass nav-icon"></i>
-        <a href="/notifications" class="nav-icon" aria-label="Thong bao"><i class="fa-regular fa-bell"></i></a>
+        <form id="movieSearchForm" class="nav-search" action="/movies" method="get">
+            <input type="hidden" name="sort" th:value="${selectedSort}">
+            <button id="movieSearchToggle" class="nav-icon nav-search-toggle" type="button" aria-label="Tìm kiếm">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+            <input id="movieSearchInput" class="nav-search-input" name="keyword" type="text"
+                   placeholder="Tìm phim..." th:value="${currentKeyword}" autocomplete="off">
+        </form>
+        <a href="/notifications" class="nav-icon notification-link" aria-label="Thong bao">
+            <i class="fa-regular fa-bell"></i>
+            <span th:if="${unreadCount > 0}" class="notification-badge" th:text="${unreadCount > 99 ? '99+' : unreadCount}">0</span>
+        </a>
         <div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>
     </div>
 </div>
@@ -107,6 +128,7 @@
                 <option value="duration_asc" th:selected="${selectedSort == 'duration_asc'}">Thời lượng: ngắn → dài</option>
                 <option value="duration_desc" th:selected="${selectedSort == 'duration_desc'}">Thời lượng: dài → ngắn</option>
             </select>
+            <input id="keyword" name="keyword" class="movie-filter-hidden" type="hidden" th:value="${currentKeyword}">
             <button class="movie-filter-btn" type="submit">Áp dụng</button>
         </form>
     </header>
@@ -115,11 +137,19 @@
         <div class="categories-container" th:if="${#lists.isEmpty(movieRows)}">
             <p class="empty-movies">Chưa có phim để hiển thị.</p>
         </div>
+        <div class="categories-container" th:if="${errorMessage != null}">
+            <p class="error-movies" th:text="${errorMessage}">Không thể kết nối hệ thống. Vui lòng thử lại sau.</p>
+        </div>
+
+        <div class="categories-container" th:if="${#lists.isEmpty(movieRows) and errorMessage == null}">
+            <p class="empty-movies" th:text="${emptyMessage != null ? emptyMessage : 'Hiện chưa có phim nào'}">Hiện chưa có phim nào</p>
+        </div>
 
         <div class="categories-container" th:each="row, rowStat : ${movieRows}">
 <!--            <h2 class="row-title" th:text="|Danh sách phim ${rowStat.count}|"></h2>-->
             <div class="row-posters">
-                <a class="movie-card" th:id="${movie.id}" th:each="movie : ${row}" th:href="@{/movies/{id}(id=${movie.id})}">
+                <a class="movie-card" th:id="${movie.id}" th:each="movie : ${row}"
+                   th:href="@{/movies/{id}(id=${movie.id}, sort=${selectedSort}, keyword=${currentKeyword})}">
                     <img th:src="${movie.imagePosterUrl}" class="row-poster" th:alt="${movie.title}">
                     <div class="movie-title-overlay" th:text="${movie.title}"></div>
                 </a>
@@ -134,6 +164,37 @@
         if (window.scrollY > 50) navbar.classList.add('scrolled');
         else navbar.classList.remove('scrolled');
     });
+
+    (function () {
+        const form = document.getElementById('movieSearchForm');
+        const toggle = document.getElementById('movieSearchToggle');
+        const input = document.getElementById('movieSearchInput');
+
+        if (!form || !toggle || !input) return;
+
+        function submitSearch() {
+            const term = (input.value || '').trim();
+            if (!term) return;
+            input.value = term;
+            form.submit();
+        }
+
+        toggle.addEventListener('click', function () {
+            if (!form.classList.contains('is-open')) {
+                form.classList.add('is-open');
+                input.focus();
+                return;
+            }
+            submitSearch();
+        });
+
+        input.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                submitSearch();
+            }
+        });
+    })();
 </script>
 
 </body>

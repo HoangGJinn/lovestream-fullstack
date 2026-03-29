@@ -29,7 +29,10 @@
                 <input type="hidden" id="searchType" name="type" th:value="${searchRequest.type}">
                 <input type="hidden" id="searchSeason" name="season" th:value="${searchRequest.season}">
             </form>
-            <i th:if="${currentUser != null}" class="fa-regular fa-bell nav-icon"></i>
+            <a th:if="${currentUser != null}" href="/notifications" class="nav-icon notification-link" aria-label="Thong bao">
+                <i class="fa-regular fa-bell"></i>
+                <span th:if="${unreadCount > 0}" class="notification-badge" th:text="${unreadCount > 99 ? '99+' : unreadCount}">0</span>
+            </a>
             <div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>
         </div>
     </div>
@@ -89,7 +92,8 @@
                 <h2 class="row-title">Danh sách nội dung</h2>
                 <div class="search-results-grid">
                     <a class="movie-card" th:each="item : ${searchResponse.data}"
-                        th:href="${item.type == 'series'} ? @{/videocontents/{id}(id=${item.id})} : @{/movies/{slug}(slug=${item.slugOrId ?: item.id})}">
+                       th:with="targetHref=${(item.type == 'series') ? ('/series/' + item.id) : ('/movies/' + (item.slugOrId != null ? item.slugOrId : item.id))}"
+                       th:href="${targetHref}">
                         <img th:src="${item.posterUrl}" class="row-poster" th:alt="${item.title}">
                         <div class="movie-title-overlay">
                             <div class="search-card-title" th:text="${item.title}">Tên phim</div>

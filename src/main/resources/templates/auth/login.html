@@ -20,6 +20,7 @@
         <div class="auth-box">
             <h2>Đăng nhập</h2>
 
+            <div id="success-alert" class="alert alert-success"></div>
             <div id="error-alert" class="alert alert-error"></div>
             <div id="google-error" class="alert alert-error"></div>
 
@@ -93,6 +94,14 @@
         (function () {
             const params = new URLSearchParams(window.location.search);
             const googleErr = params.get('error');
+            const notice = params.get('notice');
+
+            if (notice === 'password_changed') {
+                const successEl = document.getElementById('success-alert');
+                successEl.innerText = 'Đổi mật khẩu thành công. Hệ thống đã gửi email kèm link dự phòng.';
+                successEl.style.display = 'block';
+            }
+
             if (googleErr) {
                 const el = document.getElementById('google-error');
                 el.innerText = decodeURIComponent(googleErr);

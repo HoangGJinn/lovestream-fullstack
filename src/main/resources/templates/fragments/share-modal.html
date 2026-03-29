@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+</head>
+<body>
+
+<div th:fragment="shareModal">
+    <!-- Giao diện Chia sẻ (Ẩn mặc định) -->
+    <div id="sharePopUp" class="share-overlay" style="display: none;">
+        <div class="share-box">
+            <button class="share-close" id="closePopUp">&times;</button>
+            <h3 class="share-title">Chia sẻ phim</h3>
+            <div class="share-icons-row">
+                <button class="s-icon s-fb" onclick="doShare('facebook')" title="Facebook"><i class="fa-brands fa-facebook-f"></i></button>
+                <button class="s-icon s-x" onclick="doShare('twitter')" title="X (Twitter)"><i class="fa-brands fa-x-twitter"></i></button>
+                <button class="s-icon s-tg" onclick="doShare('telegram')" title="Telegram"><i class="fa-brands fa-telegram"></i></button>
+                <button class="s-icon s-rd" onclick="doShare('reddit')" title="Reddit"><i class="fa-brands fa-reddit-alien"></i></button>
+                <button class="s-icon s-ms" onclick="doShare('messenger')" title="Messenger"><i class="fa-brands fa-facebook-messenger"></i></button>
+                <button class="s-icon s-link" onclick="doCopyLink()" title="Sao chép liên kết"><i class="fa-solid fa-share-nodes"></i></button>
+            </div>
+        </div>
+    </div>
+    <div id="copyToast" class="copy-toast">Đã sao chép liên kết!</div>
+
+    <!-- Script và CSS dùng chung -->
+    <link rel="stylesheet" href="/css/share.css">
+    <script src="/js/share.js"></script>
+</div>
+
+</body>
+</html>

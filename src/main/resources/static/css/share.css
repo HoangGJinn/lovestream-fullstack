@@ -1,0 +1,65 @@
+/* Style cho Modal Chia sẻ và Toast */
+.share-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(8px);
+    z-index: 999999;
+    align-items: center;
+    justify-content: center;
+}
+
+.share-box {
+    background: #212942;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 40px;
+    width: 90%;
+    max-width: 460px;
+    position: relative;
+    box-shadow: 0 15px 50px rgba(0,0,0,0.8);
+    animation: zoomInShare 0.3s ease-out;
+}
+
+@keyframes zoomInShare {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.share-close {
+    position: absolute; top: 15px; right: 20px;
+    background: none; border: none; color: #fff; font-size: 28px; cursor: pointer;
+}
+
+.share-title { color: #fff; font-size: 22px; margin-bottom: 30px; font-family: sans-serif; text-align: center; }
+
+.share-icons-row { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+
+.s-icon {
+    width: 60px; height: 45px; border: none; border-radius: 10px;
+    color: #fff; font-size: 20px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+}
+.s-icon:hover { transform: translateY(-5px); filter: brightness(1.2); }
+
+.s-fb { background: #4a6ea9; }
+.s-x { background: #000; }
+.s-tg { background: #0088cc; }
+.s-rd { background: #ff4500; }
+.s-ms { background: #0084ff; }
+.s-link { background: #a0d911; }
+
+.copy-toast {
+    visibility: hidden; position: fixed; left: 50%; bottom: 40px;
+    transform: translateX(-50%); background: #111; color: #fff;
+    padding: 12px 25px; border-radius: 10px; z-index: 1000000;
+    border: 1px solid #333;
+    text-align: center;
+}
+.copy-toast.show { visibility: visible; animation: toastFadeShare 3s forwards; }
+@keyframes toastFadeShare {
+    0% { opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { opacity: 0; }
+}

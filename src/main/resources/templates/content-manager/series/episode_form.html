@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${episodeUpsertRequest.id != null} ? 'Sửa Episode' : 'Thêm Episode mới'">Form Episode</title>
+    <title th:text="${not #strings.isEmpty(episodeUpsertRequest.id)} ? 'Sửa Episode' : 'Thêm Episode mới'">Form Episode</title>
     <link rel="stylesheet" th:href="@{/css/content-manager/content-manager-theme.css}" />
     <link rel="stylesheet" th:href="@{/css/content-manager/movies.css}" />
 </head>
@@ -13,27 +13,26 @@
 
 <div class="admin-content">
     <header class="admin-header">
-        <h1 th:text="${episodeUpsertRequest.id != null} ? 'Cập nhật Episode' : 'Thêm Episode mới'">Form Episode</h1>
+        <h1 th:text="${not #strings.isEmpty(episodeUpsertRequest.id)} ? 'Cập nhật Episode' : 'Thêm Episode mới'">Form Episode</h1>
         <div class="header-actions">
-            <a th:href="@{/content-manager/series/seasons/{id}/edit(id=${season.id})}" class="btn btn-secondary">
+            <a th:href="@{/content-manager/series/seasons/{id}/edit(id=${season.id})}"
+               class="btn btn-secondary js-guarded-navigation">
                 ← Quay lại Mùa: <span th:text="${season.name ?: 'Mùa ' + season.seasonNumber}"></span>
             </a>
         </div>
     </header>
 
     <div class="admin-content">
-
         <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
         <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
-        <!-- ── FORM: Episode metadata ── -->
         <div class="form-card">
-            <form th:action="${episodeUpsertRequest.id != null}
+            <form th:action="${not #strings.isEmpty(episodeUpsertRequest.id)}
                     ? @{/content-manager/series/episodes/{id}(id=${episodeUpsertRequest.id})}
                     : @{/content-manager/series/seasons/{seasonId}/episodes(seasonId=${season.id})}"
-                  th:object="${episodeUpsertRequest}" method="post"
-                  onchange="window.__formDirty = true"
-                  onsubmit="window.__formDirty = false">
+                  th:object="${episodeUpsertRequest}"
+                  method="post"
+                  class="js-dirty-form">
 
                 <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger">
                     <p th:each="err : ${#fields.globalErrors()}" th:text="${err}"></p>
@@ -74,24 +73,28 @@
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="airDate">Ngày phát sóng (tuỳ chọn)</label>
+                            <label for="airDate">Ngày phát sóng (tùy chọn)</label>
                             <input id="airDate" type="date" th:field="*{airDate}" class="form-control" />
                         </div>
                     </div>
                 </div>
 
                 <div class="form-actions">
-                    <a th:href="@{/content-manager/series/seasons/{id}/edit(id=${season.id})}" class="btn btn-secondary">Hủy</a>
+                    <button type="button"
+                            class="btn btn-secondary js-cancel-navigation"
+                            th:attr="data-cancel-url=@{/content-manager/series/seasons/{id}/edit(id=${season.id})}">
+                        Hủy
+                    </button>
                     <button type="submit" class="btn btn-primary"
-                            th:text="${episodeUpsertRequest.id != null} ? 'Lưu thay đổi' : 'Tạo tập'">Lưu</button>
+                            th:text="${not #strings.isEmpty(episodeUpsertRequest.id)} ? 'Lưu thay đổi' : 'Tạo tập'">Lưu</button>
                 </div>
             </form>
-        </div><!-- /.form-card metadata -->
+        </div>
 
-
-        <!-- ── Episode Video URL  ── -->
-        <div class="form-card" th:if="${episodeUpsertRequest.id != null}">
-            <form th:action="@{/content-manager/series/episodes/{id}/video/url(id=${episodeUpsertRequest.id})}" method="post" class="upload-section">
+        <div class="form-card" th:if="${not #strings.isEmpty(episodeUpsertRequest.id)}">
+            <form th:action="@{/content-manager/series/episodes/{id}/video/url(id=${episodeUpsertRequest.id})}"
+                  method="post"
+                  class="upload-section js-dirty-form">
                 <div class="form-section-title">Video tập phim (Cloudinary URL)</div>
                 <p style="margin:0 0 15px 0;color:#b3b3b3;font-size:14px;">
                     Nhập đường dẫn <code>Secure URL</code> từ Cloudinary để gắn video cho tập này.
@@ -108,18 +111,10 @@
                 </div>
             </form>
         </div>
+    </div>
+</div>
 
-    </div><!-- /.admin-content inner -->
-</div><!-- /.admin-content outer -->
-
-<script>
-window.addEventListener('beforeunload', function(e) {
-    if (window.__formDirty) {
-        e.preventDefault();
-        e.returnValue = '';
-    }
-});
-</script>
+<script th:src="@{/js/content-manager/series-form.js}"></script>
 
 </body>
 </html>

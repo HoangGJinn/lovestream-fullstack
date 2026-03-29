@@ -920,7 +920,7 @@ const video = document.getElementById('video');
                     backBufferLength: 0,
 
                     maxBufferHole: 0.3,
-                    startLevel: 0 // 🔥 load nhanh hơn
+                    startLevel: 0
                 });
 
                 hls.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -978,7 +978,7 @@ const video = document.getElementById('video');
                 keepalive: isFinalSync
             });
         } catch (error) {
-            console.warn('Khong the dong bo lich su xem', error);
+            console.warn('Không thể đồng bộ lịch sử', error);
         }
     }
 
@@ -1437,3 +1437,6 @@ async function loadComments() {
             console.error("Lỗi khi vote đánh giá:", err);
         }
     }
+
+
+// Lưu ý: Logic chia sẻ đã được chuyển sang /js/share.js để dùng chung

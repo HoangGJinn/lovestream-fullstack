@@ -98,6 +98,15 @@
             display: flex;
             justify-content: space-between;
             gap: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .notification-card:hover {
+            border-color: #e50914;
+            background: #262626;
+            box-shadow: 0 4px 16px rgba(229, 9, 20, 0.2);
         }
 
         .notification-card--unread {
@@ -144,35 +153,197 @@
             word-break: break-word;
         }
 
-        .notification-actions {
-            display: flex;
-            align-items: center;
-        }
-
-        .mark-read-btn {
-            background: transparent;
-            color: #fff;
-            border: 1px solid #555;
-            border-radius: 4px;
-            padding: 8px 10px;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        .mark-read-btn:hover {
-            border-color: #fff;
-        }
-
-        .status-read {
-            color: #8f8f8f;
-            font-size: 0.85rem;
-            white-space: nowrap;
-        }
-
         .empty-notifications {
             color: #b3b3b3;
             font-size: 1rem;
             margin-top: 8px;
+        }
+
+        .alert-message {
+            padding: 14px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+        }
+
+        .alert-success {
+            background: rgba(140, 227, 173, 0.15);
+            border: 1px solid rgba(140, 227, 173, 0.4);
+            color: #8ce3ad;
+        }
+
+        .alert-error {
+            background: rgba(255, 100, 100, 0.15);
+            border: 1px solid rgba(255, 100, 100, 0.4);
+            color: #ff9999;
+        }
+
+        .notification-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(2px);
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .notification-modal-overlay.show {
+            display: flex;
+        }
+
+        .notification-modal {
+            background: linear-gradient(135deg, #1f1f1f 0%, #2a2a2a 100%);
+            border: 1px solid #333;
+            border-radius: 14px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            animation: slideUp 0.3s ease-out;
+        }
+
+        .notification-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 24px;
+            border-bottom: 1px solid #333;
+            gap: 16px;
+        }
+
+        .notification-modal-title {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .notification-modal-close {
+            background: transparent;
+            border: none;
+            color: #aaa;
+            font-size: 1.8rem;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .notification-modal-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .notification-modal-body {
+            padding: 24px;
+        }
+
+        .notification-modal-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .notification-modal-type {
+            background: #e50914;
+            color: #fff;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            padding: 5px 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .notification-modal-time {
+            color: #aaa;
+            font-size: 0.85rem;
+        }
+
+        .notification-modal-content {
+            color: #e5e5e5;
+            line-height: 1.8;
+            font-size: 0.95rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #333;
+        }
+
+        .notification-modal-footer {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .notification-modal-btn {
+            padding: 10px 16px;
+            border-radius: 6px;
+            border: 1px solid #555;
+            background: transparent;
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            text-decoration: none;
+        }
+
+        .notification-modal-btn:hover {
+            background: #e50914;
+            border-color: #e50914;
+        }
+
+        .notification-modal-btn.danger {
+            border-color: #e50914;
+            color: #ff9999;
+        }
+
+        .notification-modal-btn.danger:hover {
+            background: rgba(229, 9, 20, 0.2);
+            border-color: #ff5555;
+            color: #ff9999;
+        }
+
+        .notification-modal-btn[hidden] {
+            display: none !important;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
@@ -180,35 +351,49 @@
 <div class="navbar" id="navbar">
             <div th:replace="~{fragments/top-navbar :: topNavLeft('history')}"></div>
         <div class="nav-right">
-        <a href="/notifications" class="nav-icon" aria-label="Thong bao"><i class="fa-regular fa-bell"></i></a>
+        <a href="/notifications" class="nav-icon notification-link" aria-label="Thong bao">
+            <i class="fa-regular fa-bell"></i>
+            <span th:if="${unreadCount > 0}" class="notification-badge" th:text="${unreadCount > 99 ? '99+' : unreadCount}">0</span>
+        </a>
         <div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>
     </div>
 </div>
 
 <div class="notifications-page">
+    <div th:if="${successMessage}" class="alert-message alert-success">
+        <i class="fa-solid fa-check-circle"></i>
+        <span th:text="${successMessage}"></span>
+    </div>
+    <div th:if="${errorMessage}" class="alert-message alert-error">
+        <i class="fa-solid fa-exclamation-circle"></i>
+        <span th:text="${errorMessage}"></span>
+    </div>
+
     <div class="notifications-header">
         <div>
             <h1 class="notifications-title">Thong bao</h1>
-            <p class="notifications-meta" th:text="|Bạn có ${unreadCount} thông báo chưa đọc.|"></p>
+            <p class="notifications-meta"
+               id="notificationsMeta"
+               th:attr="data-unread-count=${unreadCount}"
+               th:text="|Bạn có ${unreadCount} thông báo chưa đọc.|">Bạn có 0 thông báo chưa đọc.</p>
 
-            <form method="get" action="/notifications" class="notifications-filter">
+            <div class="notifications-filter">
                 <label class="filter-label" for="filter">Lọc theo trạng thái</label>
                 <select id="filter" name="filter" class="filter-select">
                     <option value="all" th:selected="${selectedFilter == 'all'}">Tất cả</option>
                     <option value="unread" th:selected="${selectedFilter == 'unread'}">Chưa đọc</option>
                     <option value="read" th:selected="${selectedFilter == 'read'}">Đã đọc</option>
                 </select>
-                <button class="filter-btn" type="submit">Áp dụng</button>
-            </form>
+                <button class="filter-btn" type="button" id="applyFilterBtn">Áp dụng</button>
+            </div>
         </div>
-        <form method="post" action="/notifications/read-all" th:if="${unreadCount > 0}">
-            <input type="hidden" name="filter" th:value="${selectedFilter}">
-            <button class="mark-all-btn" type="submit">Đánh dấu tất cả đã đọc</button>
-        </form>
     </div>
 
-    <div class="notification-list" th:if="${not #lists.isEmpty(notifications)}">
-        <div class="notification-card" th:each="notification : ${notifications}"
+    <div class="notification-list" id="notificationList">
+        <div th:each="notification : ${notifications}"
+             class="notification-card"
+             th:with="preview=${#strings.length(notification.content) > 180 ? #strings.substring(notification.content, 0, 180) + '...' : notification.content}"
+             th:attr="data-notification-id=${notification.id},data-title=${notification.title},data-type=${notification.type},data-content-preview=${preview},data-time=${#temporals.format(notification.sentAt, 'dd/MM/yyyy HH:mm')}"
              th:classappend="${notification.status.name() == 'UNREAD'} ? ' notification-card--unread' : ''">
             <div class="notification-main">
                 <div class="notification-top">
@@ -216,28 +401,298 @@
                     <span class="notification-time" th:text="${#temporals.format(notification.sentAt, 'dd/MM/yyyy HH:mm')}"></span>
                 </div>
                 <h3 class="notification-title" th:text="${notification.title}"></h3>
-                <p class="notification-content" th:text="${notification.content}"></p>
-            </div>
-            <div class="notification-actions">
-                <form th:if="${notification.status.name() == 'UNREAD'}" method="post"
-                      th:action="@{|/notifications/${notification.id}/read|}">
-                    <input type="hidden" name="filter" th:value="${selectedFilter}">
-                    <button class="mark-read-btn" type="submit">Đánh dấu đã đọc</button>
-                </form>
-                <span class="status-read" th:if="${notification.status.name() != 'UNREAD'}">Đã đọc</span>
+                <p class="notification-content" th:text="${preview}"></p>
             </div>
         </div>
     </div>
 
-    <p class="empty-notifications" th:if="${#lists.isEmpty(notifications)}">Bạn chưa có thông báo nào.</p>
+    <!-- Modal Notification Detail -->
+    <div id="notificationModalOverlay" class="notification-modal-overlay">
+        <div class="notification-modal">
+            <div class="notification-modal-header">
+                <h2 class="notification-modal-title" id="modalTitle">Chi tiết thông báo</h2>
+                <button type="button" class="notification-modal-close" id="closeModalBtn" aria-label="Đóng">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="notification-modal-body">
+                <div class="notification-modal-meta">
+                    <span class="notification-modal-type" id="modalType"></span>
+                    <span class="notification-modal-time" id="modalTime"></span>
+                </div>
+                <div class="notification-modal-content" id="modalContent"></div>
+                <div class="notification-modal-footer">
+                    <button type="button" class="notification-modal-btn" id="modalCopyBtn">
+                        <i class="fa-solid fa-copy"></i> Sao chép nội dung
+                    </button>
+                    <button type="button" class="notification-modal-btn danger" id="modalDeleteBtn">
+                        <i class="fa-solid fa-trash"></i> Xóa thông báo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <p class="empty-notifications" id="emptyNotifications" th:hidden="${not #lists.isEmpty(notifications)}">Bạn chưa có thông báo nào.</p>
 </div>
 
 <script>
+    const notificationList = document.getElementById('notificationList');
+    const emptyNotifications = document.getElementById('emptyNotifications');
+    const notificationsMeta = document.getElementById('notificationsMeta');
+    const filterSelect = document.getElementById('filter');
+    const applyFilterBtn = document.getElementById('applyFilterBtn');
+    const modalOverlay = document.getElementById('notificationModalOverlay');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const modalCopyBtn = document.getElementById('modalCopyBtn');
+    const modalDeleteBtn = document.getElementById('modalDeleteBtn');
+    let currentNotificationId = null;
+    let currentCard = null;
+
+    function toPreview(content) {
+        if (!content) {
+            return '';
+        }
+        if (content.length <= 180) {
+            return content;
+        }
+        return `${content.slice(0, 180)}...`;
+    }
+
+    function formatDateTime(value) {
+        if (!value) {
+            return '';
+        }
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+            return '';
+        }
+        const pad = (number) => String(number).padStart(2, '0');
+        return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+
+    function setUnreadMeta(unreadCount) {
+        notificationsMeta.textContent = `Bạn có ${unreadCount} thông báo chưa đọc.`;
+    }
+
+    function createNotificationCard(item) {
+        const card = document.createElement('div');
+        card.className = 'notification-card';
+        if (item.status === 'UNREAD') {
+            card.classList.add('notification-card--unread');
+        }
+
+        card.dataset.notificationId = item.id || '';
+        card.dataset.title = item.title || '';
+        card.dataset.type = item.type || '';
+        card.dataset.contentPreview = item.contentPreview || toPreview(item.content || '');
+        card.dataset.time = formatDateTime(item.sentAt);
+
+        const main = document.createElement('div');
+        main.className = 'notification-main';
+
+        const top = document.createElement('div');
+        top.className = 'notification-top';
+
+        const type = document.createElement('span');
+        type.className = 'notification-type';
+        type.textContent = item.type || '';
+
+        const time = document.createElement('span');
+        time.className = 'notification-time';
+        time.textContent = formatDateTime(item.sentAt);
+
+        const title = document.createElement('h3');
+        title.className = 'notification-title';
+        title.textContent = item.title || '';
+
+        const content = document.createElement('p');
+        content.className = 'notification-content';
+        content.textContent = item.contentPreview || toPreview(item.content || '');
+
+        top.appendChild(type);
+        top.appendChild(time);
+        main.appendChild(top);
+        main.appendChild(title);
+        main.appendChild(content);
+        card.appendChild(main);
+
+        return card;
+    }
+
+    async function fetchNotifications() {
+        const filter = filterSelect.value || 'all';
+        const response = await fetch(`/api/v1/notifications?filter=${encodeURIComponent(filter)}`, {
+            method: 'GET'
+        });
+        if (!response.ok) {
+            throw new Error('Không thể tải danh sách thông báo');
+        }
+
+        const payload = await response.json();
+        const items = payload.items || [];
+
+        notificationList.innerHTML = '';
+        items.forEach(item => notificationList.appendChild(createNotificationCard(item)));
+
+        emptyNotifications.hidden = items.length > 0;
+        if (typeof payload.unreadCount === 'number') {
+            setUnreadMeta(payload.unreadCount);
+        }
+
+        const url = new URL(window.location.href);
+        url.searchParams.set('filter', filter);
+        window.history.replaceState({}, '', url.toString());
+    }
+
+    notificationList.addEventListener('click', (event) => {
+        const card = event.target.closest('.notification-card');
+        if (!card) {
+            return;
+        }
+
+        const notificationId = card.dataset.notificationId;
+        if (!notificationId) {
+            return;
+        }
+
+        document.getElementById('modalTitle').textContent = card.dataset.title || '';
+        document.getElementById('modalType').textContent = card.dataset.type || '';
+        document.getElementById('modalTime').textContent = card.dataset.time || '';
+        document.getElementById('modalContent').textContent = card.dataset.contentPreview || '';
+
+        currentNotificationId = notificationId;
+        currentCard = card;
+        modalOverlay.classList.add('show');
+        loadNotificationDetail(notificationId);
+        markNotificationAsReadAsync(notificationId);
+    });
+
+    async function loadNotificationDetail(notificationId) {
+        try {
+            const response = await fetch(`/api/v1/notifications/${notificationId}`, { method: 'GET' });
+            if (!response.ok) {
+                return;
+            }
+
+            const payload = await response.json();
+            if (!currentNotificationId || currentNotificationId !== notificationId) {
+                return;
+            }
+
+            document.getElementById('modalTitle').textContent = payload.title || '';
+            document.getElementById('modalType').textContent = payload.type || '';
+            document.getElementById('modalTime').textContent = formatDateTime(payload.sentAt);
+            document.getElementById('modalContent').textContent = payload.content || payload.contentPreview || '';
+        } catch (error) {
+            console.error('Error loading notification detail:', error);
+        }
+    }
+
+    async function markNotificationAsReadAsync(notificationId) {
+        try {
+            const response = await fetch(`/api/v1/notifications/${notificationId}/read`, {
+                method: 'PATCH'
+            });
+            if (!response.ok) {
+                return;
+            }
+
+            const payload = await response.json();
+            if (currentCard && currentCard.dataset.notificationId === notificationId) {
+                currentCard.classList.remove('notification-card--unread');
+            }
+            setUnreadMeta(payload.unreadCount || 0);
+        } catch (error) {
+            console.error('Error marking notification as read:', error);
+        }
+    }
+
+    applyFilterBtn.addEventListener('click', async () => {
+        try {
+            await fetchNotifications();
+        } catch (error) {
+            alert('Không thể tải danh sách thông báo.');
+        }
+    });
+
+    // Close modal
+    closeModalBtn.addEventListener('click', () => {
+        modalOverlay.classList.remove('show');
+        currentNotificationId = null;
+        currentCard = null;
+    });
+
+    modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) {
+            modalOverlay.classList.remove('show');
+            currentNotificationId = null;
+            currentCard = null;
+        }
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modalOverlay.classList.contains('show')) {
+            modalOverlay.classList.remove('show');
+            currentNotificationId = null;
+            currentCard = null;
+        }
+    });
+
+    // Copy content
+    modalCopyBtn.addEventListener('click', async () => {
+        const content = document.getElementById('modalContent').textContent;
+        try {
+            await navigator.clipboard.writeText(content);
+            const originalText = modalCopyBtn.innerHTML;
+            modalCopyBtn.innerHTML = '<i class="fa-solid fa-check"></i> Đã sao chép';
+            setTimeout(() => {
+                modalCopyBtn.innerHTML = originalText;
+            }, 2000);
+        } catch (error) {
+            alert('Không thể sao chép nội dung.');
+        }
+    });
+
+    // Delete notification
+    modalDeleteBtn.addEventListener('click', async () => {
+        if (!currentNotificationId || !confirm('Bạn có chắc muốn xóa thông báo này?')) {
+            return;
+        }
+        try {
+            const response = await fetch(`/api/v1/notifications/${currentNotificationId}`, {
+                method: 'DELETE'
+            });
+            if (response.ok) {
+                modalOverlay.classList.remove('show');
+                const removedCard = currentCard;
+                currentNotificationId = null;
+                currentCard = null;
+                if (removedCard) {
+                    removedCard.remove();
+                }
+                if (!notificationList.querySelector('.notification-card')) {
+                    emptyNotifications.hidden = false;
+                }
+                await fetchNotifications();
+            } else {
+                alert('Không thể xóa thông báo.');
+            }
+        } catch (error) {
+            console.error('Error deleting notification:', error);
+            alert('Lỗi kết nối khi xóa thông báo.');
+        }
+    });
+
     window.addEventListener('scroll', () => {
         const navbar = document.getElementById('navbar');
         if (window.scrollY > 50) navbar.classList.add('scrolled');
         else navbar.classList.remove('scrolled');
     });
+
+    const initialUnreadCount = Number(notificationsMeta.dataset.unreadCount || 0);
+    setUnreadMeta(initialUnreadCount);
 </script>
 </body>
 </html>

@@ -8,15 +8,20 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "notifications")
+@Table(
+        name = "notifications",
+        indexes = {
+                @Index(name = "idx_notifications_user_sent", columnList = "user_id,sent_at"),
+                @Index(name = "idx_notifications_user_status_sent", columnList = "user_id,status,sent_at"),
+                @Index(name = "idx_notifications_user_status", columnList = "user_id,status")
+        }
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Notification {
 
-    // CHÚ Ý: Dùng UUID thay vì IDENTITY cho cột String
-    // Không gặp lỗi "Incorrect column specifier"!
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
@@ -34,6 +39,12 @@ public class Notification {
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
+
+    @Column(name = "target_url")
+    private String targetUrl;
+
+    @Column(name = "dedupe_key", length = 200)
+    private String dedupeKey;
 
     // Trạng thái thông báo (Mặc định khi nhận được là Chưa đọc)
     @Enumerated(EnumType.STRING)

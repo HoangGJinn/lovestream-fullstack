@@ -91,8 +91,8 @@
                         <!-- Status badge -->
                         <td>
                             <span class="badge"
-                                  th:classappend="${movie.status == T(com.hcmute.lovestream.entity.enums.ContentStatus).ACTIVE} ? 'badge-active' : 'badge-hidden'"
-                                  th:text="${movie.status == T(com.hcmute.lovestream.entity.enums.ContentStatus).ACTIVE} ? 'Đang chiếu' : 'Đã ẩn'">
+                                  th:classappend="${movie.status != null and movie.status.name() == 'ACTIVE'} ? 'badge-active' : 'badge-hidden'"
+                                  th:text="${movie.status != null and movie.status.name() == 'ACTIVE'} ? 'Đang chiếu' : 'Đã ẩn'">
                             </span>
                         </td>
 
@@ -101,7 +101,7 @@
                             <a th:href="@{/content-manager/movies/{id}/edit(id=${movie.id})}" class="btn btn-secondary btn-sm">Sửa</a>
 
                             <!-- Hide -->
-                            <form th:if="${movie.status == T(com.hcmute.lovestream.entity.enums.ContentStatus).ACTIVE}"
+                            <form th:if="${movie.status != null and movie.status.name() == 'ACTIVE'}"
                                   th:action="@{/content-manager/movies/{id}/hide(id=${movie.id})}" method="post"
                                   style="display:inline;"
                                   onsubmit="return confirm('Bạn có chắc muốn ẩn bộ phim này?')">
@@ -109,7 +109,7 @@
                             </form>
 
                             <!-- Restore -->
-                            <form th:if="${movie.status == T(com.hcmute.lovestream.entity.enums.ContentStatus).HIDDEN}"
+                            <form th:if="${movie.status != null and movie.status.name() == 'HIDDEN'}"
                                   th:action="@{/content-manager/movies/{id}/restore(id=${movie.id})}" method="post"
                                   style="display:inline;"
                                   onsubmit="return confirm('Khôi phục bộ phim này?')">

@@ -119,7 +119,9 @@ public abstract class VideoContent {
     public String getPosterUrl() {
         if (this.mediaAssets != null) {
             for (MediaAsset asset : this.mediaAssets) {
-                if (asset.getAssetType() == com.hcmute.lovestream.entity.enums.AssetType.POSTER) {
+                if (asset != null
+                        && asset.getAssetType() != null
+                        && asset.getAssetType() == com.hcmute.lovestream.entity.enums.AssetType.POSTER) {
                     return asset.getAssetUrl();
                 }
             }

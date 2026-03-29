@@ -1,0 +1,35 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'Lỗi ' + ${statusCode} + ' - LoveStream'">Lỗi hệ thống - LoveStream</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap">
+    <link rel="stylesheet" href="/css/packages.css">
+</head>
+<body>
+<div class="payment-result">
+    <div class="payment-result__card">
+        <div class="payment-result__status">
+            <span class="payment-result__icon payment-result__icon--fail">!</span>
+            <div>
+                <h1 class="payment-result__title" th:text="${errorTitle}">Đã xảy ra lỗi</h1>
+                <p class="payment-result__message" th:text="${errorMessage}">Vui lòng thử lại.</p>
+            </div>
+        </div>
+
+        <div class="payment-result__grid">
+            <div class="payment-result__label">Mã trạng thái</div>
+            <div th:text="${statusCode}">500</div>
+
+            <div class="payment-result__label" th:if="${systemMessage != null}">Thông báo hệ thống</div>
+            <div th:if="${systemMessage != null}" th:text="${systemMessage}">Nội dung lỗi</div>
+        </div>
+
+        <div class="payment-result__actions">
+            <a class="btn-purchase" th:href="@{/home}">Về trang chủ</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>
