@@ -108,7 +108,11 @@
     </div>
 </div>
 <main class="vc-detail-page">
-    <a class="vc-back-link" href="/movies"><i class="fa-solid fa-arrow-left"></i> Quay lại danh sách phim</a>
+    <a class="vc-back-link"
+       th:with="qs=${#request != null ? #request.queryString : null}"
+       th:href="${qs != null and !#strings.isEmpty(qs)} ? '/movies?' + qs : '/movies'">
+        <i class="fa-solid fa-arrow-left"></i> Quay lại danh sách phim
+    </a>
 
     <div class="vc-detail-error" th:if="${errorMessage != null}">
         <h2 th:text="${errorMessage}">Nội dung không tồn tại</h2>
