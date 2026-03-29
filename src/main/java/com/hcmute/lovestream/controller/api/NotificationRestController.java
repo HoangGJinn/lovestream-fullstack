@@ -5,183 +5,127 @@ import com.hcmute.lovestream.entity.User;
 import com.hcmute.lovestream.service.notification.NotificationService;
 import com.hcmute.lovestream.service.user.UserProfileService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Slice;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 @RestController
 @RequestMapping("/api/v1/notifications")
 @RequiredArgsConstructor
 public class NotificationRestController {
 
-    private static final Set<String> ALLOWED_FILTERS = Set.of("all", "unread", "read");
-
     private final NotificationService notificationService;
     private final UserProfileService userProfileService;
 
+    // ===== 1. GET LIST =====
     @GetMapping
-    public ResponseEntity<?> getNotifications(@RequestParam(name = "filter", defaultValue = "all") String filter,
-                                              @RequestParam(name = "page", defaultValue = "0") int page,
-                                              @RequestParam(name = "size", defaultValue = "20") int size,
-                                              @RequestParam(name = "includeUnreadCount", defaultValue = "false") boolean includeUnreadCount,
-                                              Authentication authentication) {
-        if (authentication == null || authentication.getName() == null) {
+    public ResponseEntity<?> getNotifications(
+            @RequestParam(defaultValue = "all") String filter,
+            Authentication auth
+    ) {
+        if (auth == null || auth.getName() == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
-        String normalizedFilter = normalizeFilter(filter);
-        Slice<Notification> notificationsPage = notificationService
-                .getVisibleNotificationsByFilter(currentUser.getId(), normalizedFilter, page, size);
+        User user = userProfileService.getCurrentUserByEmail(auth.getName());
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("items", notificationsPage.getContent().stream().map(this::toListPayload).toList());
-        if (includeUnreadCount) {
-            response.put("unreadCount", notificationService.countUnread(currentUser.getId()));
-        }
-        response.put("selectedFilter", normalizedFilter);
-        response.put("page", notificationsPage.getNumber());
-        response.put("size", notificationsPage.getSize());
-        response.put("hasNext", notificationsPage.hasNext());
-        return ResponseEntity.ok(response);
+        List<Notification> list = notificationService
+                .getNotifications(user.getId(), filter);
+
+        Map<String, Object> res = new HashMap<>();
+        res.put("items", list.stream().map(this::toListPayload).toList());
+        res.put("unreadCount", notificationService.countUnread(user.getId()));
+
+        return ResponseEntity.ok(res);
     }
 
+    // ===== 2. DETAIL =====
     @GetMapping("/{id}")
-    public ResponseEntity<?> getNotificationDetail(@PathVariable("id") String id,
-                                                    Authentication authentication) {
-        if (authentication == null || authentication.getName() == null) {
+    public ResponseEntity<?> getDetail(@PathVariable String id, Authentication auth) {
+        if (auth == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
-        Optional<Notification> notificationOpt = notificationService.getNotificationDetail(id, currentUser.getId());
+        User user = userProfileService.getCurrentUserByEmail(auth.getName());
 
-        if (notificationOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    Map.of("error", "Thông báo không được tìm thấy")
-            );
+        Optional<Notification> opt = notificationService
+                .getNotificationDetail(id, user.getId());
+
+        if (opt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Not found"));
         }
 
-        Notification notification = notificationOpt.get();
-        return ResponseEntity.ok(toDetailPayload(notification));
+        return ResponseEntity.ok(toDetailPayload(opt.get()));
     }
 
+    // ===== 3. MARK READ =====
     @PatchMapping("/{id}/read")
-    public ResponseEntity<?> markAsRead(@PathVariable("id") String id,
-                                        Authentication authentication) {
-        if (authentication == null || authentication.getName() == null) {
+    public ResponseEntity<?> markRead(@PathVariable String id, Authentication auth) {
+        if (auth == null || auth.getName() == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
-        Optional<Notification> notificationOpt = notificationService.markAsRead(id, currentUser.getId());
-        if (notificationOpt.isEmpty()) {
+        User user = userProfileService.getCurrentUserByEmail(auth.getName());
+        Optional<Notification> opt = notificationService.getNotificationDetail(id, user.getId());
+        if (opt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "Thông báo không được tìm thấy"));
+                    .body(Map.of("error", "Not found"));
         }
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("item", toListPayload(notificationOpt.get()));
-        response.put("unreadCount", notificationService.countUnread(currentUser.getId()));
-        return ResponseEntity.ok(response);
+        notificationService.markAsRead(id, user.getId());
+
+        return ResponseEntity.ok(Map.of(
+                "unreadCount", notificationService.countUnread(user.getId())
+        ));
     }
 
-    @PatchMapping("/read-all")
-    public ResponseEntity<?> markAllAsRead(Authentication authentication) {
-        if (authentication == null || authentication.getName() == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
-        long updatedCount = notificationService.markAllAsRead(currentUser.getId());
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("updatedCount", updatedCount);
-        response.put("unreadCount", notificationService.countUnread(currentUser.getId()));
-        return ResponseEntity.ok(response);
-    }
-
+    // ===== 4. DELETE =====
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteNotification(@PathVariable("id") String id,
-                                                Authentication authentication) {
-        if (authentication == null || authentication.getName() == null) {
+    public ResponseEntity<?> delete(@PathVariable String id, Authentication auth) {
+        if (auth == null || auth.getName() == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
-        boolean deleted = notificationService.deleteNotification(id, currentUser.getId());
-        if (!deleted) {
+        User user = userProfileService.getCurrentUserByEmail(auth.getName());
+        Optional<Notification> opt = notificationService.getNotificationDetail(id, user.getId());
+        if (opt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "Thông báo không được tìm thấy"));
+                    .body(Map.of("error", "Not found"));
         }
+
+        notificationService.delete(id, user.getId());
 
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{id}/open")
-    public ResponseEntity<?> openNotification(@PathVariable("id") String id,
-                                              Authentication authentication) {
-        if (authentication == null || authentication.getName() == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
-        Optional<String> targetUrlOpt = notificationService.openNotification(id, currentUser.getId());
-        if (targetUrlOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "Thông báo không được tìm thấy"));
-        }
-
-        return ResponseEntity.ok(Map.of("redirectUrl", targetUrlOpt.get()));
+    // ===== MAPPER =====
+    private Map<String, Object> toListPayload(Notification n) {
+        Map<String, Object> res = new HashMap<>();
+        res.put("id", n.getId());
+        res.put("title", n.getTitle());
+        res.put("type", n.getType().name());
+        res.put("contentPreview", toPreview(n.getContent()));
+        res.put("sentAt", n.getSentAt());
+        res.put("status", n.getStatus().name());
+        res.put("targetUrl", n.getTargetUrl());
+        return res;
     }
 
-    private String normalizeFilter(String filter) {
-        String normalized = filter == null ? "all" : filter.trim().toLowerCase(Locale.ROOT);
-        return ALLOWED_FILTERS.contains(normalized) ? normalized : "all";
-    }
-
-    private Map<String, Object> toListPayload(Notification notification) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("id", notification.getId());
-        response.put("type", notification.getType().name());
-        response.put("title", notification.getTitle());
-        response.put("contentPreview", toPreview(notification.getContent()));
-        response.put("sentAt", notification.getSentAt());
-        response.put("status", notification.getStatus().name());
-        response.put("targetUrl", notification.getTargetUrl());
-        return response;
-    }
-
-    private Map<String, Object> toDetailPayload(Notification notification) {
-        Map<String, Object> response = toListPayload(notification);
-        response.put("content", notification.getContent());
-        return response;
+    private Map<String, Object> toDetailPayload(Notification n) {
+        Map<String, Object> res = toListPayload(n);
+        res.put("content", n.getContent());
+        return res;
     }
 
     private String toPreview(String content) {
-        if (content == null) {
-            return "";
-        }
-        if (content.length() <= 180) {
-            return content;
-        }
-        return content.substring(0, 180) + "...";
+        if (content == null) return "";
+        return content.length() <= 180 ? content : content.substring(0, 180) + "...";
     }
 }
-
