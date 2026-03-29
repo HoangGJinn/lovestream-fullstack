@@ -206,11 +206,13 @@
                 <button class="detail-footer-btn" onclick="copyToClipboard(event)">
                     <i class="fa-solid fa-copy"></i> Sao chép nội dung
                 </button>
-                <form method="post" th:action="@{|/notifications/${notification.id}/delete|}" style="flex: 1;">
-                    <button class="detail-footer-btn" type="submit" style="width: 100%; border-color: #e50914; color: #ff9999;">
-                        <i class="fa-solid fa-trash"></i> Xóa thông báo
-                    </button>
-                </form>
+                <button class="detail-footer-btn"
+                        id="deleteNotificationBtn"
+                        type="button"
+                        style="width: 100%; border-color: #e50914; color: #ff9999;"
+                        th:attr="data-notification-id=${notification.id}">
+                    <i class="fa-solid fa-trash"></i> Xóa thông báo
+                </button>
             </div>
         </div>
 
@@ -244,6 +246,28 @@
                 alert('Không thể sao chép nội dung.');
             });
         }
+    }
+
+    const deleteNotificationBtn = document.getElementById('deleteNotificationBtn');
+    if (deleteNotificationBtn) {
+        deleteNotificationBtn.addEventListener('click', async () => {
+            const notificationId = deleteNotificationBtn.getAttribute('data-notification-id');
+            if (!notificationId || !confirm('Bạn có chắc muốn xóa thông báo này?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/v1/notifications/${notificationId}`, {
+                    method: 'DELETE'
+                });
+                if (!response.ok) {
+                    throw new Error('Cannot delete notification');
+                }
+                window.location.href = '/notifications';
+            } catch (error) {
+                alert('Không thể xóa thông báo.');
+            }
+        });
     }
 </script>
 </body>

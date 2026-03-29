@@ -6,6 +6,10 @@ import com.hcmute.lovestream.entity.enums.TypeNotification;
 import com.hcmute.lovestream.entity.enums.UserNotificationStatus;
 import com.hcmute.lovestream.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +41,23 @@ public class NotificationService {
         };
     }
 
+            @Transactional(readOnly = true)
+                    public Slice<Notification> getVisibleNotificationsByFilter(String userId, String filter, int page, int size) {
+                String normalizedFilter = filter == null ? "all" : filter.trim().toLowerCase(Locale.ROOT);
+                int safePage = Math.max(page, 0);
+                int safeSize = Math.max(1, Math.min(size, 100));
+                Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "sentAt"));
+
+                return switch (normalizedFilter) {
+                    case "unread" -> notificationRepository
+                            .findByUser_IdAndStatus(userId, UserNotificationStatus.UNREAD, pageable);
+                    case "read" -> notificationRepository
+                            .findByUser_IdAndStatus(userId, UserNotificationStatus.READ, pageable);
+                    default -> notificationRepository
+                            .findByUser_IdAndStatusNot(userId, UserNotificationStatus.DELETED, pageable);
+                };
+            }
+
     @Transactional(readOnly = true)
     public long countUnread(String userId) {
         return notificationRepository.countByUser_IdAndStatus(userId, UserNotificationStatus.UNREAD);
@@ -44,40 +65,50 @@ public class NotificationService {
 
 
     @Transactional
-    public void markAsRead(String notificationId, String userId) {
-        notificationRepository.findByIdAndUser_Id(notificationId, userId)
-                .ifPresent(notification -> {
-                    if (notification.getStatus() == UserNotificationStatus.UNREAD) {
-                        notification.setStatus(UserNotificationStatus.READ);
-                    }
-                });
+    public Optional<Notification> markAsRead(String notificationId, String userId) {
+        Optional<Notification> notificationOpt = getVisibleNotification(notificationId, userId);
+        notificationOpt.ifPresent(notification -> {
+            if (notification.getStatus() == UserNotificationStatus.UNREAD) {
+                notification.setStatus(UserNotificationStatus.READ);
+            }
+        });
+        return notificationOpt;
     }
 
     @Transactional(readOnly = true)
     public Optional<Notification> getNotificationDetail(String notificationId, String userId) {
-        return notificationRepository.findByIdAndUser_Id(notificationId, userId);
+        return getVisibleNotification(notificationId, userId);
     }
 
     @Transactional
-    public void deleteNotification(String notificationId, String userId) {
-        notificationRepository.findByIdAndUser_Id(notificationId, userId)
-                .ifPresent(notification -> {
-                    notification.setStatus(UserNotificationStatus.DELETED);
-                    notificationRepository.save(notification);
-                });
+    public boolean deleteNotification(String notificationId, String userId) {
+        Optional<Notification> notificationOpt = getVisibleNotification(notificationId, userId);
+        if (notificationOpt.isEmpty()) {
+            return false;
+        }
+
+        Notification notification = notificationOpt.get();
+        notification.setStatus(UserNotificationStatus.DELETED);
+        notificationRepository.save(notification);
+        return true;
     }
 
 
     @Transactional
-    public void markAllAsRead(User user) {
+    public long markAllAsRead(String userId) {
         List<Notification> notifications = notificationRepository
-                .findByUser_IdAndStatusNotOrderBySentAtDesc(user.getId(), UserNotificationStatus.DELETED);
+                .findByUser_IdAndStatusNotOrderBySentAtDesc(userId, UserNotificationStatus.DELETED);
+
+        long updatedCount = 0;
 
         for (Notification notification : notifications) {
             if (notification.getStatus() == UserNotificationStatus.UNREAD) {
                 notification.setStatus(UserNotificationStatus.READ);
+                updatedCount++;
             }
         }
+
+        return updatedCount;
     }
 
     @Transactional
@@ -121,15 +152,19 @@ public class NotificationService {
 
 
     @Transactional
-    public String openNotification(String notificationId, String userId) {
-        return notificationRepository.findByIdAndUser_Id(notificationId, userId)
+    public Optional<String> openNotification(String notificationId, String userId) {
+        return getVisibleNotification(notificationId, userId)
                 .map(notification -> {
                     if (notification.getStatus() == UserNotificationStatus.UNREAD) {
                         notification.setStatus(UserNotificationStatus.READ);
                     }
                     return hasText(notification.getTargetUrl()) ? notification.getTargetUrl() : "/notifications";
-                })
-                .orElse("/notifications");
+                });
+    }
+
+    private Optional<Notification> getVisibleNotification(String notificationId, String userId) {
+        return notificationRepository.findByIdAndUser_Id(notificationId, userId)
+                .filter(notification -> notification.getStatus() != UserNotificationStatus.DELETED);
     }
 
 

@@ -1,21 +1,18 @@
 package com.hcmute.lovestream.controller.web;
 
 import com.hcmute.lovestream.entity.User;
-import com.hcmute.lovestream.entity.Notification;
 import com.hcmute.lovestream.service.notification.NotificationService;
 import com.hcmute.lovestream.service.user.UserProfileService;
 import lombok.RequiredArgsConstructor;
+import com.hcmute.lovestream.entity.Notification;
+import org.springframework.data.domain.Slice;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Locale;
-import java.util.Optional;
 import java.util.Set;
 
 @Controller
@@ -23,6 +20,7 @@ import java.util.Set;
 public class NotificationWebController {
 
     private static final Set<String> ALLOWED_FILTERS = Set.of("all", "unread", "read");
+    private static final int INITIAL_PAGE_SIZE = 20;
 
     private final NotificationService notificationService;
     private final UserProfileService userProfileService;
@@ -34,52 +32,22 @@ public class NotificationWebController {
         User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
 
         String normalizedFilter = normalizeFilter(filter);
-        model.addAttribute("notifications", notificationService.getVisibleNotificationsByFilter(currentUser.getId(), normalizedFilter));
+        Slice<Notification> firstPage = notificationService
+                .getVisibleNotificationsByFilter(currentUser.getId(), normalizedFilter, 0, INITIAL_PAGE_SIZE);
+
+        model.addAttribute("notifications", firstPage.getContent());
+        model.addAttribute("initialPage", 0);
+        model.addAttribute("pageSize", INITIAL_PAGE_SIZE);
+        model.addAttribute("hasNextPage", firstPage.hasNext());
         model.addAttribute("unreadCount", notificationService.countUnread(currentUser.getId()));
         model.addAttribute("selectedFilter", normalizedFilter);
         return "user/notifications";
-    }
-
-    @PostMapping("/notifications/{id}/read")
-    public String markNotificationAsRead(@PathVariable("id") String id,
-                                         @RequestParam(name = "filter", defaultValue = "all") String filter,
-                                         Authentication authentication) {
-        User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
-        notificationService.markAsRead(id, currentUser.getId());
-        return "redirect:/notifications?filter=" + normalizeFilter(filter);
-    }
-
-    @PostMapping("/notifications/read-all")
-    public String markAllAsRead(@RequestParam(name = "filter", defaultValue = "all") String filter,
-                                Authentication authentication) {
-        User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
-        notificationService.markAllAsRead(currentUser);
-        return "redirect:/notifications?filter=" + normalizeFilter(filter);
-    }
-
-    @PostMapping("/notifications/{id}/delete")
-    public String deleteNotification(@PathVariable("id") String id,
-                                     Authentication authentication,
-                                     RedirectAttributes redirectAttributes) {
-        User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
-        notificationService.deleteNotification(id, currentUser.getId());
-        redirectAttributes.addFlashAttribute("successMessage", "Thông báo đã được xóa.");
-        return "redirect:/notifications";
     }
 
     private String normalizeFilter(String filter) {
         String normalized = filter == null ? "all" : filter.trim().toLowerCase(Locale.ROOT);
         return ALLOWED_FILTERS.contains(normalized) ? normalized : "all";
     }
-
-
-    @GetMapping("/notifications/{id}/open")
-    public String openNotification(@PathVariable("id") String id,
-                                   Authentication authentication) {
-        User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
-        return "redirect:" + notificationService.openNotification(id, currentUser.getId());
-    }
-
 
 
 

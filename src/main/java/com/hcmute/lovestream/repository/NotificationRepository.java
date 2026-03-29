@@ -2,6 +2,8 @@ package com.hcmute.lovestream.repository;
 
 import com.hcmute.lovestream.entity.Notification;
 import com.hcmute.lovestream.entity.enums.UserNotificationStatus;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,7 +14,11 @@ import java.util.Optional;
 public interface NotificationRepository extends JpaRepository<Notification, String> {
 	List<Notification> findByUser_IdAndStatusNotOrderBySentAtDesc(String userId, UserNotificationStatus status);
 
+	Slice<Notification> findByUser_IdAndStatusNot(String userId, UserNotificationStatus status, Pageable pageable);
+
 	List<Notification> findByUser_IdAndStatusOrderBySentAtDesc(String userId, UserNotificationStatus status);
+
+	Slice<Notification> findByUser_IdAndStatus(String userId, UserNotificationStatus status, Pageable pageable);
 
 	long countByUser_IdAndStatus(String userId, UserNotificationStatus status);
 
