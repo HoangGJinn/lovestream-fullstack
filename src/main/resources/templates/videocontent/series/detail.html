@@ -154,7 +154,7 @@
 
 <div class="series-detail">
     <a class="vc-back-link"
-       th:with="qs=${#request != null ? #request.queryString : null}"
+       th:with="qs=${queryString}"
        th:href="${qs != null and !#strings.isEmpty(qs)} ? '/series?' + qs : '/series'"
        style="display:inline-flex;align-items:center;gap:10px;color:#e5e5e5;text-decoration:none;margin-bottom:18px;font-weight:700;">
         <i class="fa-solid fa-arrow-left"></i> Quay lại danh sách series
