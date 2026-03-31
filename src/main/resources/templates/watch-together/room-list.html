@@ -622,7 +622,7 @@
             <p>Tham gia cùng hàng nghìn người khác để cùng xem những bộ phim bom tấn<br>và thảo luận trực tiếp trong thời gian thực.</p>
         </div>
         <div class="action-group">
-            <button id="refreshRoomsBtn" class="ghost-btn" type="button"><i class="fa-solid fa-rotate-right"></i> LAM MOI</button>
+            <button id="refreshRoomsBtn" class="ghost-btn" type="button"><i class="fa-solid fa-rotate-right"></i>LÀM MỚI</button>
             <a href="/watch-together/my-rooms" class="ghost-btn"><i class="fa-solid fa-list"></i> PHÒNG CỦA TÔI</a>
             <a href="/watch-together/creat-room" class="create-btn"><i class="fa-solid fa-video"></i> TẠO PHÒNG</a>
         </div>
@@ -630,38 +630,40 @@
 
     <p th:if="${successMessage}" th:text="${successMessage}" style="margin:0 0 16px; color:#9de7b2; font-size:16px;"></p>
     <p th:if="${errorMessage}" th:text="${errorMessage}" style="margin:0 0 16px; color:#ff9da3; font-size:16px;"></p>
-
+<!-- thoong tin phong vua tao-->
     <section class="created-room-card" th:if="${createdRoomCode != null}">
-        <h2 class="created-room-title">Phong vua tao - chia se nhanh</h2>
+        <h2 class="created-room-title">phòng vừa tạo - chia sẽ nhanh</h2>
 
         <div class="share-row">
-            <label class="share-label" for="createdRoomLink">Link phong</label>
+            <label class="share-label" for="createdRoomLink">Link tham gia phòng</label>
             <input id="createdRoomLink" class="share-value" type="text" readonly>
             <div class="share-actions">
-                <button class="share-btn copy-btn" type="button" data-copy-target="createdRoomLink">Sao chep</button>
+                <button class="share-btn copy-btn" type="button" data-copy-target="createdRoomLink">Sao chép</button>
             </div>
         </div>
 
         <div class="share-row">
-            <label class="share-label" for="createdRoomCode">Ma phong</label>
+            <label class="share-label" for="createdRoomCode">Mã phòng</label>
             <input id="createdRoomCode" class="share-value" type="text" readonly th:value="${createdRoomCode}">
             <div class="share-actions">
-                <button class="share-btn copy-btn" type="button" data-copy-target="createdRoomCode">Sao chep</button>
+                <button class="share-btn copy-btn" type="button" data-copy-target="createdRoomCode">Sao chép</button>
             </div>
         </div>
 
         <div class="share-row" th:if="${createdRoomPassword != null and !#strings.isEmpty(createdRoomPassword)}">
-            <label class="share-label" for="createdRoomPassword">Mat khau</label>
+            <label class="share-label" for="createdRoomPassword">Mật khẩu</label>
             <input id="createdRoomPassword" class="share-value" type="password" readonly th:value="${createdRoomPassword}">
             <div class="share-actions">
-                <button id="togglePasswordBtn" class="share-btn" type="button">Hien</button>
-                <button class="share-btn copy-btn" type="button" data-copy-target="createdRoomPassword">Sao chep</button>
+                <button id="togglePasswordBtn" class="share-btn" type="button">Hiện</button>
+                <button class="share-btn copy-btn" type="button" data-copy-target="createdRoomPassword">Sao chép</button>
             </div>
         </div>
 
-        <p class="share-note">Link duoc tao theo trinh duyet hien tai: <code>/join/{maPhong}</code>.</p>
     </section>
 
+
+
+<!--     tim kiem va danh sach phong-->
     <section class="code-search">
         <form class="code-search-form" method="get" action="/watch-together">
             <input id="roomCodeSearch" name="roomCode" class="search-input" type="text" placeholder="Nhập mã phòng để tìm nhanh..." th:value="${roomCodeQuery}">
@@ -697,7 +699,7 @@
         </article>
     </section>
 
-    <p th:if="${searchedRoom == null and roomCodeQuery != null and !#strings.isEmpty(roomCodeQuery)}" style="margin:0 0 16px; color:#ff9da3; font-size:14px;">❌ Không tìm thấy phòng với mã: <strong th:text="${roomCodeQuery}">CODE</strong></p>
+    <p th:if="${searchedRoom == null and roomCodeQuery != null and !#strings.isEmpty(roomCodeQuery)}" style="margin:0 0 16px; color:#ff9da3; font-size:14px;">Không tìm thấy phòng với mã: <strong th:text="${roomCodeQuery}">CODE</strong></p>
 
     <!-- All Public Rooms Section -->
     <section class="all-rooms-section" th:if="${#lists.isEmpty(rooms) == false or searchedRoom == null}">
@@ -719,6 +721,8 @@
         </label>
     </section>
 
+
+<!--    hiện danh sách các phòng public-->
     <section class="room-grid" id="roomGrid">
         <article class="room-card"
                  th:each="room : ${rooms}"
@@ -729,12 +733,12 @@
             </div>
             <div class="room-body">
                 <h3 class="room-title" th:text="${room.roomName}">Ten phong</h3>
-                <div class="movie-name"><i class="fa-solid fa-film"></i> <span th:text="${room.movieTitle}">Ten phim</span></div>
+                <div class="movie-name"><i class="fa-solid fa-film"></i> <span th:text="${room.movieTitle}">Tên phim</span></div>
                 <div class="meta">
-                    <span><i class="fa-solid fa-users"></i> <span class="js-room-participants" th:attr="data-max-participants=${room.maxParticipants}" th:text="${room.participantCount + ' / ' + room.maxParticipants + ' nguoi'}">0 / 0 nguoi</span></span>
-                    <span th:text="${room.createdAtLabel}">Vua tao</span>
+                    <span><i class="fa-solid fa-users"></i> <span class="js-room-participants" th:attr="data-max-participants=${room.maxParticipants}" th:text="${room.participantCount + ' / ' + room.maxParticipants + ' Người'}">0 / 0 người</span></span>
+                    <span th:text="${room.createdAtLabel}">Vừa tạo</span>
                 </div>
-                <form th:action="@{/watch-together/{roomCode}/join(roomCode=${room.roomCode})}" method="post">
+                <form th:action="@{/join/{roomCode}(roomCode=${room.roomCode})}" method="get">
                     <button type="submit" class="join-btn">Tham gia ngay</button>
                 </form>
             </div>
@@ -814,7 +818,7 @@
             togglePasswordBtn.addEventListener('click', function () {
                 const showPassword = createdRoomPassword.type === 'password';
                 createdRoomPassword.type = showPassword ? 'text' : 'password';
-                togglePasswordBtn.textContent = showPassword ? 'An' : 'Hien';
+                togglePasswordBtn.textContent = showPassword ? 'Ẩn' : 'Hiện';
             });
         }
 
@@ -837,7 +841,7 @@
                 }
 
                 const originalText = button.textContent;
-                button.textContent = 'Da sao chep';
+                button.textContent = 'Đã sao chép';
                 window.setTimeout(function () {
                     button.textContent = originalText;
                 }, 1100);
@@ -874,12 +878,12 @@
         function toStatusView(status) {
             const normalized = String(status || '').trim().toUpperCase();
             if (normalized === 'PLAYING') {
-                return { text: 'Dang chieu', live: true };
+                return { text: 'Đang chiếu', live: true };
             }
             if (normalized === 'PAUSED') {
-                return { text: 'Tam dung', live: false };
+                return { text: 'Tạm dừng', live: false };
             }
-            return { text: 'Dang cho', live: false };
+            return { text: 'Đang chờ', live: false };
         }
 
         function updateRoomCardRealtime(roomCode, message) {
@@ -905,8 +909,8 @@
                     const maxParticipants = Number(participantLabel.dataset.maxParticipants || 0);
                     const online = Math.max(0, Math.floor(currentParticipants));
                     participantLabel.textContent = maxParticipants > 0
-                        ? online + ' / ' + maxParticipants + ' nguoi'
-                        : online + ' nguoi';
+                        ? online + ' / ' + maxParticipants + ' người'
+                        : online + ' người';
                 }
             });
         }

@@ -164,7 +164,6 @@ public class WatchTogetherService {
                 .room(room)
                 .user(user)
                 .role(RoomRole.VIEWER)
-                // Presence is controlled by WebSocket JOIN/DISCONNECT events.
                 .connectionStatus(ConnectionStatus.DISCONNECTED)
                 .build();
         roomParticipantRepository.save(participant);
@@ -321,7 +320,8 @@ public class WatchTogetherService {
                 participantCount,
                 room.getMaxParticipants(),
                 Optional.ofNullable(room.getHost()).map(User::getFullName).orElse("Unknown"),
-                formatDateTime(room.getCreatedAt())
+                formatDateTime(room.getCreatedAt()),
+                room.getPassword()
         );
     }
 
