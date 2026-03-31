@@ -39,6 +39,43 @@
             color: #b3b3b3;
             font-size: 1rem;
         }
+
+        .series-filter-form {
+            margin-top: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .series-filter-label {
+            color: #e5e5e5;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .series-filter-input {
+            background-color: #111;
+            color: #fff;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 8px 12px;
+            min-width: 260px;
+        }
+
+        .series-filter-btn {
+            background: #e50914;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .series-filter-btn:hover {
+            background: #f6121d;
+        }
     </style>
 </head>
 <body>
@@ -46,7 +83,13 @@
 <div class="navbar" id="navbar">
             <div th:replace="~{fragments/top-navbar :: topNavLeft('series')}"></div>
         <div class="nav-right">
-        <i class="fa-solid fa-magnifying-glass nav-icon"></i>
+        <form id="seriesSearchForm" class="nav-search" action="/series" method="get">
+            <button id="seriesSearchToggle" class="nav-icon nav-search-toggle" type="button" aria-label="Tìm kiếm">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+            <input id="seriesSearchInput" class="nav-search-input" name="keyword" type="text"
+                   placeholder="Tìm series..." th:value="${currentKeyword}" autocomplete="off">
+        </form>
         <a href="/notifications" class="nav-icon notification-link" aria-label="Thong bao">
             <i class="fa-regular fa-bell"></i>
             <span th:if="${unreadCount > 0}" class="notification-badge" th:text="${unreadCount > 99 ? '99+' : unreadCount}">0</span>
@@ -59,6 +102,13 @@
     <header class="series-list-header">
         <h1 class="series-list-title">Danh sach series</h1>
         <p class="series-list-subtitle">Chi hien thi cac phim tap voi giao dien giong trang phim.</p>
+
+        <form class="series-filter-form" method="get" action="/series">
+            <label class="series-filter-label" for="keyword">Tìm kiếm</label>
+            <input id="keyword" name="keyword" class="series-filter-input" type="text"
+                   placeholder="Tìm theo tên series..." th:value="${currentKeyword}">
+            <button class="series-filter-btn" type="submit">Áp dụng</button>
+        </form>
     </header>
 
     <div class="main-content">
@@ -68,7 +118,7 @@
 
         <div class="categories-container" th:each="row : ${seriesRows}">
             <div class="row-posters">
-                <a th:each="series : ${row}" th:href="@{/series/{id}(id=${series.id})}"
+                <a th:each="series : ${row}" th:href="@{/series/{id}(id=${series.id}, keyword=${currentKeyword})}"
                    style="text-decoration:none;color:inherit;">
                     <div class="movie-card" th:id="${series.id}">
                         <img th:src="${series.posterUrl}" class="row-poster" th:alt="${series.title}">
@@ -87,6 +137,37 @@
         if (window.scrollY > 50) navbar.classList.add('scrolled');
         else navbar.classList.remove('scrolled');
     });
+
+    (function () {
+        const form = document.getElementById('seriesSearchForm');
+        const toggle = document.getElementById('seriesSearchToggle');
+        const input = document.getElementById('seriesSearchInput');
+
+        if (!form || !toggle || !input) return;
+
+        function submitSearch() {
+            const term = (input.value || '').trim();
+            if (!term) return;
+            input.value = term;
+            form.submit();
+        }
+
+        toggle.addEventListener('click', function () {
+            if (!form.classList.contains('is-open')) {
+                form.classList.add('is-open');
+                input.focus();
+                return;
+            }
+            submitSearch();
+        });
+
+        input.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                submitSearch();
+            }
+        });
+    })();
 </script>
 
 </body>

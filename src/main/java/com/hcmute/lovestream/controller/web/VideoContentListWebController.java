@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,8 +31,12 @@ public class VideoContentListWebController {
 
     @GetMapping("/movies")
     public String getMovies(@RequestParam(name = "sort", defaultValue = "default") String sort,
+                            @RequestParam(required = false) String keyword,
                             Authentication authentication,
                             Model model) {
+        // Normalize keyword so /movies works independently (trim + treat blank as null)
+        keyword = (StringUtils.hasText(keyword) ? keyword.trim() : null);
+
         String userEmail = null;
         if (authentication != null
                 && authentication.isAuthenticated()
@@ -43,7 +48,7 @@ public class VideoContentListWebController {
             }
         }
 
-        List<MovieResponse> movies = movieService.getMoviesForListing(sort, userEmail);
+        List<MovieResponse> movies = movieService.getMoviesForListing(sort, userEmail, keyword);
 
         List<List<MovieResponse>> rows = new ArrayList<>();
         int size = 6;
@@ -54,11 +59,15 @@ public class VideoContentListWebController {
 
         model.addAttribute("movieRows", rows);
         model.addAttribute("selectedSort", sort);
+        model.addAttribute("currentKeyword", keyword);
         return "videocontent/movie/movie_list";
     }
 
     @GetMapping("/series")
-    public String getSeries(Authentication authentication, Model model) {
+    public String getSeries(@RequestParam(required = false) String keyword,
+                            @RequestParam(name = "sort", defaultValue = "default") String sort,
+                            Authentication authentication,
+                            Model model) {
         if (authentication != null
                 && authentication.isAuthenticated()
                 && !(authentication instanceof AnonymousAuthenticationToken)) {
@@ -79,6 +88,8 @@ public class VideoContentListWebController {
         }
 
         model.addAttribute("seriesRows", rows);
+        model.addAttribute("currentKeyword", keyword);
+        model.addAttribute("selectedSort", sort);
         return "videocontent/series/series_list";
     }
 }

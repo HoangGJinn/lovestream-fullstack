@@ -4,6 +4,7 @@ import com.hcmute.lovestream.dto.response.VideoContentDetail;
 import com.hcmute.lovestream.service.videoContent.VideoContentDetailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,7 +19,12 @@ public class VideoContentDetailController {
     private final VideoContentDetailService movieDetailService;
 
     @GetMapping("/movies/{movieId}")
-    public String viewMovieDetail(@PathVariable String movieId, Authentication authentication, Model model) {
+    public String viewMovieDetail(@PathVariable String movieId,
+                                  Authentication authentication,
+                                  HttpServletRequest request,
+                                  Model model) {
+        model.addAttribute("queryString", request.getQueryString());
+
         String userEmail = null;
         boolean isVip = false;
         if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getName())) {

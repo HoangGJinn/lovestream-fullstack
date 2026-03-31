@@ -181,8 +181,6 @@ public class AuthServiceImpl implements AuthService {
         if (user.getStatus() == UserStatus.BANNED || user.getStatus() == UserStatus.REMOVED) {
             throw new RuntimeException("Tài khoản đang bị khóa hoặc đã xóa. Không thể thao tác.");
         }
-
-        otpService.clearOtp(otp);
     }
 
     @Override
