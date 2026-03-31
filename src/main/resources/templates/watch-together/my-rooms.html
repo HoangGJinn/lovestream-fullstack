@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Phòng của tôi - LoveStream</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/user-menu.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/css/user-menu.css" rel="stylesheet">
     <style>
         :root {
             --bg: #090b11;
@@ -27,10 +27,9 @@
         body {
             margin: 0;
             min-height: 100vh;
-            background:
-                    radial-gradient(circle at 8% 20%, rgba(229, 9, 20, 0.2), transparent 42%),
-                    radial-gradient(circle at 90% 75%, rgba(70, 112, 255, 0.14), transparent 38%),
-                    var(--bg);
+            background: radial-gradient(circle at 8% 20%, rgba(229, 9, 20, 0.2), transparent 42%),
+            radial-gradient(circle at 90% 75%, rgba(70, 112, 255, 0.14), transparent 38%),
+            var(--bg);
             color: var(--text);
             font-family: "Inter", sans-serif;
         }
@@ -62,7 +61,17 @@
             font-weight: 900;
             letter-spacing: 0.4px;
         }
+        .invite-link {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
 
+        .invite-input {
+            flex: 1;
+            padding: 4px 8px;
+            font-size: 13px;
+        }
         .nav-links {
             margin: 0;
             padding: 0;
@@ -389,12 +398,13 @@
         <div class="hero-top">
             <div>
                 <h1 class="title">Phòng của tôi</h1>
-                <p class="subtitle">Quản lý nhanh các phòng đã tạo, chia sẻ mã phòng và điều khiển phiên xem chung dễ dàng.</p>
+                <p class="subtitle">Quản lý nhanh các phòng đã tạo, chia sẻ mã phòng và điều khiển phiên xem chung dễ
+                    dàng.</p>
             </div>
             <div class="actions">
-                <a href="/watch-together" class="nav-btn"><i class="fa-solid fa-layer-group"></i> Danh sách phòng</a>
-                <a href="/watch-together/join-private" class="nav-btn"><i class="fa-solid fa-key"></i> Vào phòng private</a>
-                <a href="/watch-together/creat-room" class="nav-btn primary"><i class="fa-solid fa-circle-plus"></i> Tạo phòng mới</a>
+                <a class="nav-btn" href="/watch-together"><i class="fa-solid fa-layer-group"></i> Danh sách phòng</a>
+                <a class="nav-btn primary" href="/watch-together/creat-room"><i class="fa-solid fa-circle-plus"></i> Tạo
+                    phòng mới</a>
             </div>
         </div>
         <div class="stats">
@@ -404,11 +414,9 @@
             </article>
             <article class="stat-card">
                 <div class="label">Điều hướng nhanh</div>
-                <div class="value" style="font-size:15px; font-weight:700; margin-top:8px;">Xem, dừng hoặc bắt đầu phòng chỉ trong 1 chạm</div>
-            </article>
-            <article class="stat-card">
-                <div class="label">Mẹo chia sẻ</div>
-                <div class="value" style="font-size:15px; font-weight:700; margin-top:8px;">Gửi mã phòng hoặc link <code>/join/{roomCode}</code> cho bạn bè</div>
+                <div class="value" style="font-size:15px; font-weight:700; margin-top:8px;">Xem, dừng hoặc bắt đầu phòng
+                    chỉ trong 1 chạm
+                </div>
             </article>
         </div>
     </section>
@@ -416,60 +424,109 @@
     <p class="msg success" th:if="${successMessage}" th:text="${successMessage}"></p>
     <p class="msg error" th:if="${errorMessage}" th:text="${errorMessage}"></p>
 
+
+    <!--     hiển thị danh sách phòng hiện tại-->
     <section class="rooms-grid" th:if="${myRooms != null and !#lists.isEmpty(myRooms)}">
         <article class="card" th:each="room : ${myRooms}">
             <div class="card-head">
                 <h2 class="name" th:text="${room.roomName}">Tên phòng</h2>
                 <div class="room-badges">
-                    <span class="badge status" th:text="${room.statusText}">Dang cho</span>
-                    <span class="badge" th:classappend="${room.privateRoom} ? 'private' : 'public'" th:text="${room.privateRoom} ? 'Private' : 'Public'">Public</span>
+                    <span class="badge status" th:text="${room.statusText}">Đang chờ</span>
+                    <span class="badge" th:classappend="${room.privateRoom} ? 'private' : 'public'"
+                          th:text="${room.privateRoom} ? 'Private' : 'Public'">Public</span>
                 </div>
             </div>
             <div class="meta">
                 <span>Mã: <strong th:text="${room.roomCode}">CODE</strong></span>
                 <span>Phim: <span th:text="${room.movieTitle}">Movie</span></span>
-            </div>
-            <div class="code-actions">
-                <span style="color:#b8c0cf; font-size:12px;">Chia sẻ nhanh mã phòng</span>
-                <button type="button" class="mini-btn js-copy-code" th:attr="data-code=${room.roomCode}">Sao chép mã</button>
+                <div class="invite-link">
+                    <span>Link mời</span>
+
+                    <!-- nút copy -->
+                    <button type="button"
+                            class="mini-btn js-copy-link"
+                            th:attr="data-code=${room.roomCode}">
+                        Sao chép
+                    </button>
+                </div>
+                <span th:if="${room.privateRoom}">
+    Mật khẩu:
+
+    <span class="password-text"
+          style="display:none;"
+          th:text="${room.password}">
+    </span>
+
+                    <!-- nút hiện/ẩn -->
+    <button class="mini-btn toggle-password" type="button">Hiện</button>
+
+                    <!-- nút copy -->
+    <button type="button"
+            class="mini-btn js-copy-password"
+            th:attr="data-password=${room.password}">
+        Sao chép
+    </button>
+</span>
             </div>
             <div class="control-row">
-                <form th:action="@{/watch-together/{roomCode}/start(roomCode=${room.roomCode})}" method="post">
-                    <button type="submit" class="btn start">Bắt đầu</button>
+                <form method="post" th:action="@{/watch-together/{roomCode}/start(roomCode=${room.roomCode})}">
+                    <button class="btn start" type="submit">Bắt đầu</button>
                 </form>
-                <form th:action="@{/watch-together/{roomCode}/stop(roomCode=${room.roomCode})}" method="post">
-                    <button type="submit" class="btn stop">Dừng phòng</button>
+                <form method="post" th:action="@{/watch-together/{roomCode}/stop(roomCode=${room.roomCode})}">
+                    <button class="btn stop" type="submit">Dừng phòng</button>
                 </form>
                 <a class="btn" th:href="@{/join/{roomCode}(roomCode=${room.roomCode})}">Vào phòng</a>
             </div>
         </article>
     </section>
 
-    <p class="empty" th:if="${myRooms == null or #lists.isEmpty(myRooms)}">Bạn chưa tạo phòng nào. Hãy <a href="/watch-together/creat-room">tạo phòng đầu tiên</a> để bắt đầu xem chung.</p>
+    <p class="empty" th:if="${myRooms == null or #lists.isEmpty(myRooms)}">Bạn chưa tạo phòng nào. Hãy <a
+            href="/watch-together/creat-room">tạo phòng đầu tiên</a> để bắt đầu xem chung.</p>
 </main>
 <script>
-    (function () {
-        const copyButtons = document.querySelectorAll('.js-copy-code');
-        copyButtons.forEach(function (button) {
-            button.addEventListener('click', async function () {
-                const code = button.getAttribute('data-code') || '';
-                if (!code) {
-                    return;
-                }
-                try {
-                    await navigator.clipboard.writeText(code);
-                    const original = button.textContent;
-                    button.textContent = 'Da sao chep';
-                    setTimeout(function () {
-                        button.textContent = original;
-                    }, 1300);
-                } catch (error) {
-                    console.error(error);
-                    alert('Khong the sao chep ma phong.');
+    document.addEventListener("DOMContentLoaded", function () {
+
+        // toggle password
+        document.querySelectorAll(".toggle-password").forEach(btn => {
+            btn.addEventListener("click", function () {
+                const passwordSpan = this.previousElementSibling;
+
+                if (passwordSpan.style.display === "none") {
+                    passwordSpan.style.display = "inline";
+                    this.textContent = "Ẩn";
+                } else {
+                    passwordSpan.style.display = "none";
+                    this.textContent = "Hiện";
                 }
             });
         });
-    })();
+
+        // copy link
+        document.querySelectorAll(".js-copy-link").forEach(btn => {
+            btn.addEventListener("click", function () {
+                const code = this.getAttribute("data-code");
+                const fullLink = window.location.origin + "/join/" + code;
+
+                navigator.clipboard.writeText(fullLink).then(() => {
+                    this.textContent = "Đã copy!";
+                    setTimeout(() => this.textContent = "Sao chép", 1500);
+                });
+            });
+        });
+
+        // copy password
+        document.querySelectorAll(".js-copy-password").forEach(btn => {
+            btn.addEventListener("click", function () {
+                const password = this.getAttribute("data-password");
+
+                navigator.clipboard.writeText(password).then(() => {
+                    this.textContent = "Đã copy!";
+                    setTimeout(() => this.textContent = "Sao chép", 1500);
+                });
+            });
+        });
+
+    });
 </script>
 </body>
 </html>

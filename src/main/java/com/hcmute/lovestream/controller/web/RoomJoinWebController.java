@@ -36,7 +36,7 @@ public class RoomJoinWebController {
             return "redirect:/watch-together";
         }
 
-        if (room.isPrivate()) {
+        if (room.isPrivate() && !watchTogetherService.isUserHost(roomCode, authentication.getName())) {
             model.addAttribute("roomCode", room.getRoomCode());
             model.addAttribute("roomName", room.getRoomName());
             return "watch-together/join-private";
@@ -65,7 +65,7 @@ public class RoomJoinWebController {
 
         try {
             Room room = watchTogetherService.joinRoom(roomCode, authentication.getName(), password);
-            redirectAttributes.addFlashAttribute("successMessage", "Ban da tham gia phong " + room.getRoomName());
+            redirectAttributes.addFlashAttribute("successMessage", "Bạn đã tham gia phòng" + room.getRoomName());
             return "redirect:/watch-movie?id=" + room.getVideoContent().getId() + "&roomCode=" + room.getRoomCode();
         } catch (RuntimeException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
