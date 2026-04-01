@@ -13,7 +13,8 @@ public record WatchRoomCardResponse(
 		long participantCount,
 		int maxParticipants,
 		String hostName,
-		String createdAtLabel
+		String createdAtLabel,
+		String password
 ) {
 }
 

@@ -51,7 +51,7 @@ public class MediaAssetWebController {
                 model.addAttribute("currentUserEmail", user.getEmail());
                 model.addAttribute("currentUserAvatar", user.getAvatar());
             } catch (RuntimeException e) {
-                // Nếu không tìm thấy user cũng không làm chết trang
+                System.err.println("Error fetching user profile: " + e.getMessage());
             }
         }
 

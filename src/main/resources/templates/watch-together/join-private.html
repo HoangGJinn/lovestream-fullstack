@@ -90,7 +90,7 @@
     <p>Phòng <strong th:text="${roomName}">Room</strong> yêu cầu mật khẩu để tham gia.</p>
     <p class="msg" th:if="${errorMessage}" th:text="${errorMessage}"></p>
     <form th:action="@{/join/{roomCode}(roomCode=${roomCode})}" method="post">
-        <label class="visually-hidden" for="joinRoomPassword">Mat khau phong</label>
+        <label class="visually-hidden" for="joinRoomPassword">Mật khẩu phòng</label>
         <input id="joinRoomPassword" type="password" name="password" placeholder="Nhập mật khẩu phòng" required>
         <div class="row">
             <button class="btn" type="submit">Tham gia ngay</button>

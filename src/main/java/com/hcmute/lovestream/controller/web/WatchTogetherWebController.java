@@ -30,7 +30,7 @@ import java.util.Map;
 public class WatchTogetherWebController {
 
     private final WatchTogetherService watchTogetherService;
-
+// search room by code or list all public rooms if no code provided
     @GetMapping({"", "/room-list"})
     public String roomList(
             @RequestParam(name = "roomCode", required = false) String roomCode,
@@ -62,13 +62,14 @@ public class WatchTogetherWebController {
             Model model
     ) {
         if (bindingResult.hasErrors()) {
+            // hiển thị danh sách phim khả dụng lại nếu có lỗi để người dùng chọn lại
             model.addAttribute("movieOptions", watchTogetherService.getCreateRoomMovieOptions());
             return "watch-together/creat-room";
         }
 
         try {
             Room room = watchTogetherService.createRoom(authentication.getName(), createRoomForm);
-            redirectAttributes.addFlashAttribute("successMessage", "Tao phong thanh cong. Ma phong: " + room.getRoomCode());
+            redirectAttributes.addFlashAttribute("successMessage", "Tạo phòng thnh công - Mã phòng: " + room.getRoomCode());
             redirectAttributes.addFlashAttribute("showCreatedRoomInfo", Boolean.TRUE);
             redirectAttributes.addFlashAttribute("createdRoomCode", room.getRoomCode());
             redirectAttributes.addFlashAttribute("createdRoomPassword", room.getPassword());
@@ -77,23 +78,6 @@ public class WatchTogetherWebController {
             model.addAttribute("movieOptions", watchTogetherService.getCreateRoomMovieOptions());
             model.addAttribute("errorMessage", ex.getMessage());
             return "watch-together/creat-room";
-        }
-    }
-
-    @PostMapping("/{roomCode}/join")
-    public String joinRoom(
-            @PathVariable String roomCode,
-            @RequestParam(name = "password", required = false) String password,
-            Authentication authentication,
-            RedirectAttributes redirectAttributes
-    ) {
-        try {
-            Room room = watchTogetherService.joinRoom(roomCode, authentication.getName(), password);
-            redirectAttributes.addFlashAttribute("successMessage", "Ban da tham gia phong " + room.getRoomName());
-            return "redirect:/watch-movie?id=" + room.getVideoContent().getId() + "&roomCode=" + room.getRoomCode();
-        } catch (RuntimeException ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
-            return "redirect:/watch-together";
         }
     }
 
@@ -111,7 +95,7 @@ public class WatchTogetherWebController {
     ) {
         try {
             Room room = watchTogetherService.startRoom(roomCode, authentication.getName());
-            redirectAttributes.addFlashAttribute("successMessage", "Phong " + room.getRoomName() + " da bat dau");
+            redirectAttributes.addFlashAttribute("successMessage", "Phòng " + room.getRoomName() + " đã bắt đầu");
         } catch (RuntimeException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
         }
@@ -126,7 +110,7 @@ public class WatchTogetherWebController {
     ) {
         try {
             Room room = watchTogetherService.stopRoom(roomCode, authentication.getName());
-            redirectAttributes.addFlashAttribute("successMessage", "Phong " + room.getRoomName() + " da dung");
+            redirectAttributes.addFlashAttribute("successMessage", "Phòng " + room.getRoomName() + " đã dừng ");
         } catch (RuntimeException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
         }
@@ -147,33 +131,9 @@ public class WatchTogetherWebController {
         }
     }
 
-    @PostMapping("/api/rooms/{roomCode}/start")
-    @ResponseBody
-    public ResponseEntity<?> startRoomApi(
-            @PathVariable String roomCode,
-            Authentication authentication
-    ) {
-        try {
-            watchTogetherService.startRoom(roomCode, authentication.getName());
-            return ResponseEntity.ok(watchTogetherService.getRoomState(roomCode, authentication.getName()));
-        } catch (RuntimeException ex) {
-            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
-        }
-    }
 
-    @PostMapping("/api/rooms/{roomCode}/stop")
-    @ResponseBody
-    public ResponseEntity<?> stopRoomApi(
-            @PathVariable String roomCode,
-            Authentication authentication
-    ) {
-        try {
-            watchTogetherService.stopRoom(roomCode, authentication.getName());
-            return ResponseEntity.ok(watchTogetherService.getRoomState(roomCode, authentication.getName()));
-        } catch (RuntimeException ex) {
-            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
-        }
-    }
+
+
 }
 
 
