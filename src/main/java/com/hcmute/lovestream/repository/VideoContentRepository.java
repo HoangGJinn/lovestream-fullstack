@@ -38,4 +38,6 @@ public interface VideoContentRepository extends JpaRepository<VideoContent, Stri
     Optional<VideoContent> findById(String id);
 
     Optional<VideoContent> findByIdAndStatus(String id, ContentStatus status);
+
+    Optional<VideoContent> findBySlugAndStatus(String slug, ContentStatus status);
 }

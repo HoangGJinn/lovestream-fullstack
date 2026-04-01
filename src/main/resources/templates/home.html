@@ -46,8 +46,10 @@
                      th:classappend="${iter.index == 0} ? ' is-active'">
 
                     <div class="banner-slide-media">
-                        <img th:src="@{/uploads/{path}(path=${banner.imagePath})}" th:alt="${banner.title}"
-                             class="banner-slide-img"/>
+                        <img th:if="${#strings.startsWith(banner.imagePath, 'http://') or #strings.startsWith(banner.imagePath, 'https://')}"
+                            th:src="${banner.imagePath}" th:alt="${banner.title}" class="banner-slide-img"/>
+                        <img th:unless="${#strings.startsWith(banner.imagePath, 'http://') or #strings.startsWith(banner.imagePath, 'https://')}"
+                            th:src="@{/uploads/{path}(path=${banner.imagePath})}" th:alt="${banner.title}" class="banner-slide-img"/>
                     </div>
 
                     <th:block th:if="${banner.resolvedNavigationLink != null and !#strings.isEmpty(banner.resolvedNavigationLink)}">
@@ -57,6 +59,11 @@
 
                     <div class="banner-slide-overlay">
                         <h1 class="movie-title" th:text="${banner.title}">Tiêu đề banner</h1>
+                        <p class="movie-desc"
+                           th:if="${banner.resolvedDescription != null and !#strings.isEmpty(banner.resolvedDescription)}"
+                           th:text="${banner.resolvedDescription}">
+                            Mô tả nội dung
+                        </p>
                         <div th:if="${banner.resolvedNavigationLink != null and !#strings.isEmpty(banner.resolvedNavigationLink)}"
                              class="banner-cta-row">
                             <a th:href="${banner.resolvedNavigationLink}" class="banner-cta">Xem ngay</a>
@@ -78,19 +85,33 @@
         </div>
     </div>
 
-    <!-- Fallback hero (hard-code hiện tại) -->
-    <div th:unless="${hasDisplayedBanners}" class="hero">
+    <!-- Fallback hero: random nội dung ACTIVE -->
+    <div th:unless="${hasDisplayedBanners}" class="hero"
+         th:style="${featuredMovie != null ? 'background-image: url(' + featuredMovie.posterUrl + ');' : ''}">
         <div class="hero-gradient"></div>
         <div class="hero-content">
-            <h1 class="movie-title">The Witcher</h1>
-            <p class="movie-desc">
+            <h1 class="movie-title" th:text="${featuredMovie != null ? featuredMovie.title : 'The Witcher'}">The Witcher</h1>
+            <p class="movie-desc"
+               th:text="${featuredMovie != null and !#strings.isEmpty(featuredMovie.description)
+                        ? featuredMovie.description
+                        : 'Nội dung nổi bật đang được cập nhật.'}">
                 Geralt xứ Rivia, một thợ săn quái vật đột biến, dấn thân vào hành trình đi tìm định mệnh của mình trong
                 một thế giới hỗn loạn, nơi mà con người đôi khi còn độc ác hơn cả quái thú.
             </p>
             <div th:replace="~{plans/banner :: packageCta(${hasActiveSub}, ${isAuthenticated}, false)}"></div>
             <div class="btn-group">
-                <button class="btn btn-play"><i class="fa-solid fa-play"></i> Phát</button>
-                <button class="btn btn-info"><i class="fa-solid fa-circle-info"></i> Thông tin khác</button>
+                <a th:if="${featuredMovie != null}"
+                   class="btn btn-play"
+                   th:href="@{/movies/{slug}(slug=${featuredMovie.slugOrId})}">
+                    <i class="fa-solid fa-play"></i> Phát
+                </a>
+                <a th:if="${featuredMovie != null}"
+                   class="btn btn-info"
+                   th:href="@{/movies/{slug}(slug=${featuredMovie.slugOrId})}">
+                    <i class="fa-solid fa-circle-info"></i> Thông tin khác
+                </a>
+                <button th:unless="${featuredMovie != null}" class="btn btn-play"><i class="fa-solid fa-play"></i> Phát</button>
+                <button th:unless="${featuredMovie != null}" class="btn btn-info"><i class="fa-solid fa-circle-info"></i> Thông tin khác</button>
             </div>
         </div>
     </div>

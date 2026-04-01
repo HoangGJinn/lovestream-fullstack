@@ -37,6 +37,9 @@ public interface MovieRepository extends JpaRepository<Movie, String> {
     List<Movie> findAllByOrderByTitleAsc();
 
     @EntityGraph(attributePaths = { "mediaAssets" })
+    List<Movie> findAllWithMediaAssetsByOrderByTitleAsc();
+
+    @EntityGraph(attributePaths = { "mediaAssets" })
     Page<Movie> findAllByOrderByTitleAsc(Pageable pageable);
 
     // 2. Lọc phim lẻ theo trạng thái (ASC)
