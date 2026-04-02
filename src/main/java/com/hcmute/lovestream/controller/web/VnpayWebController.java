@@ -4,6 +4,7 @@ import com.hcmute.lovestream.entity.Payment;
 import com.hcmute.lovestream.entity.enums.SubscriptionStatus;
 import com.hcmute.lovestream.repository.PaymentRepository;
 import com.hcmute.lovestream.repository.SubscriptionRepository;
+import com.hcmute.lovestream.security.JwtAuthenticationFilter;
 import com.hcmute.lovestream.security.JwtUtil;
 import com.hcmute.lovestream.service.vnpay.VnpayService;
 import jakarta.servlet.http.Cookie;
@@ -93,7 +94,15 @@ public class VnpayWebController {
                 LocalDateTime.now()
         );
 
-        String token = jwtUtil.generateToken(payment.getUser(), isVip);
+        String deviceId = null;
+        if (authentication.getPrincipal() instanceof JwtAuthenticationFilter.JwtPrincipal principal) {
+            Object principalDeviceId = principal.get("deviceId");
+            if (principalDeviceId instanceof String value && !value.isBlank()) {
+                deviceId = value;
+            }
+        }
+
+        String token = jwtUtil.generateToken(payment.getUser(), isVip, deviceId);
 
         Cookie jwtCookie = new Cookie("JWT_TOKEN", token);
         jwtCookie.setHttpOnly(true);
