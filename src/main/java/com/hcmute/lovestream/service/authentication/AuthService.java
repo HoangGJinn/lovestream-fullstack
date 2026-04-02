@@ -7,12 +7,12 @@ import java.util.Map;
 public interface AuthService {
     void register(Register request);
     void verifyEmail(String token);
-    Map<String, String> login(Login request);
+    Map<String, String> login(Login request, String userAgent);
     void forgotPassword(String email);
     void verifyForgotPasswordOtp(String token);
     void resetPassword(String token, String newPassword);
     void resendOtp(String email);
     Map<String, String> refreshToken(String refreshToken);
     void logout(String refreshToken);
-    Map<String, String> googleLogin(String email);
+    Map<String, String> googleLogin(String email, String deviceId, String userAgent);
 }
