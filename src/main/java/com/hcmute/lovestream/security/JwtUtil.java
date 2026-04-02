@@ -75,6 +75,10 @@ public class JwtUtil {
 
     // Dành cho luồng AuthServiceImpl đăng nhập đơn giản
     public String generateToken(com.hcmute.lovestream.entity.User user, boolean isVip) {
+        return generateToken(user, isVip, null);
+    }
+
+    public String generateToken(com.hcmute.lovestream.entity.User user, boolean isVip, String deviceId) {
 
         Map<String, Object> claims = new HashMap<>();
 
@@ -83,6 +87,9 @@ public class JwtUtil {
         claims.put("type", "ACCESS");
         claims.put("fullName", user.getFullName());
         claims.put("avatar", user.getAvatar());
+        if (deviceId != null && !deviceId.isBlank()) {
+            claims.put("deviceId", deviceId);
+        }
 
         return Jwts.builder()
                 .claims(claims)
@@ -195,5 +202,9 @@ public class JwtUtil {
 
     public String extractRole(String token) {
         return extractClaim(token, claims -> claims.get("role", String.class));
+    }
+
+    public String extractDeviceId(String token) {
+        return extractClaim(token, claims -> claims.get("deviceId", String.class));
     }
 }

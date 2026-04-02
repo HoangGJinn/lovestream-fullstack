@@ -31,4 +31,7 @@ public interface ServicePlanService {
 
     // Nhãn chất lượng gói hiện tại để hiển thị thông báo nâng cấp trên player
     String getCurrentPlanQualityLabel(String userEmail);
+
+    // Số thiết bị được xem đồng thời theo gói hiện tại
+    int getMaxConcurrentStreams(String userEmail);
 }
