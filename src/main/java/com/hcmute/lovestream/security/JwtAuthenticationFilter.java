@@ -89,6 +89,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     principalData.put("fullName", fullName);
                     principalData.put("avatar", avatar);
                     principalData.put("isVip", isVip);
+                    principalData.put("deviceId", tokenDeviceId);
 
                     // Cấp quyền trực tiếp vào Context, truyền principalData làm tham số đầu tiên
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
@@ -184,6 +185,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             principalData.put("fullName", rt.getUser().getFullName());
             principalData.put("avatar", rt.getUser().getAvatar());
             principalData.put("isVip", isVip);
+            principalData.put("deviceId", rt.getDeviceId());
 
             String roleStr = rt.getUser().getRole().getAuthority();
             List<SimpleGrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority(roleStr));
