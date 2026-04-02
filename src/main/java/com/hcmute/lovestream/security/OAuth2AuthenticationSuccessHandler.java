@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Handles the redirect after a successful Google OAuth2 / OIDC login.
@@ -48,7 +49,8 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         }
 
         try {
-            Map<String, String> tokens = authService.googleLogin(email);
+            String deviceId = extractOrCreateDeviceId(request);
+            Map<String, String> tokens = authService.googleLogin(email, deviceId, request.getHeader("User-Agent"));
 
             // Xóa cookie trạng thái OAuth2 sau khi đăng nhập thành công
             cookieRepository.removeAuthorizationRequestCookies(request, response);
@@ -66,6 +68,12 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
             refreshCookie.setPath("/");
             refreshCookie.setMaxAge(604800);
             response.addCookie(refreshCookie);
+
+            Cookie deviceCookie = new Cookie("DEVICE_ID", deviceId);
+            deviceCookie.setHttpOnly(false);
+            deviceCookie.setPath("/");
+            deviceCookie.setMaxAge(31536000);
+            response.addCookie(deviceCookie);
 
             // Redirect theo role
             String role = tokens.get("role");
@@ -101,5 +109,16 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
             return email != null ? email.toString() : null;
         }
         return null;
+    }
+
+    private String extractOrCreateDeviceId(HttpServletRequest request) {
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("DEVICE_ID".equals(cookie.getName()) && cookie.getValue() != null && !cookie.getValue().isBlank()) {
+                    return cookie.getValue().trim();
+                }
+            }
+        }
+        return UUID.randomUUID().toString();
     }
 }

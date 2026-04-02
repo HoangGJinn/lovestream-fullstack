@@ -44,6 +44,11 @@ const video = document.getElementById('video');
         : Number.POSITIVE_INFINITY;
     const planQualityLabel = String(runtimeConfig.planQualityLabel || 'SD (480p)');
     const upgradePackagesUrl = String(runtimeConfig.upgradePackagesUrl || '/packages');
+    const streamApiBase = String(runtimeConfig.streamApiBase || '/api/v1/streams');
+    const configuredHeartbeatMs = Number(runtimeConfig.streamHeartbeatIntervalMs);
+    const streamHeartbeatIntervalMs = Number.isFinite(configuredHeartbeatMs) && configuredHeartbeatMs >= 10000
+        ? configuredHeartbeatMs
+        : 25000;
     const queryParams = new URLSearchParams(window.location.search);
     const videoContentId = queryParams.get('id') || fallbackVideoId;
     const roomCode = (queryParams.get('roomCode') || '').trim().toUpperCase();
@@ -73,6 +78,14 @@ const video = document.getElementById('video');
     let suppressNextPlaySync = false;
     let suppressNextPauseSync = false;
     let maxAllowedQualityLevelIndex = -1;
+    let streamDeviceId = null;
+    let streamSessionActive = false;
+    let streamStartPromise = null;
+    let streamHeartbeatTimerId = null;
+    let streamHeartbeatInFlight = false;
+    let lastStreamErrorAt = 0;
+    const STREAM_DEVICE_STORAGE_KEY = 'lovestream_device_id';
+    const STREAM_ERROR_COOLDOWN_MS = 4000;
 
     function toPositiveNumber(value, fallback = 0) {
         const numeric = Number(value);
@@ -96,6 +109,241 @@ const video = document.getElementById('video');
 
     function shouldEmitHostSync() {
         return isRoomMode && isHost && wsConnected && !isRemoteAction;
+    }
+
+    function buildFallbackDeviceId() {
+        return 'device-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+    }
+
+    function syncDeviceCookie(deviceId) {
+        const maxAge = 60 * 60 * 24 * 365;
+        document.cookie = 'DEVICE_ID=' + encodeURIComponent(deviceId) + '; path=/; max-age=' + maxAge + '; SameSite=Lax';
+    }
+
+    function getOrCreateDeviceId() {
+        if (streamDeviceId) {
+            return streamDeviceId;
+        }
+
+        try {
+            const existing = localStorage.getItem(STREAM_DEVICE_STORAGE_KEY);
+            if (existing && existing.trim()) {
+                streamDeviceId = existing.trim();
+                syncDeviceCookie(streamDeviceId);
+                return streamDeviceId;
+            }
+        } catch (_error) {
+            // Continue and generate a runtime device ID.
+        }
+
+        const generated = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+            ? crypto.randomUUID()
+            : buildFallbackDeviceId();
+
+        streamDeviceId = generated;
+        try {
+            localStorage.setItem(STREAM_DEVICE_STORAGE_KEY, generated);
+        } catch (_error) {
+            // Ignore storage failures and keep session-only device ID.
+        }
+        syncDeviceCookie(generated);
+        return streamDeviceId;
+    }
+
+    function buildStreamPayload() {
+        return {
+            deviceId: getOrCreateDeviceId(),
+            videoContentId: videoContentId || null
+        };
+    }
+
+    function getStreamErrorMessage(responsePayload, fallback) {
+        if (responsePayload && typeof responsePayload.message === 'string' && responsePayload.message.trim()) {
+            return responsePayload.message.trim();
+        }
+        return fallback;
+    }
+
+    function showStreamError(message) {
+        if (!message) {
+            return;
+        }
+        const now = Date.now();
+        if (now - lastStreamErrorAt < STREAM_ERROR_COOLDOWN_MS) {
+            return;
+        }
+        lastStreamErrorAt = now;
+        alert(message);
+    }
+
+    async function callStreamApi(action, options = {}) {
+        const endpoint = streamApiBase + '/' + action;
+        const payload = buildStreamPayload();
+
+        if (options.useBeacon && navigator.sendBeacon) {
+            const body = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+            navigator.sendBeacon(endpoint, body);
+            return { ok: true, status: 0, payload: null };
+        }
+
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+                keepalive: !!options.keepalive
+            });
+
+            let responsePayload = null;
+            try {
+                responsePayload = await response.json();
+            } catch (_error) {
+                responsePayload = null;
+            }
+
+            return {
+                ok: response.ok,
+                status: response.status,
+                payload: responsePayload
+            };
+        } catch (_error) {
+            return {
+                ok: false,
+                status: 0,
+                payload: null
+            };
+        }
+    }
+
+    function stopStreamHeartbeat() {
+        if (streamHeartbeatTimerId) {
+            clearInterval(streamHeartbeatTimerId);
+            streamHeartbeatTimerId = null;
+        }
+        streamHeartbeatInFlight = false;
+    }
+
+    async function refreshStreamSessionByHeartbeat() {
+        if (!streamSessionActive || streamHeartbeatInFlight) {
+            return true;
+        }
+
+        streamHeartbeatInFlight = true;
+        const result = await callStreamApi('heartbeat');
+        streamHeartbeatInFlight = false;
+
+        if (result.ok) {
+            return true;
+        }
+
+        if (result.status === 429) {
+            streamSessionActive = false;
+            stopStreamHeartbeat();
+            if (!video.paused) {
+                video.pause();
+            }
+            showStreamError(getStreamErrorMessage(
+                result.payload,
+                'Tài khoản của bạn đang được sử dụng trên thiết bị khác.'
+            ));
+            return false;
+        }
+
+        if (result.status === 401) {
+            streamSessionActive = false;
+            stopStreamHeartbeat();
+            if (!video.paused) {
+                video.pause();
+            }
+            showStreamError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+            return false;
+        }
+
+        streamSessionActive = false;
+        stopStreamHeartbeat();
+        if (!video.paused) {
+            video.pause();
+        }
+        showStreamError(getStreamErrorMessage(
+            result.payload,
+            'Phiên xem đã kết thúc trên thiết bị này.'
+        ));
+        return false;
+    }
+
+    function startStreamHeartbeat() {
+        if (streamHeartbeatTimerId) {
+            clearInterval(streamHeartbeatTimerId);
+        }
+        streamHeartbeatTimerId = setInterval(() => {
+            refreshStreamSessionByHeartbeat();
+        }, streamHeartbeatIntervalMs);
+    }
+
+    async function ensureStreamSessionForPlayback() {
+        if (streamSessionActive) {
+            return true;
+        }
+
+        if (streamStartPromise) {
+            return streamStartPromise;
+        }
+
+        streamStartPromise = (async () => {
+            const result = await callStreamApi('start');
+            if (result.ok) {
+                streamSessionActive = true;
+                startStreamHeartbeat();
+                return true;
+            }
+
+            streamSessionActive = false;
+            stopStreamHeartbeat();
+
+            const limitMessage = getStreamErrorMessage(
+                result.payload,
+                'Tài khoản của bạn đang được sử dụng trên thiết bị khác.'
+            );
+
+            if (!video.paused) {
+                video.pause();
+            }
+
+            if (result.status === 429) {
+                showStreamError(limitMessage);
+            } else if (result.status === 401) {
+                showStreamError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+            } else {
+                showStreamError(getStreamErrorMessage(
+                    result.payload,
+                    'Không thể bắt đầu phiên xem lúc này. Vui lòng thử lại.'
+                ));
+            }
+            return false;
+        })();
+
+        try {
+            return await streamStartPromise;
+        } finally {
+            streamStartPromise = null;
+        }
+    }
+
+    function stopStreamSession(useBeacon = false) {
+        const wasActive = streamSessionActive;
+        streamSessionActive = false;
+        stopStreamHeartbeat();
+
+        if (useBeacon) {
+            callStreamApi('stop', { useBeacon: true });
+            return;
+        }
+
+        if (!wasActive) {
+            return;
+        }
+
+        callStreamApi('stop', { keepalive: true });
     }
 
     function updateParticipantCount(count) {
@@ -298,7 +546,7 @@ const video = document.getElementById('video');
                 await video.play();
                 hideRemotePlayUnlock();
             } catch (error) {
-                console.warn('Khong the tiep tuc phat sau khi user click', error);
+                console.warn('Không thể tiếp tục phát sau khi user click', error);
             }
         });
     }
@@ -840,9 +1088,13 @@ const video = document.getElementById('video');
         }
     });
 
-    video.addEventListener('play', () => {
+    video.addEventListener('play', async () => {
         playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
         syncPauseState();
+        const streamAllowed = await ensureStreamSessionForPlayback();
+        if (!streamAllowed) {
+            return;
+        }
         if (suppressNextPlaySync) {
             suppressNextPlaySync = false;
             return;
@@ -865,7 +1117,10 @@ const video = document.getElementById('video');
         }
     });
 
-    video.addEventListener('ended', () => syncWatchProgress(true));
+    video.addEventListener('ended', () => {
+        syncWatchProgress(true);
+        stopStreamSession();
+    });
 
     // --- Seek tối ưu ---
     video.addEventListener('seeking', () => {
@@ -984,6 +1239,7 @@ const video = document.getElementById('video');
 
     window.addEventListener('beforeunload', () => {
         syncWatchProgress(true);
+        stopStreamSession(true);
         stopHostSyncHeartbeat();
         if (stompClient && wsConnected) {
             try {

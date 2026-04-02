@@ -30,6 +30,9 @@ public class RefreshToken {
     @Column(nullable = false, unique = true, length = 500)
     private String token;
 
+    @Column(name = "device_id", length = 128)
+    private String deviceId;
+
     @Column(name = "expires_at", nullable = false)
     private LocalDateTime expiresAt;
 

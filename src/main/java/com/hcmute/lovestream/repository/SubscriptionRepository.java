@@ -14,6 +14,9 @@ import java.util.Optional;
 @Repository
 public interface SubscriptionRepository extends JpaRepository<Subscription, String> {
     Optional<Subscription> findTopByUserAndStatusOrderByEndDateDesc(User user, SubscriptionStatus status);
+    Optional<Subscription> findTopByUserAndStatusAndEndDateAfterOrderByEndDateDesc(User user,
+                                                                                     SubscriptionStatus status,
+                                                                                     LocalDateTime now);
     boolean existsByUserAndStatus(User user, SubscriptionStatus status);
 
     boolean existsByUser_IdAndStatusAndEndDateAfter(String userId, SubscriptionStatus status, LocalDateTime now);

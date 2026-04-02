@@ -29,6 +29,11 @@ public class AccountSecurityWebController {
         return "user/security";
     }
 
+    @GetMapping("/account/devices")
+    public String devicesPage() {
+        return "user/devices";
+    }
+
     @GetMapping("/account/delete/confirm")
     public String confirmDeleteAccount(
             @RequestParam("token") String token,

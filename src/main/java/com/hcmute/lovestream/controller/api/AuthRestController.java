@@ -45,9 +45,11 @@ public class AuthRestController {
 
     // UC3: Đăng nhập
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody Login request, HttpServletResponse response) {
+    public ResponseEntity<?> login(@Valid @RequestBody Login request,
+                                   HttpServletRequest httpRequest,
+                                   HttpServletResponse response) {
         try {
-            Map<String, String> tokens = authService.login(request);
+            Map<String, String> tokens = authService.login(request, httpRequest.getHeader("User-Agent"));
 
             // 1. Nhét Access Token vào Cookie
             Cookie accessCookie = new Cookie("JWT_TOKEN", tokens.get("accessToken"));
@@ -62,6 +64,14 @@ public class AuthRestController {
             refreshCookie.setPath("/");
             refreshCookie.setMaxAge(604800);
             response.addCookie(refreshCookie);
+
+            if (request.getDeviceId() != null && !request.getDeviceId().isBlank()) {
+                Cookie deviceCookie = new Cookie("DEVICE_ID", request.getDeviceId().trim());
+                deviceCookie.setHttpOnly(false);
+                deviceCookie.setPath("/");
+                deviceCookie.setMaxAge(31536000);
+                response.addCookie(deviceCookie);
+            }
 
             // KẾT HỢP LOGIC KIỂM TRA ROLE ĐỂ ĐIỀU HƯỚNG
             String redirectUrl = "/home";
@@ -158,6 +168,12 @@ public class AuthRestController {
         refreshCookie.setPath("/");
         refreshCookie.setMaxAge(0);
         response.addCookie(refreshCookie);
+
+        Cookie deviceCookie = new Cookie("DEVICE_ID", "");
+        deviceCookie.setHttpOnly(false);
+        deviceCookie.setPath("/");
+        deviceCookie.setMaxAge(0);
+        response.addCookie(deviceCookie);
 
         // Xóa OAuth2 state cookie (nếu user đang ở giữa luồng đăng nhập Google)
         Cookie oauth2Cookie = new Cookie("oauth2_auth_request", "");

@@ -109,6 +109,45 @@
             }
         })();
 
+        const DEVICE_STORAGE_KEY = 'lovestream_device_id';
+
+        function buildFallbackDeviceId() {
+            return 'device-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+        }
+
+        function syncDeviceCookie(deviceId) {
+            const maxAge = 60 * 60 * 24 * 365;
+            document.cookie = 'DEVICE_ID=' + encodeURIComponent(deviceId) + '; path=/; max-age=' + maxAge + '; SameSite=Lax';
+        }
+
+        function getOrCreateDeviceId() {
+            try {
+                const existing = localStorage.getItem(DEVICE_STORAGE_KEY);
+                if (existing && existing.trim()) {
+                    const deviceId = existing.trim();
+                    syncDeviceCookie(deviceId);
+                    return deviceId;
+                }
+            } catch (_error) {}
+
+            const generated = (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function')
+                ? crypto.randomUUID()
+                : buildFallbackDeviceId();
+
+            try {
+                localStorage.setItem(DEVICE_STORAGE_KEY, generated);
+            } catch (_error) {}
+            syncDeviceCookie(generated);
+            return generated;
+        }
+
+        const googleBtn = document.getElementById('googleBtn');
+        if (googleBtn) {
+            googleBtn.addEventListener('click', () => {
+                getOrCreateDeviceId();
+            });
+        }
+
         // Xử lý Submit
         document.getElementById('loginForm').addEventListener('submit', async function (event) {
             event.preventDefault();
@@ -122,10 +161,11 @@
             submitBtn.innerText = 'Đang xử lý...';
 
             try {
+                const deviceId = getOrCreateDeviceId();
                 const response = await fetch('/api/v1/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
+                    body: JSON.stringify({ email, password, deviceId })
                 });
                 const data = await response.json();
                 if (response.ok) {
