@@ -51,11 +51,17 @@ public class DeviceAccessService {
 
     @Transactional(readOnly = true)
     public List<DeviceAccessItemResponse> getDevices(String userEmail, String rawCurrentDeviceId) {
-        User user = getUserByEmail(userEmail);
-        String currentDeviceId = normalizeOptionalDeviceId(rawCurrentDeviceId);
-        Set<String> streamingDeviceIds = streamSessionService.getActiveDeviceIds(userEmail);
+        return getDevices(userEmail, rawCurrentDeviceId, true);
+    }
 
-        return deviceRepository.findByUserOrderByLastLoginDesc(user).stream()
+    @Transactional(readOnly = true)
+    public List<DeviceAccessItemResponse> getDevices(String userEmail, String rawCurrentDeviceId, boolean includeStreamingState) {
+        String currentDeviceId = normalizeOptionalDeviceId(rawCurrentDeviceId);
+        Set<String> streamingDeviceIds = includeStreamingState
+                ? streamSessionService.getActiveDeviceIds(userEmail)
+                : Set.of();
+
+        return deviceRepository.findByUser_EmailAndIsActiveTrueOrderByLastLoginDesc(userEmail).stream()
                 .map(device -> {
                     String deviceId = device.getClientDeviceId();
                     return new DeviceAccessItemResponse(
@@ -84,10 +90,9 @@ public class DeviceAccessService {
         Device device = deviceRepository.findByUserAndClientDeviceId(user, targetDeviceId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thiết bị cần đăng xuất."));
 
-        device.setActive(false);
-        deviceRepository.save(device);
         refreshTokenRepository.revokeUserTokensByDeviceId(user.getId(), targetDeviceId);
         streamSessionService.stop(userEmail, targetDeviceId);
+        deviceRepository.delete(device);
     }
 
     @Transactional(readOnly = true)
@@ -97,6 +102,17 @@ public class DeviceAccessService {
             return false;
         }
         return deviceRepository.findByUser_EmailAndClientDeviceId(userEmail, deviceId)
+                .map(Device::isActive)
+                .orElse(false);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isDeviceActiveByUserId(String userId, String rawDeviceId) {
+        String deviceId = normalizeOptionalDeviceId(rawDeviceId);
+        if (deviceId == null || userId == null || userId.isBlank()) {
+            return false;
+        }
+        return deviceRepository.findByUser_IdAndClientDeviceId(userId.trim(), deviceId)
                 .map(Device::isActive)
                 .orElse(false);
     }

@@ -1,8 +1,6 @@
 package com.hcmute.lovestream.controller.web;
 
-import com.hcmute.lovestream.entity.User;
 import com.hcmute.lovestream.service.notification.NotificationService;
-import com.hcmute.lovestream.service.user.UserProfileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -16,7 +14,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class GlobalModelAttributes {
 
-    private final UserProfileService userProfileService;
     private final NotificationService notificationService;
 
     @ModelAttribute
@@ -39,13 +36,11 @@ public class GlobalModelAttributes {
                 model.addAttribute("hasActiveSub", Boolean.TRUE.equals(currentUser.get("isVip")));
 
                 Object emailValue = currentUser.get("email");
-                if (emailValue instanceof String email && !email.isBlank()) {
-                    try {
-                        User user = userProfileService.getCurrentUserByEmail(email);
-                        model.addAttribute("unreadCount", notificationService.countUnread(user.getId()));
-                    } catch (RuntimeException ignored) {
-                        model.addAttribute("unreadCount", 0L);
-                    }
+                Object userIdValue = currentUser.get("userId");
+                if (userIdValue instanceof String userId && !userId.isBlank()) {
+                    model.addAttribute("unreadCount", notificationService.countUnread(userId));
+                } else if (emailValue instanceof String email && !email.isBlank()) {
+                    model.addAttribute("unreadCount", 0L);
                 }
             }
         } else {

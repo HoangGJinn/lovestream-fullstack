@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="vi">
 <head>
     <meta charset="UTF-8">
@@ -127,6 +127,16 @@
             text-align: center;
         }
 
+        .loading-state {
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            background: #fff;
+            color: #374151;
+            padding: 20px;
+            text-align: center;
+            font-weight: 600;
+        }
+
         .status-text {
             margin-top: 14px;
             font-size: 14px;
@@ -238,6 +248,7 @@
 
             listEl.innerHTML = items.map(item => {
                 const isCurrent = !!item.currentDevice || item.deviceId === currentDeviceId;
+                const deviceIconClass = resolveDeviceIconClass(item);
                 const streamClass = item.streaming ? 'stream-state stream-state--playing' : 'stream-state stream-state--idle';
                 const streamText = item.streaming ? 'Đang xem phim' : 'Không có hoạt động để hiển thị';
                 const streamIcon = item.streaming ? 'fa-circle-play' : 'fa-user-clock';
@@ -249,7 +260,7 @@
                 return (
                     '<article class="device-card">' +
                         '<div class="device-title-row">' +
-                            '<h2 class="device-title">' + escapeHtml(item.deviceName || 'Thiết bị') + '</h2>' +
+                            '<h2 class="device-title"><i class="fa-solid ' + deviceIconClass + '" style="margin-right: 8px;"></i>' + escapeHtml(item.deviceName || 'Thiết bị') + '</h2>' +
                             (isCurrent ? '<span class="current-badge">Thiết bị hiện tại</span>' : '') +
                         '</div>' +
                         '<div class="device-meta"><i class="fa-regular fa-clock"></i><span>Lần cuối đăng nhập: ' + escapeHtml(formatLastLogin(item.lastLogin)) + '</span></div>' +
@@ -260,6 +271,26 @@
                     '</article>'
                 );
             }).join('');
+        }
+
+        function renderLoading(text) {
+            const message = text || 'Đang tải danh sách thiết bị...';
+            listEl.innerHTML =
+                '<div class="loading-state">' +
+                    '<i class="fa-solid fa-spinner fa-spin" style="margin-right: 8px;"></i>' +
+                    message +
+                '</div>';
+        }
+
+        function resolveDeviceIconClass(item) {
+            const os = String(item && item.os ? item.os : '').toLowerCase();
+            const name = String(item && item.deviceName ? item.deviceName : '').toLowerCase();
+
+            if (name.includes('tv')) return 'fa-tv';
+            if (os.includes('ios') || name.includes('iphone') || name.includes('ipad')) return 'fa-mobile-screen';
+            if (os.includes('android') || name.includes('android')) return 'fa-mobile-screen';
+            if (os.includes('windows') || os.includes('mac') || os.includes('linux')) return 'fa-laptop';
+            return 'fa-desktop';
         }
 
         function escapeHtml(value) {
@@ -275,17 +306,25 @@
             refreshBtn.disabled = true;
             setStatus('', false);
             const currentDeviceId = getOrCreateDeviceId();
+            renderLoading('Đang tải danh sách thiết bị...');
 
             try {
-                await touchCurrentDevice(currentDeviceId);
 
-                const response = await fetch('/api/v1/devices/me?deviceId=' + encodeURIComponent(currentDeviceId));
+                const response = await fetch('/api/v1/devices/me?deviceId=' + encodeURIComponent(currentDeviceId) + '&includeStreaming=false');
                 const payload = await response.json().catch(() => ({}));
                 if (!response.ok) {
                     throw new Error(payload.error || 'Không thể tải danh sách thiết bị.');
                 }
 
                 renderDevices(payload.items || [], currentDeviceId);
+                fetch('/api/v1/devices/me?deviceId=' + encodeURIComponent(currentDeviceId) + '&includeStreaming=true')
+                    .then(resp => resp.ok ? resp.json() : null)
+                    .then(data => {
+                        if (data && data.items) {
+                            renderDevices(data.items, currentDeviceId);
+                        }
+                    })
+                    .catch(() => {});
             } catch (error) {
                 listEl.innerHTML = '<div class="empty-state">Không thể tải danh sách thiết bị.</div>';
                 setStatus(error.message || 'Có lỗi xảy ra khi tải dữ liệu.', true);
@@ -329,3 +368,8 @@
 
 </body>
 </html>
+
+
+
+
+

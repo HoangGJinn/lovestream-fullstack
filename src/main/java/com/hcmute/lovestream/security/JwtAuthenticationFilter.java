@@ -63,14 +63,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 if (jwtUtil.isTokenValid(token) && "ACCESS".equals(jwtUtil.extractTokenType(token))) {
 
                     String email = jwtUtil.extractUsername(token);
+                    String userId = jwtUtil.extractUserIdString(token);
                     String roleStr = jwtUtil.extractRole(token);
                     boolean isVip = jwtUtil.extractIsVip(token);
                     String fullName = jwtUtil.extractFullName(token);
                     String avatar = jwtUtil.extractAvatar(token);
                     String tokenDeviceId = jwtUtil.extractDeviceId(token);
 
-                    if (tokenDeviceId != null && !tokenDeviceId.isBlank()
-                            && !deviceAccessService.isDeviceActive(email, tokenDeviceId)) {
+                    boolean deviceActive = true;
+                    if (tokenDeviceId != null && !tokenDeviceId.isBlank()) {
+                        deviceActive = userId != null && !userId.isBlank()
+                                ? deviceAccessService.isDeviceActiveByUserId(userId, tokenDeviceId)
+                                : deviceAccessService.isDeviceActive(email, tokenDeviceId);
+                    }
+                    if (!deviceActive) {
                         clearAuthCookies(response);
                         filterChain.doFilter(request, response);
                         return;
@@ -86,6 +92,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     // Gom tất cả dữ liệu vào một Map (Principal)
                     JwtPrincipal principalData = new JwtPrincipal();
                     principalData.put("email", email);
+                    principalData.put("userId", userId);
                     principalData.put("fullName", fullName);
                     principalData.put("avatar", avatar);
                     principalData.put("isVip", isVip);
@@ -139,7 +146,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             if (rt.getDeviceId() != null && !rt.getDeviceId().isBlank()
-                    && !deviceAccessService.isDeviceActive(rt.getUser().getEmail(), rt.getDeviceId())) {
+                    && !deviceAccessService.isDeviceActiveByUserId(rt.getUser().getId(), rt.getDeviceId())) {
                 clearAuthCookies(response);
                 return;
             }
@@ -182,6 +189,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // Cấp quyền ngay cho request hiện tại để khỏi bị redirect (Không gọi userDetailsService nữa)
             JwtPrincipal principalData = new JwtPrincipal();
             principalData.put("email", rt.getUser().getEmail());
+            principalData.put("userId", rt.getUser().getId());
             principalData.put("fullName", rt.getUser().getFullName());
             principalData.put("avatar", rt.getUser().getAvatar());
             principalData.put("isVip", isVip);
