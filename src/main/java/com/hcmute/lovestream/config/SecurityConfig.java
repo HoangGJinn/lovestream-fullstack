@@ -91,7 +91,8 @@ public class SecurityConfig {
                 )
                 .exceptionHandling(exc -> exc.authenticationEntryPoint((request, response, authException) -> {
                     if (request.getRequestURI().startsWith("/api/")) {
-                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Vui long dang nhap");
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.getWriter().write("Vui long dang nhap");
                     } else {
                         response.sendRedirect("/login");
                     }
