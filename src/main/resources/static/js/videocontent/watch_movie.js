@@ -1666,7 +1666,8 @@ async function loadComments() {
 
             if (res.ok) {
                 loadComments(); // Tải lại danh sách để cập nhật số lượng hiển thị
-            } else {
+            }
+            else {
                 const msg = await res.text();
                 alert(msg || "Vui lòng đăng nhập để thực hiện tính năng này.");
             }

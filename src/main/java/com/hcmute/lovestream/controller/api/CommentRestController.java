@@ -117,6 +117,11 @@ public class CommentRestController {
 
     @PostMapping("/{id}/like")
     public ResponseEntity<?> likeComment(Principal principal, @PathVariable String id) {
+
+        if (principal == null) {
+            return ResponseEntity.status(401).body("Vui lòng đăng nhập để bình luận!");
+        }
+
         try {
             commentService.voteComment(principal.getName(), id, true);
             return ResponseEntity.ok().build();
@@ -127,6 +132,11 @@ public class CommentRestController {
 
     @PostMapping("/{id}/dislike")
     public ResponseEntity<?> dislikeComment(Principal principal, @PathVariable String id) {
+
+        if (principal == null) {
+            return ResponseEntity.status(401).body("Vui lòng đăng nhập để bình luận!");
+        }
+
         try {
             commentService.voteComment(principal.getName(), id, false);
             return ResponseEntity.ok().build();
