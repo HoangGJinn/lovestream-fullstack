@@ -188,6 +188,14 @@ public class WatchTogetherService {
     }
 
     @Transactional
+    public Room deleteRoom(String roomCode, String hostEmail) {
+        Room room = findRoomByCodeOrThrow(roomCode);
+        validateHost(room, hostEmail);
+        roomRepository.delete(room);
+        return room;
+    }
+
+    @Transactional
     public void markParticipantConnected(String roomCode, String userEmail) {
         Room room = findRoomByCodeOrThrow(roomCode);
         User user = userRepository.findByEmail(userEmail)

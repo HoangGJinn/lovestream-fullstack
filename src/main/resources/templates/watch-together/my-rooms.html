@@ -339,6 +339,11 @@
             color: #ffc3c8;
         }
 
+        .btn.delete {
+            border-color: rgba(255, 126, 126, 0.72);
+            color: #ffd4d8;
+        }
+
         .empty {
             margin-top: 8px;
             color: #c0c7d5;
@@ -475,6 +480,12 @@
                 <form method="post" th:action="@{/watch-together/{roomCode}/stop(roomCode=${room.roomCode})}">
                     <button class="btn stop" type="submit">Dừng phòng</button>
                 </form>
+                <form method="post"
+                      class="js-delete-room-form"
+                      th:action="@{/watch-together/{roomCode}/delete(roomCode=${room.roomCode})}"
+                      th:attr="data-room-name=${room.roomName}">
+                    <button class="btn delete" type="submit">Xóa phòng</button>
+                </form>
                 <a class="btn" th:href="@{/join/{roomCode}(roomCode=${room.roomCode})}">Vào phòng</a>
             </div>
         </article>
@@ -523,6 +534,17 @@
                     this.textContent = "Đã copy!";
                     setTimeout(() => this.textContent = "Sao chép", 1500);
                 });
+            });
+        });
+
+        // confirm delete room
+        document.querySelectorAll(".js-delete-room-form").forEach(form => {
+            form.addEventListener("submit", function (event) {
+                const roomName = this.getAttribute("data-room-name") || "phòng này";
+                const ok = window.confirm('Bạn có chắc chắn muốn xóa "' + roomName + '" không?');
+                if (!ok) {
+                    event.preventDefault();
+                }
             });
         });
 
