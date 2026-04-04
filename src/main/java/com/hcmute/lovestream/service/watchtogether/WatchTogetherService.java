@@ -378,7 +378,19 @@ public class WatchTogetherService {
         return switch (normalized) {
             case "action" -> "Hanh dong";
             case "horror" -> "Kinh di";
-            case "drama", "romance" -> "Tinh cam";
+            case "drama" -> "Chinh kich";
+            case "romance" -> "Tinh cam";
+            case "thriller" -> "Gay can";
+            case "supernatural" -> "Sieu nhien";
+            case "mystery" -> "Bi an";
+            case "music" -> "Am nhac";
+            case "adventure" -> "Phieu luu";
+            case "mentality" -> "Tam ly";
+            case "crime" -> "Toi pham";
+            case "fantasy" -> "Gia tuong";
+            case "family" -> "Gia dinh";
+            case "science-fiction" -> "Khoa hoc vien tuong";
+            case "espionage" -> "Gian diep";
             case "anime", "animation" -> "Anime";
             default -> genreName;
         };
