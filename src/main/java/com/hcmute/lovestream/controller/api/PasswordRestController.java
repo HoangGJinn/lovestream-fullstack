@@ -33,8 +33,8 @@ public class PasswordRestController {
             changePasswordService.changePasswordByOldPassword(authentication.getName(), request);
             clearAuthCookies(response);
             return ResponseEntity.ok(Map.of(
-                    "message", "Đổi mật khẩu thành công. Vui lòng đăng nhập lại.",
-                    "redirectUrl", "/login"
+                    "message", "Đổi mật khẩu thành công. Hệ thống đã gửi email kèm link dự phòng. Vui lòng đăng nhập lại.",
+                    "redirectUrl", "/login?notice=password_changed"
             ));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
@@ -50,8 +50,8 @@ public class PasswordRestController {
             changePasswordService.changePasswordByBackupLink(request);
             clearAuthCookies(response);
             return ResponseEntity.ok(Map.of(
-                    "message", "Đổi mật khẩu thành công. Vui lòng đăng nhập lại.",
-                    "redirectUrl", "/login"
+                    "message", "Đổi mật khẩu thành công. Hệ thống đã gửi email kèm link dự phòng. Vui lòng đăng nhập lại.",
+                    "redirectUrl", "/login?notice=password_changed"
             ));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));

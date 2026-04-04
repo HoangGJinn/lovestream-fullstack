@@ -33,8 +33,67 @@ public class WebContentBannerNavigationResolver {
             return;
         }
 
-        banner.setResolvedNavigationLink(resolveNavigationLink(banner));
-        banner.setResolvedTargetLabel(resolveTargetLabel(banner));
+        ResolvedBannerFields resolved = resolveBannerFields(banner);
+        banner.setResolvedNavigationLink(resolved.navigationLink());
+        banner.setResolvedTargetLabel(resolved.targetLabel());
+        banner.setResolvedDescription(resolved.description());
+    }
+
+    private ResolvedBannerFields resolveBannerFields(WebContentBanner banner) {
+        if (banner == null) {
+            return new ResolvedBannerFields(null, "Không điều hướng", null);
+        }
+
+        WebContentBannerTargetType targetType = banner.getTargetType();
+        if (targetType == null) {
+            String legacyLink = trimToNull(banner.getNavigationLink());
+            String legacyLabel = legacyLink == null ? "Không điều hướng" : "Link cũ: " + legacyLink;
+            return new ResolvedBannerFields(legacyLink, legacyLabel, null);
+        }
+
+        return switch (targetType) {
+            case NONE -> new ResolvedBannerFields(null, "Không điều hướng", null);
+            case MOVIE -> resolveMovieFields(banner.getTargetRefId());
+            case SERIES -> resolveSeriesFields(banner.getTargetRefId());
+            case STATIC_PAGE -> {
+                String link = resolveStaticPageLink(banner.getTargetRefId());
+                String label = resolveStaticPageLabel(banner.getTargetRefId());
+                yield new ResolvedBannerFields(link, label, null);
+            }
+            case EXTERNAL_URL -> {
+                String url = firstNonBlank(banner.getExternalUrl(), banner.getNavigationLink());
+                String label = url == null ? "URL tùy chỉnh chưa hợp lệ" : "URL tùy chỉnh: " + url;
+                yield new ResolvedBannerFields(url, label, null);
+            }
+        };
+    }
+
+    private ResolvedBannerFields resolveMovieFields(String movieId) {
+        String normalizedMovieId = trimToNull(movieId);
+        if (normalizedMovieId == null) {
+            return new ResolvedBannerFields(null, "Phim chưa được chọn", null);
+        }
+
+        return movieRepository.findById(normalizedMovieId)
+                .map(movie -> new ResolvedBannerFields(
+                        "/movies/" + movie.getSlugOrId(),
+                        "Phim: " + movie.getTitle(),
+                        trimToNull(movie.getDescription())))
+                .orElseGet(() -> new ResolvedBannerFields(null, "Phim không tồn tại", null));
+    }
+
+    private ResolvedBannerFields resolveSeriesFields(String seriesId) {
+        String normalizedSeriesId = trimToNull(seriesId);
+        if (normalizedSeriesId == null) {
+            return new ResolvedBannerFields(null, "Series chưa được chọn", null);
+        }
+
+        return tvSeriesRepository.findById(normalizedSeriesId)
+                .map(series -> new ResolvedBannerFields(
+                        "/series/" + series.getId(),
+                        "Series: " + series.getTitle(),
+                        trimToNull(series.getDescription())))
+                .orElseGet(() -> new ResolvedBannerFields(null, "Series không tồn tại", null));
     }
 
     public String resolveNavigationLink(WebContentBanner banner) {
@@ -182,5 +241,8 @@ public class WebContentBannerNavigationResolver {
 
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private record ResolvedBannerFields(String navigationLink, String targetLabel, String description) {
     }
 }

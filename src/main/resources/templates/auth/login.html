@@ -20,6 +20,7 @@
         <div class="auth-box">
             <h2>Đăng nhập</h2>
 
+            <div id="success-alert" class="alert alert-success"></div>
             <div id="error-alert" class="alert alert-error"></div>
             <div id="google-error" class="alert alert-error"></div>
 
@@ -93,12 +94,59 @@
         (function () {
             const params = new URLSearchParams(window.location.search);
             const googleErr = params.get('error');
+            const notice = params.get('notice');
+
+            if (notice === 'password_changed') {
+                const successEl = document.getElementById('success-alert');
+                successEl.innerText = 'Đổi mật khẩu thành công. Hệ thống đã gửi email kèm link dự phòng.';
+                successEl.style.display = 'block';
+            }
+
             if (googleErr) {
                 const el = document.getElementById('google-error');
                 el.innerText = decodeURIComponent(googleErr);
                 el.style.display = 'block';
             }
         })();
+
+        const DEVICE_STORAGE_KEY = 'lovestream_device_id';
+
+        function buildFallbackDeviceId() {
+            return 'device-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+        }
+
+        function syncDeviceCookie(deviceId) {
+            const maxAge = 60 * 60 * 24 * 365;
+            document.cookie = 'DEVICE_ID=' + encodeURIComponent(deviceId) + '; path=/; max-age=' + maxAge + '; SameSite=Lax';
+        }
+
+        function getOrCreateDeviceId() {
+            try {
+                const existing = localStorage.getItem(DEVICE_STORAGE_KEY);
+                if (existing && existing.trim()) {
+                    const deviceId = existing.trim();
+                    syncDeviceCookie(deviceId);
+                    return deviceId;
+                }
+            } catch (_error) {}
+
+            const generated = (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function')
+                ? crypto.randomUUID()
+                : buildFallbackDeviceId();
+
+            try {
+                localStorage.setItem(DEVICE_STORAGE_KEY, generated);
+            } catch (_error) {}
+            syncDeviceCookie(generated);
+            return generated;
+        }
+
+        const googleBtn = document.getElementById('googleBtn');
+        if (googleBtn) {
+            googleBtn.addEventListener('click', () => {
+                getOrCreateDeviceId();
+            });
+        }
 
         // Xử lý Submit
         document.getElementById('loginForm').addEventListener('submit', async function (event) {
@@ -113,10 +161,11 @@
             submitBtn.innerText = 'Đang xử lý...';
 
             try {
+                const deviceId = getOrCreateDeviceId();
                 const response = await fetch('/api/v1/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
+                    body: JSON.stringify({ email, password, deviceId })
                 });
                 const data = await response.json();
                 if (response.ok) {

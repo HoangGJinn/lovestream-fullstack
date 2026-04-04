@@ -42,8 +42,11 @@ public class ContentManagerWebContentBannerController {
 
     @ModelAttribute("availableMovies")
     public List<SelectOption> populateMovies() {
-        return movieRepository.findAllByOrderByTitleAsc().stream()
-                .map(movie -> new SelectOption(movie.getId(), buildContentLabel(movie.getTitle(), movie.getStatus())))
+        return movieRepository.findAllWithMediaAssetsByOrderByTitleAsc().stream()
+            .map(movie -> new SelectOption(
+                movie.getId(),
+                buildContentLabel(movie.getTitle(), movie.getStatus()),
+                normalize(movie.getPosterUrl())))
                 .toList();
     }
 
@@ -51,16 +54,16 @@ public class ContentManagerWebContentBannerController {
     public List<SelectOption> populateSeries() {
         return tvSeriesRepository.findAll().stream()
                 .sorted(Comparator.comparing((TVSeries series) -> sortKey(series.getTitle()), String.CASE_INSENSITIVE_ORDER))
-                .map(series -> new SelectOption(series.getId(), buildContentLabel(series.getTitle(), series.getStatus())))
+                .map(series -> new SelectOption(series.getId(), buildContentLabel(series.getTitle(), series.getStatus()), null))
                 .toList();
     }
 
     @ModelAttribute("availableStaticPages")
     public List<SelectOption> populateStaticPages() {
         return List.of(
-                new SelectOption(WebStaticPageType.ABOUT.name(), "Giới thiệu (/about)"),
-                new SelectOption(WebStaticPageType.PRIVACY_POLICY.name(), "Chính sách bảo mật (/privacy-policy)"),
-                new SelectOption(WebStaticPageType.TERMS.name(), "Điều khoản sử dụng (/terms)")
+                new SelectOption(WebStaticPageType.ABOUT.name(), "Giới thiệu (/about)", null),
+                new SelectOption(WebStaticPageType.PRIVACY_POLICY.name(), "Chính sách bảo mật (/privacy-policy)", null),
+                new SelectOption(WebStaticPageType.TERMS.name(), "Điều khoản sử dụng (/terms)", null)
         );
     }
 
@@ -108,8 +111,15 @@ public class ContentManagerWebContentBannerController {
         }
 
         try {
+            boolean usesDefaultMoviePoster = request.getTargetType() == WebContentBannerTargetType.MOVIE
+                    && (request.getBannerImage() == null || request.getBannerImage().isEmpty());
             bannerService.create(request);
-            redirectAttributes.addFlashAttribute("successMessage", "Tạo banner thành công!");
+            if (usesDefaultMoviePoster) {
+                redirectAttributes.addFlashAttribute("successMessage",
+                        "Tạo banner thành công! Hệ thống đã dùng ảnh poster mặc định của phim.");
+            } else {
+                redirectAttributes.addFlashAttribute("successMessage", "Tạo banner thành công!");
+            }
             return "redirect:/content-manager/web-content?tab=banners";
         } catch (IllegalArgumentException e) {
             log.warn("Create banner failed: {}", e.getMessage());
@@ -232,6 +242,6 @@ public class ContentManagerWebContentBannerController {
         return normalized != null ? normalized : "";
     }
 
-    public record SelectOption(String value, String label) {
+    public record SelectOption(String value, String label, String posterUrl) {
     }
 }

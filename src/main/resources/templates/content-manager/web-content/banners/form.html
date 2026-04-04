@@ -72,6 +72,7 @@
                                 <option value="">-- Chọn phim --</option>
                                 <option th:each="movie : ${availableMovies}"
                                         th:value="${movie.value}"
+                                        th:attr="data-poster-url=${movie.posterUrl}"
                                         th:text="${movie.label}"></option>
                             </select>
                         </div>
@@ -130,21 +131,28 @@
 
                     <div class="form-row two-col">
                         <div class="form-group">
-                            <label for="bannerImage">Chọn ảnh <span class="required">*</span></label>
+                            <label for="bannerImage">Chọn ảnh</label>
                             <input id="bannerImage" type="file" th:field="*{bannerImage}" class="form-control"
-                                   accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                                   th:required="${bannerRequest.id == null}" />
+                                   accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
                             <div style="color: var(--netflix-light-grey); font-size: 13px; margin-top: 8px;">
-                                Chỉ nhận `jpg`, `jpeg`, `png`, `webp` (tối đa 5MB).
+                                Chỉ nhận `jpg`, `jpeg`, `png`, `webp` (tối đa 5MB). Nếu để trống và kiểu điều hướng là `Phim`, hệ thống sẽ tự dùng poster mặc định của phim đích.
                             </div>
                         </div>
                         <div class="form-group">
                             <label>Preview ảnh hiện tại</label>
                             <img th:if="${bannerRequest.existingImagePath != null and !#strings.isEmpty(bannerRequest.existingImagePath)}"
-                                 th:src="@{/uploads/{path}(path=${bannerRequest.existingImagePath})}"
+                                 id="bannerPreviewImage"
+                                 th:src="${#strings.startsWith(bannerRequest.existingImagePath, 'http://') or #strings.startsWith(bannerRequest.existingImagePath, 'https://')
+                                        ? bannerRequest.existingImagePath
+                                        : '/uploads/' + bannerRequest.existingImagePath}"
                                  class="banner-thumb" alt="Banner preview" />
                             <div th:if="${bannerRequest.existingImagePath == null or #strings.isEmpty(bannerRequest.existingImagePath)}"
+                                 id="bannerPreviewEmpty"
                                  style="color: var(--netflix-light-grey);">Chưa có ảnh</div>
+                            <div id="bannerPreviewFallbackHint"
+                                 style="display: none; margin-top: 8px; color: var(--netflix-light-grey); font-size: 13px;">
+                                Đang xem trước poster mặc định của phim được chọn.
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -164,6 +172,85 @@
             const groups = Array.from(document.querySelectorAll('[data-target-group]'));
             if (!targetTypeField || groups.length === 0) return;
 
+            const movieSelect = document.getElementById('movieTargetId');
+            const imageInput = document.getElementById('bannerImage');
+            const fallbackHint = document.getElementById('bannerPreviewFallbackHint');
+            const existingImagePathField = document.getElementById('existingImagePath');
+
+            let previewImage = document.getElementById('bannerPreviewImage');
+            let previewEmpty = document.getElementById('bannerPreviewEmpty');
+
+            function ensurePreviewImage() {
+                if (previewImage) return previewImage;
+                const newImg = document.createElement('img');
+                newImg.id = 'bannerPreviewImage';
+                newImg.className = 'banner-thumb';
+                newImg.alt = 'Banner preview';
+
+                const container = previewEmpty ? previewEmpty.parentElement : fallbackHint?.parentElement;
+                if (container) {
+                    container.insertBefore(newImg, previewEmpty || fallbackHint || null);
+                }
+
+                previewImage = newImg;
+                return previewImage;
+            }
+
+            function setPreviewSource(src, useFallbackHint) {
+                if (src && src.trim().length > 0) {
+                    const img = ensurePreviewImage();
+                    img.src = src;
+                    img.style.display = '';
+                    if (previewEmpty) previewEmpty.style.display = 'none';
+                    if (fallbackHint) fallbackHint.style.display = useFallbackHint ? '' : 'none';
+                    return;
+                }
+
+                if (previewImage) previewImage.style.display = 'none';
+                if (previewEmpty) previewEmpty.style.display = '';
+                if (fallbackHint) fallbackHint.style.display = 'none';
+            }
+
+            function selectedMoviePosterUrl() {
+                if (!movieSelect) return null;
+                const selectedOption = movieSelect.options[movieSelect.selectedIndex];
+                if (!selectedOption) return null;
+                const value = selectedOption.getAttribute('data-poster-url');
+                return value && value.trim().length > 0 ? value : null;
+            }
+
+            function syncPreview() {
+                if (!targetTypeField) return;
+
+                const hasUpload = imageInput && imageInput.files && imageInput.files.length > 0;
+                if (hasUpload) {
+                    const fileUrl = URL.createObjectURL(imageInput.files[0]);
+                    setPreviewSource(fileUrl, false);
+                    return;
+                }
+
+                const hasExistingImagePath = existingImagePathField && existingImagePathField.value
+                    && existingImagePathField.value.trim().length > 0;
+                if (hasExistingImagePath && previewImage && previewImage.getAttribute('src')) {
+                    setPreviewSource(previewImage.getAttribute('src'), false);
+                    return;
+                }
+
+                if (targetTypeField.value === 'MOVIE') {
+                    const posterUrl = selectedMoviePosterUrl();
+                    if (posterUrl) {
+                        setPreviewSource(posterUrl, true);
+                        return;
+                    }
+                }
+
+                const existing = previewImage && previewImage.getAttribute('src');
+                const visible = previewImage && previewImage.style.display !== 'none' && existing;
+                if (!visible) {
+                    setPreviewSource(null, false);
+                }
+            }
+
             function syncTargetGroups() {
                 const activeType = targetTypeField.value || 'NONE';
 
@@ -174,8 +261,12 @@
                         field.disabled = !isActive;
                     });
                 });
+
+                syncPreview();
             }
 
+            movieSelect && movieSelect.addEventListener('change', syncPreview);
+            imageInput && imageInput.addEventListener('change', syncPreview);
             targetTypeField.addEventListener('change', syncTargetGroups);
             syncTargetGroups();
         })();

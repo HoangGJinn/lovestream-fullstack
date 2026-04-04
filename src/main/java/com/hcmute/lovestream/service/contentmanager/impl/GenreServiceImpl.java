@@ -125,11 +125,9 @@ public class GenreServiceImpl implements GenreService {
         }
 
         // Kiểm tra trùng tên (không phân biệt hoa thường)
-        if (genreRepository.existsByNameIgnoreCase(name)) {
-            Genre g = genreRepository.findByName(name).orElse(null);
-            if (g != null && !g.getId().equals(excludeId)) {
+        Genre existingGenre = genreRepository.findByNameIgnoreCase(name).orElse(null);
+        if (existingGenre != null && !existingGenre.getId().equals(excludeId)) {
                 throw new RuntimeException("Thể loại '" + name + "' đã tồn tại");
-            }
         }
     }
 }

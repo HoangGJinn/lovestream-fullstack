@@ -1,6 +1,7 @@
 package com.hcmute.lovestream.controller.web;
 
 import com.hcmute.lovestream.entity.User;
+import com.hcmute.lovestream.entity.Notification;
 import com.hcmute.lovestream.service.notification.NotificationService;
 import com.hcmute.lovestream.service.user.UserProfileService;
 import lombok.RequiredArgsConstructor;
@@ -8,9 +9,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
@@ -20,40 +21,27 @@ public class NotificationWebController {
     private final UserProfileService userProfileService;
 
     @GetMapping("/notifications")
-    public String notificationPage(@RequestParam(name = "filter", defaultValue = "all") String filter,
-                                   Authentication authentication,
-                                   Model model) {
-        User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
+    public String notificationPage(
+            @RequestParam(defaultValue = "all") String filter,
+            Authentication auth,
+            Model model
+    ) {
+        User user = userProfileService.getCurrentUserByEmail(auth.getName());
 
+        List<Notification> list = notificationService
+                .getNotifications(user.getId(), filter);
 
-        model.addAttribute("notifications", notificationService.getVisibleNotificationsByFilter(currentUser.getId(), filter));
-        model.addAttribute("unreadCount", notificationService.countUnread(currentUser.getId()));
-        model.addAttribute("selectedFilter", filter);
+        String normalizedFilter = filter == null ? "all" : filter.trim().toLowerCase();
+
+        model.addAttribute("notifications", list);
+        model.addAttribute("unreadCount",
+                notificationService.countUnread(user.getId()));
+        model.addAttribute("selectedFilter", normalizedFilter);
+
         return "user/notifications";
     }
 
-    @PostMapping("/notifications/{id}/read")
-    public String markNotificationAsRead(@PathVariable("id") String id,
-                                         @RequestParam(name = "filter", defaultValue = "all") String filter,
-                                         Authentication authentication) {
-        User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
-        notificationService.markAsRead(id, currentUser.getId());
-        return "redirect:/notifications?filter=" + filter;
-    }
 
-    @GetMapping("/notifications/{id}/open")
-    public String openNotification(@PathVariable("id") String id,
-                                   Authentication authentication) {
-        User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
-        return "redirect:" + notificationService.openNotification(id, currentUser.getId());
-    }
 
-    @PostMapping("/notifications/read-all")
-    public String markAllAsRead(@RequestParam(name = "filter", defaultValue = "all") String filter,
-                                Authentication authentication) {
-        User currentUser = userProfileService.getCurrentUserByEmail(authentication.getName());
-        notificationService.markAllAsRead(currentUser);
-        return "redirect:/notifications?filter=" + filter;
-    }
 }
 

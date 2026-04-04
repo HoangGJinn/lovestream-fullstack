@@ -9,10 +9,109 @@
     <link rel="stylesheet" href="/css/home.css">
     <link rel="stylesheet" href="/css/user-menu.css">
     <link rel="stylesheet" href="/css/videocontents.css">
-    <link rel="stylesheet" href="/css/share.css">
+    <link rel="preload" as="image" th:if="${movie != null and movie.posterUrl != null}" th:href="${movie.posterUrl}">
+    <script>
+        (function () {
+            try {
+                var raw = sessionStorage.getItem("ls_movie_poster_transition_v1");
+                if (!raw) return;
+                var data = JSON.parse(raw);
+                var currentPath = window.location.pathname + window.location.search;
+                if (window.location.pathname.startsWith("/movies/") && data && data.pathWithQuery === currentPath) {
+                    document.documentElement.classList.add("ls-movie-detail-loading");
+                }
+            } catch (error) {
+                // Ignore.
+            }
+        })();
+    </script>
     <style>
         .vc-detail-page {
             padding-top: 96px;
+            opacity: 1;
+            transform: none;
+            transition: opacity 220ms ease, transform 260ms ease;
+        }
+
+        .vc-detail-skeleton {
+            display: none;
+            padding: 96px 20px 0;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .vc-detail-skeleton-card {
+            display: grid;
+            grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+            gap: 24px;
+            padding: 24px;
+            border-radius: 14px;
+            background: #141414;
+            border: 1px solid #252525;
+        }
+
+        .vc-skel-block {
+            border-radius: 10px;
+            background: linear-gradient(100deg, #1a1a1a 30%, #2b2b2b 45%, #1a1a1a 60%);
+            background-size: 240% 100%;
+            animation: vcShimmer 1s linear infinite;
+        }
+
+        .vc-skel-poster {
+            width: 100%;
+            height: clamp(320px, 45vw, 460px);
+        }
+
+        .vc-skel-content {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .vc-skel-title {
+            width: 62%;
+            height: 34px;
+        }
+
+        .vc-skel-meta {
+            width: 40%;
+            height: 14px;
+        }
+
+        .vc-skel-line {
+            width: 100%;
+            height: 12px;
+        }
+
+        .vc-skel-line.short {
+            width: 78%;
+        }
+
+        .vc-skel-actions {
+            margin-top: 16px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .vc-skel-btn {
+            width: 150px;
+            height: 42px;
+            border-radius: 8px;
+        }
+
+        .ls-movie-detail-loading .vc-detail-page {
+            opacity: 0;
+            transform: translateY(8px);
+            pointer-events: none;
+        }
+
+        .ls-movie-detail-loading .vc-detail-skeleton {
+            display: block;
+        }
+
+        @keyframes vcShimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -40% 0; }
         }
 
         .vc-section {
@@ -90,6 +189,10 @@
         }
 
         @media (max-width: 860px) {
+            .vc-detail-skeleton-card {
+                grid-template-columns: 1fr;
+            }
+
             .vc-detail-card {
                 grid-template-columns: 1fr;
             }
@@ -99,28 +202,44 @@
             }
         }
     </style>
-
 </head>
 <body>
 <div class="navbar scrolled" id="navbar">
     <div th:replace="~{fragments/top-navbar :: topNavLeft('movies')}"></div>
     <div class="nav-right">
-        <a th:if="${currentUser != null}" href="/notifications" class="nav-icon notification-link" aria-label="Thong bao">
-            <i class="fa-regular fa-bell"></i>
-            <span th:if="${unreadCount > 0}" class="notification-badge" th:text="${unreadCount > 99 ? '99+' : unreadCount}">0</span>
-        </a>
+        <a th:if="${currentUser != null}" href="/notifications" class="nav-icon" aria-label="Thong bao"><i class="fa-regular fa-bell"></i></a>
         <div th:replace="~{fragments/user-menu :: userMenu(${currentUser}, 'dark')}"></div>
     </div>
 </div>
-<main class="vc-detail-page">
-    <a class="vc-back-link" href="/movies"><i class="fa-solid fa-arrow-left"></i> Quay lại danh sách phim</a>
+<section class="vc-detail-skeleton" id="vcDetailSkeleton" aria-hidden="true">
+    <div class="vc-detail-skeleton-card">
+        <div class="vc-skel-block vc-skel-poster"></div>
+        <div class="vc-skel-content">
+            <div class="vc-skel-block vc-skel-title"></div>
+            <div class="vc-skel-block vc-skel-meta"></div>
+            <div class="vc-skel-block vc-skel-line"></div>
+            <div class="vc-skel-block vc-skel-line"></div>
+            <div class="vc-skel-block vc-skel-line short"></div>
+            <div class="vc-skel-actions">
+                <div class="vc-skel-block vc-skel-btn"></div>
+                <div class="vc-skel-block vc-skel-btn"></div>
+            </div>
+        </div>
+    </div>
+</section>
+<main class="vc-detail-page" id="vcDetailMain">
+    <a class="vc-back-link"
+       th:with="qs=${queryString}"
+       th:href="${qs != null and !#strings.isEmpty(qs)} ? '/movies?' + qs : '/movies'">
+        <i class="fa-solid fa-arrow-left"></i> Quay lại danh sách phim
+    </a>
 
     <div class="vc-detail-error" th:if="${errorMessage != null}">
         <h2 th:text="${errorMessage}">Nội dung không tồn tại</h2>
     </div>
 
     <article class="vc-detail-card" th:if="${movie != null}">
-        <img th:src="${movie.posterUrl}" th:alt="${movie.title}">
+        <img th:src="${movie.posterUrl}" th:alt="${movie.title}" data-movie-detail-poster="true" loading="eager" fetchpriority="high" decoding="async">
         <div class="vc-detail-content">
             <h1 th:text="${movie.title}">Tên phim</h1>
             <p class="vc-meta">
@@ -176,13 +295,6 @@
                         <i class="fa-solid fa-plus"></i> Thêm vào yêu thích
                     </span>
                 </button>
-
-                <!-- Nút Chia sẻ (VIP) -->
-                <button th:if="${hasActiveSub}" id="btn-share-trigger" class="vc-buy-btn vc-buy-btn--ghost" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2);">
-                    <i class="fa-solid fa-share-nodes"></i> Chia sẻ phim
-                </button>
-
-
             </div>
         </div>
     </article>
@@ -325,6 +437,7 @@
     async function voteRatingOnDetail(ratingId, isLike) {
         const action = isLike ? 'like' : 'dislike';
         try {
+            // SỬA DÒNG NÀY: Bỏ các dấu \ đi
             const res = await fetch(`/api/v1/ratings/${ratingId}/${action}`, { method: 'POST' });
 
             if (res.ok) {
@@ -341,9 +454,6 @@
 </script>
 
 
-<!-- Giao diện Chia sẻ (Fragment dùng chung) -->
-<div th:replace="~{fragments/share-modal :: shareModal}"></div>
-
-
 </body>
 </html>
+

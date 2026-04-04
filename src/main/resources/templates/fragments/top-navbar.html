@@ -4,15 +4,22 @@
 <div th:fragment="topNavLeft(activeTab)" class="nav-left">
     <a href="/" class="logo">LoveStream</a>
     <ul class="nav-links">
-        <li><a href="/home" th:classappend="${activeTab == 'home'} ? ' active' : ''">Trang chu</a></li>
-        <li><a href="/series" th:classappend="${activeTab == 'series'} ? ' active' : ''">Series</a></li>
-        <li><a href="/movies" th:classappend="${activeTab == 'movies'} ? ' active' : ''">Phim</a></li>
-        <li><a href="/videocontents/search" th:classappend="${activeTab == 'discover'} ? ' active' : ''">Moi &amp; Pho bien</a></li>
-        <li th:if="${currentUser != null}"><a href="/account/favorites" th:classappend="${activeTab == 'favorites'} ? ' active' : ''">Danh sach cua toi</a></li>
-        <li th:if="${currentUser != null}"><a href="/history" th:classappend="${activeTab == 'history'} ? ' active' : ''">Lich su xem phim</a></li>
-        <li><a href="/packages" th:classappend="${activeTab == 'packages'} ? ' active' : ''">Goi dich vu</a></li>
+        <li><a href="/home" th:classappend="${activeTab == 'home'} ? ' active' : ''">Trang chủ</a></li>
+        <li>
+            <a href="/series"
+               th:classappend="${activeTab == 'series'} ? ' active' : ''">Series</a>
+        </li>
+        <li>
+            <a href="/movies"
+               th:classappend="${activeTab == 'movies'} ? ' active' : ''">Phim</a>
+        </li>
+        <li><a href="/videocontents/search" th:classappend="${activeTab == 'discover'} ? ' active' : ''">Mới &amp; Phổ biến</a></li>
+        <li th:if="${currentUser != null}"><a href="/account/favorites" th:classappend="${activeTab == 'favorites'} ? ' active' : ''">Danh sách của tôi</a></li>
+        <li th:if="${currentUser != null}"><a href="/history" th:classappend="${activeTab == 'history'} ? ' active' : ''">Lịch sử xem phim</a></li>
+        <li><a href="/packages" th:classappend="${activeTab == 'packages'} ? ' active' : ''">Gói dịch vụ</a></li>
         <li th:if="${currentUser != null}"><a href="/watch-together" th:classappend="${activeTab == 'watch-together'} ? ' active' : ''">Xem chung</a></li>
     </ul>
+    <script th:src="@{/js/movie-poster-transition.js}" defer></script>
 </div>
 </body>
 </html>

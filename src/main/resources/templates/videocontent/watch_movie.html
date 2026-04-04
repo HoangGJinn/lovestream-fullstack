@@ -18,9 +18,6 @@
     </button>
     <video id="video"></video>
     <div id="loadingSpinner" class="spinner hidden"></div>
-    <button class="remote-play-unlock hidden" id="remotePlayUnlockBtn" type="button">
-        Nhan de tiep tuc phat
-    </button>
     <div class="controls-overlay" id="controlsOverlay">
 
         <div class="progress-bar-container" id="progressBarContainer">
@@ -214,7 +211,9 @@
         roomState: /*[[${roomState}]]*/ null,
         maxAllowedHeight: /*[[${maxAllowedHeight}]]*/ 480,
         planQualityLabel: /*[[${planQualityLabel}]]*/ 'SD (480p)',
-        upgradePackagesUrl: '/packages'
+        upgradePackagesUrl: '/packages',
+        streamApiBase: '/api/v1/streams',
+        streamHeartbeatIntervalMs: /*[[${streamHeartbeatIntervalMs}]]*/ 25000
     };
 </script>
 <script src="/js/videocontent/watch_movie.js"></script>

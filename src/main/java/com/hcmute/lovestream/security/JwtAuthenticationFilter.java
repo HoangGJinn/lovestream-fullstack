@@ -4,6 +4,7 @@ import com.hcmute.lovestream.entity.RefreshToken;
 import com.hcmute.lovestream.entity.enums.SubscriptionStatus;
 import com.hcmute.lovestream.repository.RefreshTokenRepository;
 import com.hcmute.lovestream.repository.SubscriptionRepository;
+import com.hcmute.lovestream.service.device.DeviceAccessService;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -35,6 +36,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
     private final RefreshTokenRepository refreshTokenRepository;
     private final SubscriptionRepository subscriptionRepository;
+    private final DeviceAccessService deviceAccessService;
 
     @Value("${jwt.refresh-token.expiration}")
     private Long refreshExpiration;
@@ -61,10 +63,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 if (jwtUtil.isTokenValid(token) && "ACCESS".equals(jwtUtil.extractTokenType(token))) {
 
                     String email = jwtUtil.extractUsername(token);
+                    String userId = jwtUtil.extractUserIdString(token);
                     String roleStr = jwtUtil.extractRole(token);
                     boolean isVip = jwtUtil.extractIsVip(token);
                     String fullName = jwtUtil.extractFullName(token);
                     String avatar = jwtUtil.extractAvatar(token);
+                    String tokenDeviceId = jwtUtil.extractDeviceId(token);
+
+                    boolean deviceActive = true;
+                    if (tokenDeviceId != null && !tokenDeviceId.isBlank()) {
+                        deviceActive = userId != null && !userId.isBlank()
+                                ? deviceAccessService.isDeviceActiveByUserId(userId, tokenDeviceId)
+                                : deviceAccessService.isDeviceActive(email, tokenDeviceId);
+                    }
+                    if (!deviceActive) {
+                        clearAuthCookies(response);
+                        filterChain.doFilter(request, response);
+                        return;
+                    }
 
                     if (roleStr != null && !roleStr.startsWith("ROLE_")) {
                         roleStr = "ROLE_" + roleStr;
@@ -76,9 +92,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     // Gom tất cả dữ liệu vào một Map (Principal)
                     JwtPrincipal principalData = new JwtPrincipal();
                     principalData.put("email", email);
+                    principalData.put("userId", userId);
                     principalData.put("fullName", fullName);
                     principalData.put("avatar", avatar);
                     principalData.put("isVip", isVip);
+                    principalData.put("deviceId", tokenDeviceId);
 
                     // Cấp quyền trực tiếp vào Context, truyền principalData làm tham số đầu tiên
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
@@ -127,6 +145,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
 
+            if (rt.getDeviceId() != null && !rt.getDeviceId().isBlank()
+                    && !deviceAccessService.isDeviceActiveByUserId(rt.getUser().getId(), rt.getDeviceId())) {
+                clearAuthCookies(response);
+                return;
+            }
+
             // ---- Token Rotation ----
             rt.setRevoked(true);
             refreshTokenRepository.save(rt);
@@ -135,6 +159,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             RefreshToken newRefreshToken = RefreshToken.builder()
                     .user(rt.getUser())
                     .token(newRefreshTokenStr)
+                    .deviceId(rt.getDeviceId())
                     .expiresAt(LocalDateTime.now().plusSeconds(refreshExpiration / 1000))
                     .revoked(false)
                     .build();
@@ -147,7 +172,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             );
 
             // SỬA: Dùng hàm generateToken theo thiết kế mới (User user, boolean isVip)
-            String newAccessToken = jwtUtil.generateToken(rt.getUser(), isVip);
+            String newAccessToken = jwtUtil.generateToken(rt.getUser(), isVip, rt.getDeviceId());
 
             Cookie jwtCookie = new Cookie("JWT_TOKEN", newAccessToken);
             jwtCookie.setHttpOnly(true);
@@ -164,9 +189,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // Cấp quyền ngay cho request hiện tại để khỏi bị redirect (Không gọi userDetailsService nữa)
             JwtPrincipal principalData = new JwtPrincipal();
             principalData.put("email", rt.getUser().getEmail());
+            principalData.put("userId", rt.getUser().getId());
             principalData.put("fullName", rt.getUser().getFullName());
             principalData.put("avatar", rt.getUser().getAvatar());
             principalData.put("isVip", isVip);
+            principalData.put("deviceId", rt.getDeviceId());
 
             String roleStr = rt.getUser().getRole().getAuthority();
             List<SimpleGrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority(roleStr));
@@ -207,6 +234,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         refreshCookie.setPath("/");
         refreshCookie.setMaxAge(0);
         response.addCookie(refreshCookie);
+
+        Cookie deviceCookie = new Cookie("DEVICE_ID", null);
+        deviceCookie.setHttpOnly(false);
+        deviceCookie.setPath("/");
+        deviceCookie.setMaxAge(0);
+        response.addCookie(deviceCookie);
     }
 
     public static class JwtPrincipal extends HashMap<String, Object> implements java.security.Principal {

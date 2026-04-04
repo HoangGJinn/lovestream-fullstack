@@ -5,7 +5,12 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "devices")
+@Table(
+        name = "devices",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_devices_user_client", columnNames = {"user_id", "client_device_id"})
+        }
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,13 +21,17 @@ public class Device {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id; // Trong sơ đồ thiết kế là String, ta dùng UUID tự động sinh cho an toàn
 
+    @Column(name = "client_device_id", nullable = false, length = 128)
+    private String clientDeviceId;
+
     @Column(name = "device_name")
     private String deviceName;
 
     private String os;
 
-    @Column(name = "fcm_token")
-    private String fcmToken;
+    // Sử dụng khi phát triển app mobile để gửi thông báo đẩy qua FCM, nhưng hiện tại chưa cần thiết nên tạm ẩn đi
+//    @Column(name = "fcm_token")
+//    private String fcmToken;
 
     @Column(name = "last_login")
     private LocalDateTime lastLogin;

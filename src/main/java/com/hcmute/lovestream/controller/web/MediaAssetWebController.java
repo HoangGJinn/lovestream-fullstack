@@ -2,11 +2,11 @@ package com.hcmute.lovestream.controller.web;
 
 import com.hcmute.lovestream.dto.response.WatchRoomStateResponse;
 import com.hcmute.lovestream.entity.User;
-import com.hcmute.lovestream.repository.UserRepository;
 import com.hcmute.lovestream.service.user.UserProfileService;
 import com.hcmute.lovestream.service.plan.ServicePlanService;
 import com.hcmute.lovestream.service.watchtogether.WatchTogetherService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -22,6 +22,9 @@ public class MediaAssetWebController {
     private final UserProfileService userProfileService;
 
     private final ServicePlanService servicePlanService;
+
+    @Value("${app.stream-session.heartbeat-seconds:25}")
+    private int streamHeartbeatSeconds;
 
     @GetMapping("/watch-movie")
     public String moviePage(
@@ -51,7 +54,7 @@ public class MediaAssetWebController {
                 model.addAttribute("currentUserEmail", user.getEmail());
                 model.addAttribute("currentUserAvatar", user.getAvatar());
             } catch (RuntimeException e) {
-                // Nếu không tìm thấy user cũng không làm chết trang
+                System.err.println("Error fetching user profile: " + e.getMessage());
             }
         }
 
@@ -63,6 +66,7 @@ public class MediaAssetWebController {
         String planQualityLabel = servicePlanService.getCurrentPlanQualityLabel(userEmail);
         model.addAttribute("maxAllowedHeight", maxAllowedHeight);
         model.addAttribute("planQualityLabel", planQualityLabel);
+        model.addAttribute("streamHeartbeatIntervalMs", Math.max(streamHeartbeatSeconds, 10) * 1000);
 
         return "videocontent/watch_movie";
     }

@@ -10,6 +10,7 @@ import com.hcmute.lovestream.repository.RefreshTokenRepository;
 import com.hcmute.lovestream.repository.SubscriptionRepository;
 import com.hcmute.lovestream.repository.UserRepository;
 import com.hcmute.lovestream.security.JwtUtil;
+import com.hcmute.lovestream.service.device.DeviceAccessService;
 import com.hcmute.lovestream.service.email.EmailService;
 import com.hcmute.lovestream.service.otp.OtpService;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -36,6 +36,7 @@ public class AuthServiceImpl implements AuthService {
     private final EmailService emailService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final SubscriptionRepository subscriptionRepository;
+    private final DeviceAccessService deviceAccessService;
 
     @Value("${jwt.refresh-token.expiration}")
     private Long refreshExpiration;
@@ -90,7 +91,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public Map<String, String> login(Login request) { // Đổi kiểu trả về thành Map
+    public Map<String, String> login(Login request, String userAgent) { // Đổi kiểu trả về thành Map
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Tên đăng nhập hoặc mật khẩu không chính xác"));
 
@@ -110,19 +111,19 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Tài khoản của bạn đã bị xóa. Vui lòng sử dụng tài khoản khác.");
         }
 
+        String deviceId = normalizeDeviceId(request.getDeviceId());
+        deviceAccessService.touchDevice(user.getEmail(), deviceId, userAgent, true);
+
         // 1. Tạo Access Token (Vé xem phim - Hạn ngắn)
         boolean isVip = subscriptionRepository.existsByUser_IdAndStatusAndEndDateAfter(
                 user.getId(),
                 SubscriptionStatus.ACTIVE,
                 LocalDateTime.now()
         );
-        String accessToken = jwtUtil.generateToken(user, isVip);
+        String accessToken = jwtUtil.generateToken(user, isVip, deviceId);
 
         // 2. Tạo Refresh Token (Thẻ thành viên - Hạn dài)
         String refreshTokenString = java.util.UUID.randomUUID().toString();
-
-        // Xóa các Refresh Token cũ của user này để tránh rác DB
-        refreshTokenRepository.deleteByUser(user);
 
         // Tính toán thời gian hết hạn (Cộng thêm số Giây vào thời gian hiện tại)
         // refreshExpiration của bạn đang là mili-giây (604800000), nên chia 1000 để ra giây
@@ -132,6 +133,7 @@ public class AuthServiceImpl implements AuthService {
         RefreshToken refreshToken = RefreshToken.builder()
                 .user(user)
                 .token(refreshTokenString)
+                .deviceId(deviceId)
                 .expiresAt(expiresAtTime)
                 .revoked(false)
                 // createdAt đã được @CreationTimestamp tự động lo
@@ -181,8 +183,6 @@ public class AuthServiceImpl implements AuthService {
         if (user.getStatus() == UserStatus.BANNED || user.getStatus() == UserStatus.REMOVED) {
             throw new RuntimeException("Tài khoản đang bị khóa hoặc đã xóa. Không thể thao tác.");
         }
-
-        otpService.clearOtp(otp);
     }
 
     @Override
@@ -251,6 +251,7 @@ public class AuthServiceImpl implements AuthService {
 
         // 4. Mọi thứ hợp lệ -> Token Rotation: Thu hồi token cũ, cấp token mới
         User user = refreshToken.getUser();
+        String deviceId = refreshToken.getDeviceId();
 
         // 4a. Revoke token cũ
         refreshToken.setRevoked(true);
@@ -262,7 +263,7 @@ public class AuthServiceImpl implements AuthService {
                 SubscriptionStatus.ACTIVE,
                 LocalDateTime.now()
         );
-        String newAccessToken = jwtUtil.generateToken(user, isVip);
+        String newAccessToken = jwtUtil.generateToken(user, isVip, deviceId);
 
         // 4c. Tạo Refresh Token mới và lưu vào DB
         String newRefreshTokenStr = UUID.randomUUID().toString();
@@ -270,6 +271,7 @@ public class AuthServiceImpl implements AuthService {
         RefreshToken newRefreshToken = RefreshToken.builder()
                 .user(user)
                 .token(newRefreshTokenStr)
+                .deviceId(deviceId)
                 .expiresAt(expiresAt)
                 .revoked(false)
                 .build();
@@ -295,7 +297,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public Map<String, String> googleLogin(String email) {
+    public Map<String, String> googleLogin(String email, String rawDeviceId, String userAgent) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản Google trong hệ thống"));
 
@@ -306,22 +308,24 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Tài khoản của bạn đã bị xóa. Vui lòng sử dụng tài khoản khác.");
         }
 
+        String deviceId = normalizeDeviceId(rawDeviceId);
+        deviceAccessService.touchDevice(user.getEmail(), deviceId, userAgent, true);
+
         // Tạo Access Token (giống luồng login thường)
         boolean isVip = subscriptionRepository.existsByUser_IdAndStatusAndEndDateAfter(
                 user.getId(),
                 SubscriptionStatus.ACTIVE,
                 LocalDateTime.now()
         );
-        String accessToken = jwtUtil.generateToken(user, isVip);
+        String accessToken = jwtUtil.generateToken(user, isVip, deviceId);
 
         // Tạo và lưu Refresh Token mới
         String refreshTokenString = UUID.randomUUID().toString();
-        refreshTokenRepository.deleteByUser(user);
-
         LocalDateTime expiresAtTime = LocalDateTime.now().plusSeconds(refreshExpiration / 1000);
         RefreshToken refreshToken = RefreshToken.builder()
                 .user(user)
                 .token(refreshTokenString)
+                .deviceId(deviceId)
                 .expiresAt(expiresAtTime)
                 .revoked(false)
                 .build();
@@ -332,5 +336,16 @@ public class AuthServiceImpl implements AuthService {
         tokens.put("refreshToken", refreshTokenString);
         tokens.put("role", user.getRole().getAuthority());
         return tokens;
+    }
+
+    private String normalizeDeviceId(String rawDeviceId) {
+        String deviceId = rawDeviceId == null ? "" : rawDeviceId.trim();
+        if (deviceId.isBlank()) {
+            throw new RuntimeException("Thiết bị không hợp lệ. Vui lòng đăng nhập lại.");
+        }
+        if (deviceId.length() > 128) {
+            throw new RuntimeException("deviceId không hợp lệ.");
+        }
+        return deviceId;
     }
 }

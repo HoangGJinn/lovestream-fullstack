@@ -65,15 +65,11 @@ public class WebContentBannerServiceImpl implements WebContentBannerService {
         if (request == null) {
             throw new IllegalArgumentException("Dữ liệu không hợp lệ.");
         }
-        validateUpsertRequest(request, true);
+        boolean requireUploadedImage = request.getTargetType() != WebContentBannerTargetType.MOVIE;
+        validateUpsertRequest(request, requireUploadedImage);
 
         MultipartFile bannerImage = request.getBannerImage();
-        String imagePath;
-        try {
-            imagePath = localStorageService.storeImage(bannerImage, "banners");
-        } catch (IOException e) {
-            throw new RuntimeException("Lưu ảnh banner thất bại: " + e.getMessage(), e);
-        }
+        String imagePath = resolveBannerImagePath(request, bannerImage);
 
         WebContentBanner banner = WebContentBanner.builder()
                 .title(request.getTitle().trim())
@@ -84,6 +80,35 @@ public class WebContentBannerServiceImpl implements WebContentBannerService {
         applyNavigationTarget(banner, request);
 
         return java.util.Objects.requireNonNull(bannerRepository.save(banner));
+    }
+
+    private String resolveBannerImagePath(WebContentBannerUpsertRequest request, MultipartFile bannerImage) {
+        if (bannerImage != null && !bannerImage.isEmpty()) {
+            try {
+                return localStorageService.storeImage(bannerImage, "banners");
+            } catch (IOException e) {
+                throw new RuntimeException("Lưu ảnh banner thất bại: " + e.getMessage(), e);
+            }
+        }
+
+        if (request.getTargetType() == WebContentBannerTargetType.MOVIE) {
+            String movieId = trimToNull(request.getMovieTargetId());
+            if (movieId == null) {
+                throw new IllegalArgumentException("Vui lòng chọn phim đích cho banner.");
+            }
+
+            String posterUrl = movieRepository.findById(movieId)
+                    .map(movie -> trimToNull(movie.getPosterUrl()))
+                    .orElse(null);
+
+            if (posterUrl != null) {
+                return posterUrl;
+            }
+
+            throw new IllegalArgumentException("Phim đích chưa có poster để làm ảnh banner mặc định.");
+        }
+
+        throw new IllegalArgumentException("Vui lòng chọn ảnh banner.");
     }
 
     @Override

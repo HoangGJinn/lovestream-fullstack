@@ -15,13 +15,14 @@ import com.hcmute.lovestream.repository.ServicePlanRepository;
 import com.hcmute.lovestream.repository.SubscriptionRepository;
 import com.hcmute.lovestream.repository.UserRepository;
 import com.hcmute.lovestream.service.vnpay.VnpayService;
-import com.hcmute.lovestream.utils.VnpayUtil;
+import com.hcmute.lovestream.util.VnpayUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Comparator;
 import java.util.Locale;
@@ -35,6 +36,7 @@ import java.util.stream.Collectors;
 public class ServicePlanServiceImpl implements ServicePlanService {
 
     private static final int DEFAULT_MAX_VIDEO_HEIGHT = 480;
+    private static final int DEFAULT_MAX_CONCURRENT_STREAMS = 1;
     private static final Pattern HEIGHT_PATTERN = Pattern.compile("(\\d{3,4})");
 
     private final ServicePlanRepository servicePlanRepository;
@@ -217,9 +219,30 @@ public class ServicePlanServiceImpl implements ServicePlanService {
                 .orElse("SD (480p)");
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public int getMaxConcurrentStreams(String userEmail) {
+        if (userEmail == null || userEmail.isBlank()) {
+            return DEFAULT_MAX_CONCURRENT_STREAMS;
+        }
+
+        return findActiveSubscriptionByEndDate(userEmail)
+                .map(Subscription::getPlan)
+                .map(ServicePlan::getMaxScreens)
+                .filter(maxScreens -> maxScreens > 0)
+                .orElse(DEFAULT_MAX_CONCURRENT_STREAMS);
+    }
+
     private Optional<Subscription> findActiveSubscription(String userEmail) {
         return userRepository.findByEmail(userEmail)
                 .flatMap(user -> subscriptionRepository.findTopByUserAndStatusOrderByEndDateDesc(user, SubscriptionStatus.ACTIVE));
+    }
+
+    private Optional<Subscription> findActiveSubscriptionByEndDate(String userEmail) {
+        LocalDateTime now = LocalDateTime.now();
+        return userRepository.findByEmail(userEmail)
+                .flatMap(user -> subscriptionRepository
+                        .findTopByUserAndStatusAndEndDateAfterOrderByEndDateDesc(user, SubscriptionStatus.ACTIVE, now));
     }
 
     private String buildQualityLabel(String resolution) {

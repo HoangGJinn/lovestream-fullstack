@@ -68,4 +68,7 @@ public class WebContentBanner {
 
     @Transient
     private String resolvedTargetLabel;
+
+    @Transient
+    private String resolvedDescription;
 }

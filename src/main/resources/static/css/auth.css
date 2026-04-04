@@ -85,6 +85,7 @@ body {
 }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 .alert-error  { background: rgba(229,9,20,0.1); color: #ff6b6b; border: 1px solid rgba(229,9,20,0.4); }
+.alert-success { background: rgba(40,167,69,0.14); color: #46d369; border: 1px solid rgba(70,211,105,0.45); }
 
 .form-group { position: relative; margin-bottom: 16px; }
 .form-control {

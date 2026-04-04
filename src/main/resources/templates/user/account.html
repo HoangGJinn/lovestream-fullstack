@@ -48,10 +48,10 @@
                th:text="${activeSubscription != null ? 'Ngày thanh toán tiếp theo: ' + #temporals.format(activeSubscription.endDate, 'dd/MM/yyyy') : 'Kích hoạt gói bằng thanh toán VNPay'}">
                 Ngày thanh toán tiếp theo
             </p>
-            <div class="payment-info">
+            <!-- <div class="payment-info">
                 <img src="https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png" alt="MoMo">
                 <span>••••••6988</span>
-            </div>
+            </div> -->
             <a href="/account/membership" class="manage-plan-link">
                 Quản lý tư cách thành viên <i class="fa-solid fa-chevron-right" style="color: #666;"></i>
             </a>
@@ -62,10 +62,10 @@
         <div class="card-group">
             <a href="/account/membership" class="card-item"><i class="fa-solid fa-box card-icon"></i><div class="card-text-wrapper"><div class="card-title">Thay đổi gói dịch vụ</div></div><i class="fa-solid fa-chevron-right card-arrow"></i></a>
             <a href="#" class="card-item"><i class="fa-regular fa-credit-card card-icon"></i><div class="card-text-wrapper"><div class="card-title">Quản lý phương thức thanh toán</div></div><i class="fa-solid fa-chevron-right card-arrow"></i></a>
-            <a href="#" class="card-item"><i class="fa-solid fa-laptop-mobile card-icon"></i><div class="card-text-wrapper"><div class="card-title">Quản lý quyền truy cập và thiết bị</div></div><i class="fa-solid fa-chevron-right card-arrow"></i></a>
+            <a href="/account/devices" class="card-item"><i class="fa-solid fa-laptop card-icon"></i><div class="card-text-wrapper"><div class="card-title">Quản lý quyền truy cập và thiết bị</div></div><i class="fa-solid fa-chevron-right card-arrow"></i></a>
             <a href="/account/change-password" class="card-item"><i class="fa-solid fa-lock card-icon"></i><div class="card-text-wrapper"><div class="card-title">Cập nhật mật khẩu</div></div><i class="fa-solid fa-chevron-right card-arrow"></i></a>
             <a href="/account/security" class="card-item"><i class="fa-solid fa-shield-halved card-icon"></i><div class="card-text-wrapper"><div class="card-title">Bảo mật tài khoản</div></div><i class="fa-solid fa-chevron-right card-arrow"></i></a>
-            <a href="/profile" class="card-item"><i class="fa-solid fa-users-arrows-right-left card-icon"></i><div class="card-text-wrapper"><div class="card-title">Chuyển hồ sơ</div></div><i class="fa-solid fa-chevron-right card-arrow"></i></a>
+            <a href="/profile" class="card-item"><i class="fa-solid fa-right-left card-icon"></i><div class="card-text-wrapper"><div class="card-title">Chuyển hồ sơ</div></div><i class="fa-solid fa-chevron-right card-arrow"></i></a>
             <a href="#" class="card-item"><i class="fa-solid fa-circle-exclamation card-icon"></i><div class="card-text-wrapper"><div class="card-title">Điều chỉnh tính năng kiểm soát của cha mẹ</div></div><i class="fa-solid fa-chevron-right card-arrow"></i></a>
         </div>
 
