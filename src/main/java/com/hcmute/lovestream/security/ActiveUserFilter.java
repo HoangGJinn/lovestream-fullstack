@@ -62,7 +62,7 @@ public class ActiveUserFilter extends OncePerRequestFilter {
                     }
 
                     try {
-                        // 👉 ĐÃ SỬA: Thêm check null an toàn cho lý do khóa
+                        // Thêm check null an toàn cho lý do khóa
                         String lockMsg = user.getLockReason() != null ? user.getLockReason() : "Tài khoản đã bị khóa do vi phạm chính sách.";
 
                         // 3. Đuổi ra màn hình đăng nhập và đính kèm lý do

@@ -141,6 +141,7 @@
 </div>
 
 <script>
+<!--    Gọi danh sách User từ UI - Controller-->
     document.addEventListener('DOMContentLoaded', () => loadUsers());
 
     function loadUsers(searchKeyword = '') {
@@ -205,23 +206,24 @@
 
         if (isCurrentlyActive) {
             // Hành động là KHÓA -> Yêu cầu nhập lý do
-            lockReason = prompt("⚠️ BẠN ĐANG KHÓA TÀI KHOẢN!\nVui lòng nhập lý do khóa (Người dùng sẽ thấy lý do này):");
+            lockReason = prompt(" BẠN ĐANG KHÓA TÀI KHOẢN!\nVui lòng nhập lý do khóa (Người dùng sẽ thấy lý do này):");
 
             if (lockReason === null) {
                 return; // Admin bấm Hủy (Cancel) trên hộp thoại prompt
             }
             if (lockReason.trim() === "") {
-                alert("❌ Lỗi: Bạn bắt buộc phải nhập lý do để khóa tài khoản!");
+                alert(" Lỗi: Bạn bắt buộc phải nhập lý do để khóa tài khoản!");
                 return;
             }
         } else {
             // Hành động là MỞ KHÓA -> Chỉ cần xác nhận
-            if (!confirm("✅ Bạn muốn MỞ KHÓA cho tài khoản này?")) {
+            if (!confirm(" Bạn muốn MỞ KHÓA cho tài khoản này?")) {
                 return;
             }
         }
 
         // Gửi API với body chứa lý do (reason)
+
         fetch(`/api/v1/admin/users/${userId}/toggle-lock`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -230,15 +232,15 @@
         .then(res => res.json())
         .then(data => {
             if (data.error) {
-                alert("❌ Lỗi: " + data.error);
+                alert(" Lỗi: " + data.error);
             } else {
-                alert("✅ " + data.message);
+                alert(" " + data.message);
                 loadUsers(); // Cập nhật lại danh sách ngay lập tức
             }
         })
         .catch(err => {
             console.error("Lỗi:", err);
-            alert("❌ Lỗi kết nối đến máy chủ!");
+            alert(" Lỗi kết nối đến máy chủ!");
         });
     }
 

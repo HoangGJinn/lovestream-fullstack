@@ -97,6 +97,16 @@
             <li><i class="fa-solid fa-check"></i> Hủy bất cứ lúc nào</li>
         </ul>
 
+        <!-- === VOUCHER SECTION === -->
+        <div th:if="${currentUser != null and (currentPlanId == null or isUpgradeTarget == true)}" class="voucher-section" style="margin-bottom: 20px; padding: 16px; background-color: rgba(255, 255, 255, 0.05); border-radius: 8px; border: 1px dashed rgba(255, 255, 255, 0.2);">
+            <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #e2e8f0;">Mã giảm giá</p>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="voucherCodeInput" placeholder="Nhập mã ưu đãi..." autocomplete="off" style="flex: 1; padding: 10px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2); background-color: rgba(0, 0, 0, 0.2); color: #ffffff; outline: none;" />
+                <button type="button" onclick="applyVoucher()" class="btn-validate" style="padding: 10px 16px; border-radius: 6px; background-color: #e50914; color: white; border: none; font-weight: bold; cursor: pointer;">Áp dụng</button>
+            </div>
+            <div id="voucher-message" style="margin-top: 8px; font-size: 14px; font-weight: 600;"></div>
+        </div>
+
         <!-- === NÚT MUA === -->
 
         <!-- Đang xem đúng gói hiện tại -->
@@ -170,14 +180,79 @@
 </div>
 
 <script th:inline="javascript">
+    const planId = /*[[${plan.id}]]*/ 'null';
+    const isUpgrade = /*[[${isUpgradeTarget != null ? isUpgradeTarget : false}]]*/ false;
+    const basePrice = /*[[${isUpgradeTarget != null && isUpgradeTarget ? upgradeDifference : plan.price}]]*/ 0;
+    const originalFormatted = /*[[${isUpgradeTarget != null && isUpgradeTarget ? #numbers.formatDecimal(upgradeDifference, 0, 'COMMA', 0, 'POINT') + ' ₫' : plan.formattedPrice}]]*/ '0 ₫';
+
+    let currentVoucherCode = '';
+
+    async function applyVoucher() {
+        const input = document.getElementById('voucherCodeInput');
+        const code = input.value.trim();
+        const msgEl = document.getElementById('voucher-message');
+        
+        if (!code) {
+           currentVoucherCode = '';
+           msgEl.textContent = '';
+           resetPrice();
+           return;
+        }
+
+        try {
+            msgEl.textContent = 'Đang kiểm tra...';
+            msgEl.style.color = '#6b7280';
+            
+            const res = await fetch(`/api/v1/vouchers/validate?code=${code}&planPrice=${basePrice}`);
+            const data = await res.json();
+            
+            if (res.ok) {
+                currentVoucherCode = data.code;
+                const formattedFinal = new Intl.NumberFormat('vi-VN').format(data.finalAmount) + ' ₫';
+                msgEl.textContent = `Voucher hợp lệ! Giảm ${data.discountPercent}%. Thành tiền: ${formattedFinal}`;
+                msgEl.style.color = '#10b981';
+                
+                document.querySelectorAll('.btn-purchase').forEach(btn => {
+                   if (isUpgrade) {
+                       btn.innerHTML = `<i class="fa-solid fa-rocket"></i> Nâng cấp gói — Thanh toán chênh lệch ${formattedFinal}`;
+                   } else {
+                       btn.innerHTML = `<i class="fa-solid fa-bolt"></i> Mua gói này — ${formattedFinal}`;
+                   }
+                });
+            } else {
+                currentVoucherCode = '';
+                msgEl.textContent = data.error || 'Voucher không hợp lệ.';
+                msgEl.style.color = '#ef4444';
+                resetPrice();
+            }
+        } catch (e) {
+            currentVoucherCode = '';
+            msgEl.textContent = 'Lỗi kết nối. Thử lại sau.';
+            msgEl.style.color = '#ef4444';
+            resetPrice();
+        }
+    }
+    
+    function resetPrice() {
+       document.querySelectorAll('.btn-purchase').forEach(btn => {
+           if (isUpgrade) {
+               btn.innerHTML = `<i class="fa-solid fa-rocket"></i> Nâng cấp gói — Thanh toán chênh lệch ${originalFormatted}`;
+           } else {
+               btn.innerHTML = `<i class="fa-solid fa-bolt"></i> Mua gói này — ${originalFormatted}`;
+           }
+       });
+    }
+
     async function handlePurchase(btn) {
-        const planId = btn.dataset.planId;
-        await startPayment(btn, `/api/v1/plans/${planId}/purchase`, 'Đang xử lý mua gói...');
+        let url = `/api/v1/plans/${planId}/purchase`;
+        if (currentVoucherCode) url += `?voucherCode=${currentVoucherCode}`;
+        await startPayment(btn, url, 'Đang xử lý mua gói...');
     }
 
     async function handleUpgrade(btn) {
-        const planId = btn.dataset.planId;
-        await startPayment(btn, `/api/v1/plans/${planId}/upgrade`, 'Đang xử lý nâng cấp gói...');
+        let url = `/api/v1/plans/${planId}/upgrade`;
+        if (currentVoucherCode) url += `?voucherCode=${currentVoucherCode}`;
+        await startPayment(btn, url, 'Đang xử lý nâng cấp gói...');
     }
 
     async function startPayment(btn, endpoint, loadingText) {
