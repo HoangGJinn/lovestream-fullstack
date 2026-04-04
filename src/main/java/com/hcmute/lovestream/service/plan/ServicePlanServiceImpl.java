@@ -15,7 +15,7 @@ import com.hcmute.lovestream.repository.ServicePlanRepository;
 import com.hcmute.lovestream.repository.SubscriptionRepository;
 import com.hcmute.lovestream.repository.UserRepository;
 import com.hcmute.lovestream.service.vnpay.VnpayService;
-import com.hcmute.lovestream.utils.VnpayUtil;
+import com.hcmute.lovestream.util.VnpayUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

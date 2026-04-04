@@ -45,13 +45,18 @@ public class DeviceAccessRestController {
 
     @GetMapping("/me")
     public ResponseEntity<?> myDevices(@RequestParam(required = false) String deviceId,
+                                       @RequestParam(defaultValue = "true") boolean includeStreaming,
                                        Principal principal) {
         if (principal == null || principal.getName() == null || principal.getName().isBlank()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         try {
-            List<DeviceAccessItemResponse> devices = deviceAccessService.getDevices(principal.getName(), deviceId);
+            List<DeviceAccessItemResponse> devices = deviceAccessService.getDevices(
+                    principal.getName(),
+                    deviceId,
+                    includeStreaming
+            );
             return ResponseEntity.ok(Map.of("items", devices));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));

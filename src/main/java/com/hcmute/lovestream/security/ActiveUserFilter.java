@@ -24,6 +24,22 @@ public class ActiveUserFilter extends OncePerRequestFilter {
     private final UserRepository userRepository;
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        if (path == null || path.isBlank()) {
+            return true;
+        }
+        return path.startsWith("/css/")
+                || path.startsWith("/js/")
+                || path.startsWith("/images/")
+                || path.startsWith("/assets/")
+                || path.startsWith("/uploads/")
+                || path.startsWith("/webjars/")
+                || path.equals("/favicon.ico")
+                || path.startsWith("/ws-lovestream");
+    }
+
+    @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
@@ -41,7 +57,9 @@ public class ActiveUserFilter extends OncePerRequestFilter {
 
                     // NẾU BỊ KHÓA: Hủy session, xóa Security Context ngay lập tức
                     SecurityContextHolder.clearContext();
-                    request.getSession().invalidate();
+                    if (request.getSession(false) != null) {
+                        request.getSession(false).invalidate();
+                    }
 
                     try {
                         // 👉 ĐÃ SỬA: Thêm check null an toàn cho lý do khóa

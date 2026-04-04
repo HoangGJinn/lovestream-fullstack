@@ -29,8 +29,9 @@ public class Device {
 
     private String os;
 
-    @Column(name = "fcm_token")
-    private String fcmToken;
+    // Sử dụng khi phát triển app mobile để gửi thông báo đẩy qua FCM, nhưng hiện tại chưa cần thiết nên tạm ẩn đi
+//    @Column(name = "fcm_token")
+//    private String fcmToken;
 
     @Column(name = "last_login")
     private LocalDateTime lastLogin;

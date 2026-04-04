@@ -19,6 +19,7 @@
         <li><a href="/packages" th:classappend="${activeTab == 'packages'} ? ' active' : ''">Gói dịch vụ</a></li>
         <li th:if="${currentUser != null}"><a href="/watch-together" th:classappend="${activeTab == 'watch-together'} ? ' active' : ''">Xem chung</a></li>
     </ul>
+    <script th:src="@{/js/movie-poster-transition.js}" defer></script>
 </div>
 </body>
 </html>

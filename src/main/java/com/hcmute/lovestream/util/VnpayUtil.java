@@ -1,4 +1,4 @@
-package com.hcmute.lovestream.utils;
+package com.hcmute.lovestream.util;
 
 import jakarta.servlet.http.HttpServletRequest;
 import javax.crypto.Mac;

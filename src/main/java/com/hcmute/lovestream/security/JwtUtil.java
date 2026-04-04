@@ -83,6 +83,7 @@ public class JwtUtil {
         Map<String, Object> claims = new HashMap<>();
 
         claims.put("role", user.getRole().getAuthority());
+        claims.put("userId", user.getId());
         claims.put("isVip", isVip);
         claims.put("type", "ACCESS");
         claims.put("fullName", user.getFullName());
@@ -206,5 +207,10 @@ public class JwtUtil {
 
     public String extractDeviceId(String token) {
         return extractClaim(token, claims -> claims.get("deviceId", String.class));
+    }
+
+    public String extractUserIdString(String token) {
+        Object userId = extractClaim(token, claims -> claims.get("userId"));
+        return userId == null ? null : String.valueOf(userId);
     }
 }
