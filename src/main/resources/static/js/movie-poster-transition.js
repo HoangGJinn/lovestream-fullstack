@@ -168,11 +168,25 @@
         }
 
         document.body.classList.remove(WAITING_CLASS);
+        document.body.classList.remove(LEAVE_CLASS);
 
         if (activeBlocker && activeBlocker.isConnected) {
             activeBlocker.remove();
         }
         activeBlocker = null;
+
+        // Remove any stray blockers that might exist
+        var strayBlockers = document.querySelectorAll("." + BLOCKER_CLASS);
+        strayBlockers.forEach(function (el) {
+            if (el.isConnected) {
+                el.remove();
+            }
+        });
+    }
+
+    function resetNavigationState() {
+        isNavigating = false;
+        unlockUserInteraction();
     }
 
     function persistTransitionData(target) {
@@ -329,5 +343,18 @@
 
     window.addEventListener("pagehide", function () {
         unlockUserInteraction();
+    });
+
+    // Clean up blocker and state when returning to this page (browser back)
+    window.addEventListener("pageshow", function (event) {
+        if (event.persisted) {
+            // Page was restored from bfcache, reset all state
+            resetNavigationState();
+        }
+    });
+
+    // Clean up any stray blocker and state on initial page load
+    window.addEventListener("load", function () {
+        resetNavigationState();
     });
 })();
