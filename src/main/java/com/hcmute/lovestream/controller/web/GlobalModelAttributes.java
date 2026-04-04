@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 
 import java.util.Map;
 
-@ControllerAdvice
+@ControllerAdvice(basePackages = "com.hcmute.lovestream.controller.web")
 @RequiredArgsConstructor
 public class GlobalModelAttributes {
 
