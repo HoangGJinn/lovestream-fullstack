@@ -20,7 +20,7 @@ public class AdminUserManagementServiceImpl implements AdminUserManagementServic
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-
+// Lấy danh sách người dùng
     @Override
     public List<Map<String, Object>> getAllUsers(String searchKeyword) {
         List<User> users;

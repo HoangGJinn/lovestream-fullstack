@@ -14,14 +14,14 @@ public interface ServicePlanService {
     // Lấy chi tiết 1 gói (chỉ trả gói đang active)
     ServicePlanResponse getPlanById(String planId);
 
-    // Mua gói: tạo Payment + Subscription, trả về thông tin đã kích hoạt
-    PurchaseResponse purchasePlan(String userEmail, String planId, HttpServletRequest request);
+    // Mua gói: tạo Payment + Subscription, trả về thông tin đã kích hoạt (voucherCode query tuỳ chọn)
+    PurchaseResponse purchasePlan(String userEmail, String planId, String voucherCode, HttpServletRequest request);
 
     // Lấy các gói có giá cao hơn gói hiện tại của user để phục vụ nâng cấp
     List<ServicePlanResponse> getAvailableUpgradePlans(String userEmail);
 
-    // Nâng cấp gói: thanh toán phần chênh lệch để chuyển sang gói cao hơn
-    PurchaseResponse upgradePlan(String userEmail, String targetPlanId, HttpServletRequest request);
+    // Nâng cấp gói: thanh toán phần chênh lệch (voucherCode query tuỳ chọn)
+    PurchaseResponse upgradePlan(String userEmail, String targetPlanId, String voucherCode, HttpServletRequest request);
 
     // Kiểm tra user có đang có gói ACTIVE không (dùng để hiển thị badge trên UI)
     boolean hasActiveSubscription(String userEmail);

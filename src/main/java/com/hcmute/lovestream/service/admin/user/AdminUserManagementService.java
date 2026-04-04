@@ -15,7 +15,10 @@ public interface AdminUserManagementService {
      * @param request thông tin Content Manager cần tạo
      * @return User Object của nhân sự vừa được khởi tạo
      */
-    User createContentManager(CreateContentManagerRequest request);
+    // Lấy danh sách User trong hệ thống
     List<Map<String, Object>> getAllUsers(String searchKeyword);
+    // Tạo tài khoản cho CM
+    User createContentManager(CreateContentManagerRequest request);
+    // Khóa/Mở tài khoản
     void toggleUserLock(String id, String reason);
 }
