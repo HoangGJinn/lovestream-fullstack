@@ -25,27 +25,37 @@
             <div class="kpi-container">
                 <div class="kpi-card">
                     <div class="kpi-title">Tổng Doanh Thu</div>
-                    <div class="kpi-value">$1,250,000</div>
-                    <div class="kpi-up">↑ +15% so với tháng trước</div>
+                    <div class="kpi-value"
+                         th:text="${#numbers.formatDecimal(stats.kpi.totalRevenue, 1, 'COMMA', 0, 'POINT') + ' ₫'}">
+                        0 ₫
+                    </div>
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-title">Tổng Người Dùng</div>
-                    <div class="kpi-value">150,000</div>
-                    <div class="kpi-up">↑ +5% user mới</div>
+                    <div class="kpi-value"
+                         th:text="${#numbers.formatInteger(stats.kpi.totalUsers, 1, 'COMMA')}">
+                        0
+                    </div>
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-title">Giao Dịch Thành Công</div>
-                    <div class="kpi-value">12,000</div>
+                    <div class="kpi-value"
+                         th:text="${#numbers.formatInteger(stats.kpi.successfulTransactions, 1, 'COMMA')}">
+                        0
+                    </div>
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-title">Đang Có Gói (Active)</div>
-                    <div class="kpi-value" style="color: var(--netflix-red);">80,000</div>
+                    <div class="kpi-value" style="color: var(--netflix-red);"
+                         th:text="${#numbers.formatInteger(stats.kpi.activeSubscriptions, 1, 'COMMA')}">
+                        0
+                    </div>
                 </div>
             </div>
 
             <div class="charts-container">
                 <div class="chart-box">
-                    <h3 style="margin-top:0;">Xu hướng doanh thu (1 tháng)</h3>
+                    <h3 style="margin-top:0;">Xu hướng doanh thu theo tháng</h3>
                     <canvas id="revenueChart" height="100"></canvas>
                 </div>
                 <div class="chart-box">
@@ -59,6 +69,7 @@
                 <table>
                     <thead>
                         <tr>
+                            <th>ID Giao dịch</th>
                             <th>ID User</th>
                             <th>Tên Gói</th>
                             <th>Số tiền</th>
@@ -67,19 +78,22 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>9024020</td>
-                            <td>Premium</td>
-                            <td>$27.00</td>
-                            <td>2026-03-22 14:30</td>
-                            <td><span class="status-success">Thành công</span></td>
+                        <tr th:each="tx : ${stats.recentTransactions}">
+                            <td th:text="${tx.id}"></td>
+                            <td th:text="${tx.userId}"></td>
+                            <td th:text="${tx.planName}"></td>
+                            <td th:text="${#numbers.formatDecimal(tx.amount, 1, 'COMMA', 0, 'POINT') + ' ₫'}"></td>
+                            <td th:text="${tx.paymentDate != null ? #temporals.format(tx.paymentDate, 'yyyy-MM-dd HH:mm') : 'N/A'}"></td>
+                            <td>
+                                <span th:class="${tx.status == 'SUCCESS' or tx.status == 'COMPLETED'} ? 'status-success' : 'status-pending'"
+                                      th:text="${tx.status == 'SUCCESS' or tx.status == 'COMPLETED'} ? 'Thành công' : ${tx.status}">
+                                </span>
+                            </td>
                         </tr>
-                        <tr>
-                            <td>8022088</td>
-                            <td>Standard</td>
-                            <td>$15.00</td>
-                            <td>2026-03-22 14:15</td>
-                            <td><span class="status-success">Thành công</span></td>
+                        <tr th:if="${stats.recentTransactions == null or stats.recentTransactions.isEmpty()}">
+                            <td colspan="6" style="text-align: center; color: var(--netflix-light-grey); padding: 30px;">
+                                Chưa có giao dịch nào
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -105,16 +119,21 @@
 
     </div>
 
-    <script>
+    <script th:inline="javascript">
         if (document.getElementById('revenueChart')) {
+            // Lấy data thật từ backend qua Thymeleaf inline
+            var monthlyRevenue = /*[[${stats.charts.monthlyRevenue}]]*/ [];
+            var planDistribution = /*[[${stats.charts.planDistribution}]]*/ {};
+
+            // --- Revenue Line Chart ---
             const ctxRev = document.getElementById('revenueChart').getContext('2d');
             new Chart(ctxRev, {
                 type: 'line',
                 data: {
-                    labels: ['1', '5', '10', '15', '20', '25', '30'],
+                    labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
                     datasets: [{
-                        label: 'Doanh thu ($)',
-                        data: [50000, 100000, 75000, 150000, 120000, 200000, 180000],
+                        label: 'Doanh thu (₫)',
+                        data: monthlyRevenue,
                         borderColor: '#E50914',
                         backgroundColor: 'rgba(229, 9, 20, 0.1)',
                         borderWidth: 3,
@@ -131,14 +150,19 @@
                 }
             });
 
+            // --- Plan Distribution Doughnut Chart ---
+            var planLabels = Object.keys(planDistribution);
+            var planValues = Object.values(planDistribution);
+            var planColors = ['#4287f5', '#f5a442', '#E50914', '#555555', '#42f587', '#f542f2', '#42d4f5', '#f5e642'];
+
             const ctxPlan = document.getElementById('planChart').getContext('2d');
             new Chart(ctxPlan, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Basic', 'Standard', 'Premium', 'No Plan'],
+                    labels: planLabels.length > 0 ? planLabels : ['Chưa có dữ liệu'],
                     datasets: [{
-                        data: [30, 15, 25, 30],
-                        backgroundColor: ['#4287f5', '#f5a442', '#E50914', '#555555'],
+                        data: planValues.length > 0 ? planValues : [1],
+                        backgroundColor: planValues.length > 0 ? planColors.slice(0, planLabels.length) : ['#555555'],
                         borderWidth: 0
                     }]
                 },
