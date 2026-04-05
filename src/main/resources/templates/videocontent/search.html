@@ -17,7 +17,7 @@
     <div class="navbar scrolled" id="navbar">
                 <div th:replace="~{fragments/top-navbar :: topNavLeft('discover')}"></div>
         <div class="nav-right">
-            <form id="searchForm" class="nav-search is-open" th:action="@{/videocontents/search}" method="get">
+            <form id="searchForm" class="nav-search is-open" th:action="@{/videocontents/search}" method="get" style="position: relative;">
                 <button id="searchToggle" class="nav-icon nav-search-toggle" type="button" aria-label="Tìm kiếm">
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </button>
@@ -28,6 +28,7 @@
                 <input type="hidden" id="searchCountry" name="country" th:value="${searchRequest.country}">
                 <input type="hidden" id="searchType" name="type" th:value="${searchRequest.type}">
                 <input type="hidden" id="searchSeason" name="season" th:value="${searchRequest.season}">
+                <div class="search-suggest-box" data-role="search-suggest-box"></div>
             </form>
             <a th:if="${currentUser != null}" href="/notifications" class="nav-icon notification-link" aria-label="Thong bao">
                 <i class="fa-regular fa-bell"></i>
@@ -45,7 +46,6 @@
                 series</h1>
             <p th:text="${searchResponse.totalResults + ' kết quả được tìm thấy'}">0 kết quả được tìm thấy</p>
             <div class="search-recent" id="recentSearches"></div>
-            <div class="search-suggest-box" id="searchSuggestions"></div>
         </div>
 
         <form id="filterForm" class="search-filter-bar" th:action="@{/videocontents/search}" method="get">
@@ -113,22 +113,11 @@
     </div>
 
     <script>
+        // Recent searches only (autocomplete is now global via /js/search-suggest.js)
         (function () {
-            const form = document.getElementById('searchForm');
-            const toggle = document.getElementById('searchToggle');
-            const keywordInput = document.getElementById('searchKeyword');
-            const suggestionBox = document.getElementById('searchSuggestions');
             const recentBox = document.getElementById('recentSearches');
-            let debounceTimer;
-
-            function saveRecent(term) {
-                if (!term) return;
-                const key = 'lovestream_recent_searches';
-                const current = JSON.parse(localStorage.getItem(key) || '[]');
-                const next = [term].concat(current.filter(function (s) { return s !== term; })).slice(0, 5);
-                localStorage.setItem(key, JSON.stringify(next));
-                renderRecent();
-            }
+            const form = document.getElementById('searchForm');
+            if (!recentBox || !form) return;
 
             function renderRecent() {
                 const key = 'lovestream_recent_searches';
@@ -139,85 +128,36 @@
                 }
 
                 recentBox.innerHTML = '<span>Tìm gần đây:</span>' + recent.map(function (item) {
-                    return '<button type="button" class="recent-chip" data-keyword="' + item.replace(/"/g, '&quot;') + '">' + item + '</button>';
+                    return '<button type="button" class="recent-chip" data-keyword="' + String(item).replace(/"/g, '&quot;') + '">' + item + '</button>';
                 }).join('');
             }
 
-            function submitSearch(term) {
-                if (!term || !term.trim()) return;
-                saveRecent(term.trim());
-                keywordInput.value = term.trim();
-                form.submit();
+            function saveRecent(term) {
+                if (!term) return;
+                const key = 'lovestream_recent_searches';
+                const current = JSON.parse(localStorage.getItem(key) || '[]');
+                const next = [term].concat(current.filter(function (s) { return s !== term; })).slice(0, 5);
+                localStorage.setItem(key, JSON.stringify(next));
+                renderRecent();
             }
-
-            function fetchSuggestions() {
-                const value = keywordInput.value.trim();
-                if (value.length < 2) {
-                    suggestionBox.innerHTML = '';
-                    return;
-                }
-
-                const searchEndpoint = form.getAttribute('action') || '/videocontents/search';
-                fetch(searchEndpoint + '?format=json&keyword=' + encodeURIComponent(value) + '&size=6', {
-                    headers: { 'Accept': 'application/json' }
-                })
-                    .then(function (response) { return response.json(); })
-                    .then(function (payload) {
-                        if (!payload.data || payload.data.length === 0) {
-                            suggestionBox.innerHTML = '';
-                            return;
-                        }
-
-                        suggestionBox.innerHTML = payload.data.map(function (item) {
-                            const safeTitle = item.title || '';
-                            return '<button type="button" class="suggest-item" data-keyword="' + safeTitle.replace(/"/g, '&quot;') + '">'
-                                + '<i class="fa-solid fa-magnifying-glass"></i>'
-                                + '<span>' + safeTitle + '</span>'
-                                + '</button>';
-                        }).join('');
-                    })
-                    .catch(function () {
-                        suggestionBox.innerHTML = '';
-                    });
-            }
-
-            toggle.addEventListener('click', function () {
-                if (!form.classList.contains('is-open')) {
-                    form.classList.add('is-open');
-                    keywordInput.focus();
-                    return;
-                }
-                submitSearch(keywordInput.value);
-            });
-
-            keywordInput.addEventListener('keydown', function (event) {
-                if (event.key === 'Enter') {
-                    event.preventDefault();
-                    submitSearch(keywordInput.value);
-                }
-            });
-
-            keywordInput.addEventListener('input', function () {
-                clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(fetchSuggestions, 300);
-            });
-
-            suggestionBox.addEventListener('click', function (event) {
-                const target = event.target.closest('[data-keyword]');
-                if (!target) return;
-                submitSearch(target.getAttribute('data-keyword'));
-            });
 
             recentBox.addEventListener('click', function (event) {
                 const target = event.target.closest('[data-keyword]');
                 if (!target) return;
-                submitSearch(target.getAttribute('data-keyword'));
+                const value = (target.getAttribute('data-keyword') || '').trim();
+                if (!value) return;
+                saveRecent(value);
+                // Submit to current form action
+                const input = form.querySelector('input[name="keyword"]');
+                if (input) input.value = value;
+                form.submit();
             });
 
-            document.addEventListener('click', function (event) {
-                if (!form.contains(event.target) && !suggestionBox.contains(event.target)) {
-                    suggestionBox.innerHTML = '';
-                }
+            // also save when user submits
+            form.addEventListener('submit', function () {
+                const input = form.querySelector('input[name="keyword"]');
+                const term = input ? (input.value || '').trim() : '';
+                if (term) saveRecent(term);
             });
 
             renderRecent();

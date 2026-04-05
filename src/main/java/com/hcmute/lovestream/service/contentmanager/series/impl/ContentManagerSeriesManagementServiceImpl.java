@@ -35,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -274,7 +275,7 @@ public class ContentManagerSeriesManagementServiceImpl implements ContentManager
     @Override
     @Transactional
     public MediaAsset addSeriesTrailerFromUrl(String seriesId, String url) {
-        validateCloudinaryUrl(url);
+        validatePublicVideoUrl(url);
         TVSeries series = getSeriesById(seriesId);
         List<MediaAsset> assets = series.getMediaAssets() == null ? List.of() : series.getMediaAssets();
 
@@ -284,7 +285,7 @@ public class ContentManagerSeriesManagementServiceImpl implements ContentManager
                 .orElse(new MediaAsset());
 
         asset.setAssetType(AssetType.TRAILER);
-        asset.setAssetUrl(url);
+        asset.setAssetUrl(url == null ? null : url.trim());
         asset.setVideoContent(series);
         log.info("Saving TRAILER URL to Series ID: {}", seriesId);
         return mediaAssetRepository.save(asset);
@@ -293,7 +294,7 @@ public class ContentManagerSeriesManagementServiceImpl implements ContentManager
     @Override
     @Transactional
     public MediaAsset addEpisodeVideoFromUrl(String episodeId, String url) {
-        validateCloudinaryUrl(url);
+        validatePublicVideoUrl(url);
         Episode episode = getEpisodeById(episodeId);
         List<MediaAsset> assets = episode.getMediaAssets() == null ? List.of() : episode.getMediaAssets();
 
@@ -303,7 +304,7 @@ public class ContentManagerSeriesManagementServiceImpl implements ContentManager
                 .orElse(new MediaAsset());
 
         asset.setAssetType(AssetType.EPISODE_VIDEO);
-        asset.setAssetUrl(url);
+        asset.setAssetUrl(url == null ? null : url.trim());
         asset.setEpisode(episode);
         log.info("Saving EPISODE_VIDEO URL to Episode ID: {}", episodeId);
         MediaAsset savedAsset = mediaAssetRepository.save(asset);
@@ -399,12 +400,25 @@ public class ContentManagerSeriesManagementServiceImpl implements ContentManager
         }
     }
 
-    private void validateCloudinaryUrl(String url) {
+    private void validatePublicVideoUrl(String url) {
         if (url == null || url.isBlank()) {
             throw new IllegalArgumentException("URL không hợp lệ. Đường dẫn không được để trống!");
         }
-        if (!url.contains("res.cloudinary.com")) {
-            throw new IllegalArgumentException("URL không hợp lệ. Chỉ chấp nhận link public từ nền tảng Cloudinary.");
+
+        URI uri;
+        try {
+            uri = URI.create(url.trim());
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("URL không hợp lệ. Đường dẫn phải đúng định dạng http/https.", ex);
+        }
+
+        String scheme = uri.getScheme();
+        if (scheme == null || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https"))) {
+            throw new IllegalArgumentException("URL không hợp lệ. Chỉ chấp nhận link http/https công khai.");
+        }
+
+        if (uri.getHost() == null || uri.getHost().isBlank()) {
+            throw new IllegalArgumentException("URL không hợp lệ. Thiếu tên miền ở đường dẫn video.");
         }
     }
 }

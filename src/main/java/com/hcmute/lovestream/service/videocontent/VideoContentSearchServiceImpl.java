@@ -231,7 +231,7 @@ public class VideoContentSearchServiceImpl implements VideoContentSearchService 
         if (size == null || size < 1) {
             return 24;
         }
-        return Math.min(size, 50);
+        return Math.min(size, 10);
     }
 
     private String trimToNull(String value) {

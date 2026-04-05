@@ -259,7 +259,7 @@
                 </div>
                 <div class="asset-status asset-status--empty" th:if="${currentTrailerAsset == null}">
                     <span class="asset-badge asset-badge--missing">Chưa có trailer</span>
-                    <p class="asset-help">Nhập Cloudinary URL để gắn trailer cho phim.</p>
+                    <p class="asset-help">Nhập public video URL để gắn trailer cho phim.</p>
                 </div>
 
                 <form th:if="${currentTrailerAsset != null}"
@@ -277,20 +277,20 @@
 
                     <div class="form-section-title">Tài nguyên Trailer</div>
                     <p class="asset-help">
-                        Trailer dùng đường dẫn <code>Secure URL</code> từ Cloudinary, giống luồng gắn
-                        <code>FULL_VIDEO</code>.
+                        Hệ thống chấp nhận public video URL có thể phát trực tiếp, ví dụ
+                        <code>.m3u8</code>, <code>.mp4</code> hoặc link media public tương tự.
                     </p>
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="trailerUrl">Đường dẫn URL Cloudinary <span class="required">*</span></label>
+                            <label for="trailerUrl">Đường dẫn URL Trailer <span class="required">*</span></label>
                             <input id="trailerUrl"
                                    type="url"
                                    name="assetUrl"
                                    class="form-control"
                                    required
                                    th:value="${currentTrailerAsset != null ? currentTrailerAsset.assetUrl : ''}"
-                                   placeholder="VD: https://res.cloudinary.com/.../video/upload/v1234/trailer.mp4" />
+                                   placeholder="VD: https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" />
                         </div>
                     </div>
                     <div class="asset-action-row">
@@ -313,7 +313,7 @@
                 </div>
                 <div class="asset-status asset-status--empty" th:if="${currentVideoAsset == null}">
                     <span class="asset-badge asset-badge--missing">Chưa có full video</span>
-                    <p class="asset-help">Nhập Cloudinary URL để gắn video phim đầy đủ.</p>
+                    <p class="asset-help">Nhập public video URL để gắn video phim đầy đủ.</p>
                 </div>
 
                 <form th:if="${currentVideoAsset != null}"
@@ -331,19 +331,20 @@
 
                     <div class="form-section-title">Tài nguyên Full Video</div>
                     <p class="asset-help">
-                        Nhập đường dẫn <code>Secure URL</code> video từ Cloudinary để gắn file phim đầy đủ.
+                        Hệ thống chấp nhận public video URL có thể phát trực tiếp, ví dụ
+                        <code>.m3u8</code>, <code>.mp4</code> hoặc link media public tương tự.
                     </p>
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="videoUrl">Đường dẫn URL Cloudinary <span class="required">*</span></label>
+                            <label for="videoUrl">Đường dẫn URL Video <span class="required">*</span></label>
                             <input id="videoUrl"
                                    type="url"
                                    name="assetUrl"
                                    class="form-control"
                                    required
                                    th:value="${currentVideoAsset != null ? currentVideoAsset.assetUrl : ''}"
-                                   placeholder="VD: https://res.cloudinary.com/.../video/upload/v1234/movie.mp4" />
+                                   placeholder="VD: https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" />
                         </div>
                     </div>
                     <div class="asset-action-row">

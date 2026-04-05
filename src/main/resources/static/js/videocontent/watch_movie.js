@@ -95,6 +95,19 @@ const video = document.getElementById('video');
         return numeric;
     }
 
+    function isHlsSourceUrl(url) {
+        if (!url) {
+            return false;
+        }
+
+        try {
+            const parsed = new URL(url, window.location.origin);
+            return parsed.pathname.toLowerCase().endsWith('.m3u8');
+        } catch (_error) {
+            return String(url).toLowerCase().split('?')[0].endsWith('.m3u8');
+        }
+    }
+
     function setControlDisabled(control, disabled) {
         if (!control) {
             return;
@@ -1029,9 +1042,16 @@ const video = document.getElementById('video');
 
     // --- Time format ---
     function formatTime(seconds) {
+        if (!Number.isFinite(seconds) || seconds <= 0) {
+            return '00:00';
+        }
         let m = Math.floor(seconds / 60);
         let s = Math.floor(seconds % 60);
         return `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
+    }
+
+    function syncDurationDisplay() {
+        durationDisplay.textContent = formatTime(video.duration);
     }
 
     function applyResumePosition(force = false) {
@@ -1057,7 +1077,7 @@ const video = document.getElementById('video');
     }
 
     video.addEventListener('loadedmetadata', () => {
-        durationDisplay.textContent = formatTime(video.duration);
+        syncDurationDisplay();
         applyResumePosition(true);
         if (isRoomMode && roomPlaybackStatus && !hasRealtimePlaybackEvent) {
             if (roomPlaybackStatus === 'PLAYING') {
@@ -1069,7 +1089,10 @@ const video = document.getElementById('video');
         syncWatchProgress();
     });
 
-    video.addEventListener('durationchange', () => applyResumePosition());
+    video.addEventListener('durationchange', () => {
+        syncDurationDisplay();
+        applyResumePosition();
+    });
     video.addEventListener('canplay', () => applyResumePosition(true));
 
     // --- Update progress (giảm lag UI) ---
@@ -1079,7 +1102,9 @@ const video = document.getElementById('video');
         if (now - lastUpdate < 200) return;
         lastUpdate = now;
 
-        const percent = (video.currentTime / video.duration) * 100;
+        const percent = Number.isFinite(video.duration) && video.duration > 0
+            ? (video.currentTime / video.duration) * 100
+            : 0;
         currentProgress.style.width = percent + '%';
         currentTimeDisplay.textContent = formatTime(video.currentTime);
 
@@ -1163,9 +1188,18 @@ const video = document.getElementById('video');
             }
 
             const res = await fetch(`/api/video/watch/${videoContentId}`);
-            const videoSrc = await res.text();
+            if (!res.ok) {
+                throw new Error(`Khong the tai URL video (${res.status})`);
+            }
 
-            if (Hls.isSupported()) {
+            const videoSrc = (await res.text()).trim();
+            if (!videoSrc) {
+                throw new Error('API khong tra ve URL video');
+            }
+
+            const isHlsSource = isHlsSourceUrl(videoSrc);
+
+            if (isHlsSource && Hls.isSupported()) {
                 hls = new Hls({
                     enableWorker: true,
                     lowLatencyMode: true,
@@ -1194,7 +1228,10 @@ const video = document.getElementById('video');
                 hls.loadSource(videoSrc);
                 hls.attachMedia(video);
 
-            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            } else if (isHlsSource && video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = videoSrc;
+                setQualityAvailability(false);
+            } else {
                 video.src = videoSrc;
                 setQualityAvailability(false);
             }

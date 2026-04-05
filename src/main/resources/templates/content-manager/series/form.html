@@ -187,15 +187,16 @@
             <form th:action="@{/content-manager/series/{id}/trailer/url(id=${tvSeriesUpsertRequest.id})}"
                   method="post"
                   class="upload-section js-dirty-form">
-                <div class="form-section-title">Trailer Series (Cloudinary URL)</div>
+                <div class="form-section-title">Trailer Series (Public Video URL)</div>
                 <p style="margin:0 0 15px 0;color:#b3b3b3;font-size:14px;">
-                    Nhập đường dẫn <code>Secure URL</code> từ Cloudinary để gắn trailer phim.
+                    Nhập public video URL có thể phát trực tiếp, ví dụ <code>.m3u8</code>, <code>.mp4</code>
+                    hoặc link media public tương tự.
                 </p>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="seriesAssetUrl">Đường dẫn URL Cloudinary <span class="required">*</span></label>
+                        <label for="seriesAssetUrl">Đường dẫn URL Trailer <span class="required">*</span></label>
                         <input id="seriesAssetUrl" type="url" name="assetUrl" class="form-control" required
-                               placeholder="https://res.cloudinary.com/.../video/upload/v.../trailer.mp4" />
+                               placeholder="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" />
                     </div>
                 </div>
                 <div style="text-align:right;margin-top:15px;">
