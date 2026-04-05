@@ -73,4 +73,10 @@ public class Comment {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private List<Comment> replies = new ArrayList<>();
-}
+
+    // Thêm quan hệ 1-n để xóa các lượt Like/Dislike khi xóa Bình luận
+    @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<CommentVote> votes;
+}
