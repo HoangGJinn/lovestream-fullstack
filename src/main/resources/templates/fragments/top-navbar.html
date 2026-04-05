@@ -20,6 +20,7 @@
         <li th:if="${currentUser != null}"><a href="/watch-together" th:classappend="${activeTab == 'watch-together'} ? ' active' : ''">Xem chung</a></li>
     </ul>
     <script th:src="@{/js/movie-poster-transition.js}" defer></script>
+    <script th:src="@{/js/search-suggest.js}" defer></script>
 </div>
 
 <form th:fragment="topNavSearch(formId, toggleId, inputId, actionUrl, placeholder, keyword, open, hiddenName, hiddenValue)"
@@ -37,6 +38,9 @@
     </button>
     <input th:id="${inputId}" class="nav-search-input" name="keyword" type="text"
            th:placeholder="${placeholder}" th:value="${keyword}" autocomplete="off">
+
+    <!-- Autocomplete dropdown (filled by /js/search-suggest.js) -->
+    <div class="search-suggest-box" data-role="search-suggest-box"></div>
 </form>
 </body>
 </html>
