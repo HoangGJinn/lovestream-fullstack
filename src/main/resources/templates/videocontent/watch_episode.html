@@ -548,16 +548,24 @@
 
     // ---- Progress ----
     function formatTime(s) {
+        if (!Number.isFinite(s) || s <= 0) return '00:00';
         let m = Math.floor(s / 60), sec = Math.floor(s % 60);
         return `${m < 10 ? '0'+m : m}:${sec < 10 ? '0'+sec : sec}`;
     }
-    video.addEventListener('loadedmetadata', () => durationDisplay.textContent = formatTime(video.duration));
+    function syncDurationDisplay() {
+        durationDisplay.textContent = formatTime(video.duration);
+    }
+    video.addEventListener('loadedmetadata', () => syncDurationDisplay());
+    video.addEventListener('durationchange', () => syncDurationDisplay());
     let lastUpdate = 0;
     video.addEventListener('timeupdate', () => {
         const now = Date.now();
         if (now - lastUpdate < 200) return;
         lastUpdate = now;
-        currentProgress.style.width = (video.currentTime / video.duration * 100) + '%';
+        const percent = Number.isFinite(video.duration) && video.duration > 0
+            ? (video.currentTime / video.duration * 100)
+            : 0;
+        currentProgress.style.width = percent + '%';
         currentTimeDisplay.textContent = formatTime(video.currentTime);
     });
     progressBarContainer.addEventListener('click', e => {
@@ -853,7 +861,7 @@
                         <div class="comment-body">
                             <div class="comment-user-name">${escHtml(r.userName)} - ${r.score} sao</div>
                             <div class="comment-text">${escHtml(r.review || '')}</div>
-                            <div class="comment-date">${formatTime(r.createdAt)}</div>
+                            <div class="comment-date">${formatDateTime(r.createdAt)}</div>
                         </div>
                     </div>
                 `).join('');
@@ -864,7 +872,7 @@
         }
     }
 
-    function formatTime(isoStr) {
+    function formatDateTime(isoStr) {
         if (!isoStr) return '';
         try {
             const d = new Date(isoStr);
