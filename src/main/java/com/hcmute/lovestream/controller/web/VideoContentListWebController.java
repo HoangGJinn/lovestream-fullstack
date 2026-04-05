@@ -5,6 +5,7 @@ import com.hcmute.lovestream.entity.TVSeries;
 import com.hcmute.lovestream.repository.TVSeriesRepository;
 import com.hcmute.lovestream.service.videoContent.MovieService;
 import com.hcmute.lovestream.service.user.UserProfileService;
+import com.hcmute.lovestream.util.VietnameseNormalizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -16,6 +17,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Controller
 public class VideoContentListWebController {
@@ -68,6 +70,8 @@ public class VideoContentListWebController {
                             @RequestParam(name = "sort", defaultValue = "default") String sort,
                             Authentication authentication,
                             Model model) {
+        keyword = (StringUtils.hasText(keyword) ? keyword.trim() : null);
+
         if (authentication != null
                 && authentication.isAuthenticated()
                 && !(authentication instanceof AnonymousAuthenticationToken)) {
@@ -79,6 +83,17 @@ public class VideoContentListWebController {
         }
 
         List<TVSeries> series = tvSeriesRepository.findAllByStatus(com.hcmute.lovestream.entity.enums.ContentStatus.ACTIVE);
+        if (keyword != null) {
+            String loweredKeyword = keyword.toLowerCase(Locale.ROOT);
+            String normalizedKeyword = VietnameseNormalizer.normalize(keyword);
+            series = series.stream()
+                    .filter(item -> {
+                        String title = item.getTitle() == null ? "" : item.getTitle().toLowerCase(Locale.ROOT);
+                        String titleUnsigned = item.getTitleUnsigned() == null ? "" : item.getTitleUnsigned();
+                        return title.contains(loweredKeyword) || titleUnsigned.contains(normalizedKeyword);
+                    })
+                    .toList();
+        }
 
         List<List<TVSeries>> rows = new ArrayList<>();
         int size = 6;

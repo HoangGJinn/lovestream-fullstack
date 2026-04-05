@@ -21,5 +21,22 @@
     </ul>
     <script th:src="@{/js/movie-poster-transition.js}" defer></script>
 </div>
+
+<form th:fragment="topNavSearch(formId, toggleId, inputId, actionUrl, placeholder, keyword, open, hiddenName, hiddenValue)"
+      th:id="${formId}"
+      class="nav-search"
+      th:classappend="${open} ? ' is-open' : ''"
+      th:action="${actionUrl}"
+      method="get">
+    <input th:if="${hiddenName != null and !#strings.isEmpty(hiddenName)}"
+           type="hidden"
+           th:name="${hiddenName}"
+           th:value="${hiddenValue}">
+    <button th:id="${toggleId}" class="nav-icon nav-search-toggle" type="button" aria-label="Tìm kiếm">
+        <i class="fa-solid fa-magnifying-glass"></i>
+    </button>
+    <input th:id="${inputId}" class="nav-search-input" name="keyword" type="text"
+           th:placeholder="${placeholder}" th:value="${keyword}" autocomplete="off">
+</form>
 </body>
 </html>

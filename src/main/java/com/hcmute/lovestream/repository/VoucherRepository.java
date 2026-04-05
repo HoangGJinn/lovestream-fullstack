@@ -29,10 +29,3 @@ public interface VoucherRepository extends JpaRepository<Voucher, String> {
     @Query("SELECT v FROM Voucher v WHERE v.status = 'ACTIVE' AND v.expiryDate >= CURRENT_DATE AND v.usedQuantity < v.totalQuantity")
     List<Voucher> findAvailableVouchers();
 }
-
-
-// model hết quota?? ???
-// cái lồn gì mới xài có 5 prompt hết quot
-
-
-//còn quota; cc cho nó chj

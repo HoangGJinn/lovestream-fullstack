@@ -5,6 +5,8 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.List;
+
 
 @Entity
 @Table(name = "ratings", uniqueConstraints = {
@@ -56,5 +58,11 @@ public class Rating {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Comment comment;
+
+    // Thêm quan hệ 1-n để xóa các lượt Like/Dislike khi xóa Đánh giá
+    @OneToMany(mappedBy = "rating", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<RatingVote> votes;
 
 }
