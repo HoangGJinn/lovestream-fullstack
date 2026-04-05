@@ -11,10 +11,11 @@
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
             background: var(--bg-color); font-family: 'Roboto', sans-serif;
-            color: var(--text-color); overflow: hidden;
+            color: var(--text-color); overflow-x: hidden;
+            overflow-y: auto;
         }
         .video-player {
-            position: relative; width: 100vw; height: 100vh;
+            position: relative; width: 100vw; height: 80vh;
             background: #000; display: flex; justify-content: center; align-items: center; cursor: pointer;
         }
         video { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
@@ -64,6 +65,75 @@
             position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
             color: #f5a623; font-size: 1.2rem; text-align: center; display: none; z-index: 20;
         }
+
+        /* Styles copied from watch_movie.css for consistency */
+        .movie-compact-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 18px 40px; background: linear-gradient(135deg, #0d0d0d 0%, #1a1a2e 100%);
+            border-top: 2px solid var(--primary-color); flex-wrap: wrap; gap: 16px;
+        }
+        .compact-left { display: flex; align-items: center; gap: 20px; flex: 1; min-width: 0; }
+        .c-title { font-size: 1.4rem; font-weight: 700; margin: 0; color: #fff; }
+        .compact-right { display: flex; align-items: center; }
+        .action-buttons-group { display: flex; align-items: center; gap: 24px; }
+        .action-item {
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            cursor: pointer; color: #bbb; font-size: 0.8rem; transition: color 0.2s, transform 0.15s;
+        }
+        .action-item:hover { color: #fff; transform: translateY(-2px); }
+        .action-item i { font-size: 1.4rem; }
+        .rating-badge-blue {
+            display: flex; align-items: center; gap: 4px; background: linear-gradient(135deg, #1a73e8, #4285f4);
+            color: #fff; padding: 6px 14px; border-radius: 20px; font-size: 0.9rem; font-weight: 600;
+        }
+        .comment-zone { padding: 30px 40px; background: #0d0d0d; }
+        .comment-zone h2 { margin: 0 0 16px; font-size: 1.2rem; color: #fff; display: flex; align-items: center; gap: 8px; }
+        .tab-group { display: inline-flex; border: 1px solid #555; border-radius: 6px; overflow: hidden; margin-left: 14px; }
+        .tab-btn { padding: 5px 16px; background: transparent; color: #ccc; border: none; font-size: 0.85rem; cursor: pointer; }
+        .tab-btn.active { background: #fff; color: #000; font-weight: 600; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .comment-input-area { position: relative; margin-bottom: 20px; }
+        .comment-input-area textarea {
+            width: 100%; min-height: 90px; padding: 14px 16px; background: #1a1a1a;
+            border: 1px solid #333; border-radius: 10px; color: #fff; font-size: 0.95rem; outline: none;
+        }
+        .comment-input-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+        .btn-send-comment { background: none; border: none; color: var(--primary-color); font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .comment-item { display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+        .comment-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #8b6914, #c9a84c); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; flex-shrink: 0; }
+        .comment-body { flex: 1; }
+        .comment-user-name { font-weight: 600; font-size: 0.9rem; color: #eee; }
+        .comment-text { font-size: 0.9rem; color: #ccc; }
+        .comment-actions { display: flex; align-items: center; gap: 14px; margin-top: 6px; }
+        .vote-btn { background: none; border: none; color: #888; cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 0.8rem; }
+        .vote-btn:hover { color: #fff; }
+        .reply-btn { background: none; border: none; color: #888; cursor: pointer; font-size: 0.8rem; }
+        .reply-box { display: none; margin-top: 10px; }
+        .reply-box.show { display: block; }
+        .reply-box textarea { width: 100%; min-height: 60px; padding: 10px; background: #1a1a1a; border: 1px solid #333; border-radius: 8px; color: #fff; font-size: 0.85rem; outline: none; }
+        .reply-box-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+        .btn-cancel-reply { background: none; border: 1px solid #555; color: #aaa; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+        .btn-send-reply { background: var(--primary-color); border: none; color: #fff; padding: 4px 16px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600; }
+        .comment-nested { border-left: 1px solid #333; margin-left: 42px; padding-left: 12px; }
+        .btn-toggle-replies { background: none; border: none; color: #888; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 4px; margin-top: 8px; padding: 0; }
+        .btn-toggle-replies:hover { color: #fff; }
+        .btn-toggle-replies.active { color: var(--primary-color); }
+        .rating-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .rating-modal-overlay.show { display: flex; }
+        .rating-modal { background: #1a1a1a; padding: 30px; border-radius: 12px; width: 400px; position: relative; }
+        .rating-modal-close { position: absolute; top: 10px; right: 15px; background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
+        .star-picker { display: flex; justify-content: space-between; margin: 20px 0; }
+        .star-picker-item { cursor: pointer; opacity: 0.4; transition: opacity 0.2s; text-align: center; }
+        .star-picker-item.selected { opacity: 1; color: #ffd700; }
+        .star-icon { font-size: 1.5rem; }
+        .star-label { display: block; font-size: 0.75rem; margin-top: 4px; }
+        .review-textarea { width: 100%; height: 80px; background: #222; border: 1px solid #444; border-radius: 6px; color: #fff; padding: 10px; resize: none; margin-bottom: 20px; }
+        .btn-submit-rating { width: 100%; background: var(--primary-color); border: none; padding: 10px; border-radius: 6px; color: #fff; font-weight: 700; cursor: pointer; }
+
     </style>
 </head>
 <body>
@@ -99,9 +169,124 @@
     </div>
 </div>
 
+<!-- ====== THANH THÔNG TIN PHIM ====== -->
+<div class="movie-compact-bar">
+    <div class="compact-left">
+        <h1 class="c-title" id="m-title">Đang tải phim...</h1>
+    </div>
+    <div class="compact-right">
+        <div class="action-buttons-group">
+            <div class="action-item" id="btnRating">
+                <i class="fa-solid fa-star"></i>
+                <span>Đánh giá</span>
+            </div>
+            <div class="action-item" id="btnComment" onclick="scrollToCommentZone()">
+                <i class="fa-solid fa-comment-dots"></i>
+                <span>Bình luận</span>
+            </div>
+            <div class="rating-badge-blue">
+                <i class="fa-solid fa-star"></i>
+                <span id="m-rating" style="margin: 0 5px;">0</span>
+                <small>Đánh giá</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====== KHU VỰC BÌNH LUẬN + ĐÁNH GIÁ (TABS) ====== -->
+<div class="comment-zone" id="commentZone">
+    <h2>
+        <i class="fa-solid fa-comment-dots"></i>
+        <span id="tabTitle">Bình luận (<span id="commentCount">0</span>)</span>
+        <div class="tab-group">
+            <button class="tab-btn active" onclick="switchTab('comment')">Bình luận</button>
+            <button class="tab-btn" onclick="switchTab('rating')">Đánh giá</button>
+        </div>
+    </h2>
+
+    <!-- TAB BÌNH LUẬN -->
+    <div class="tab-content active" id="tabComment">
+        <div class="comment-input-area">
+            <textarea id="commentInput" placeholder="Viết bình luận" maxlength="500"></textarea>
+            <div class="comment-input-footer">
+                <span class="char-counter"><span id="charCount">0</span> / 500</span>
+                <button class="btn-send-comment" onclick="sendComment()">
+                    Gửi <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+        <div class="comment-error" id="commentError"></div>
+        <div class="comment-success" id="commentSuccess"></div>
+        <div class="comment-list" id="commentList">
+            <p class="no-data-msg">Đang tải bình luận...</p>
+        </div>
+    </div>
+
+    <!-- TAB ĐÁNH GIÁ -->
+    <div class="tab-content" id="tabRating">
+        <div id="ratingList">
+            <p class="no-data-msg">Đang tải đánh giá...</p>
+        </div>
+    </div>
+</div>
+
+<!-- ====== MODAL ĐÁNH GIÁ SAO ====== -->
+<div class="rating-modal-overlay" id="ratingModalOverlay">
+    <div class="rating-modal">
+        <button class="rating-modal-close" onclick="closeRatingModal()">&times;</button>
+        <h3 id="ratingModalTitle">Đánh giá phim</h3>
+        <div class="rating-modal-avg">
+            <i class="fa-solid fa-star"></i>
+            <span id="ratingModalAvg">0</span> / <span id="ratingModalCount">0</span> lượt đánh giá
+        </div>
+        <div class="star-picker" id="starPicker">
+            <div class="star-picker-item" data-score="1" onclick="pickStar(1)">
+                <i class="fa-solid fa-star star-icon"></i>
+                <span class="star-label">Dở tệ</span>
+            </div>
+            <div class="star-picker-item" data-score="2" onclick="pickStar(2)">
+                <i class="fa-solid fa-star star-icon"></i>
+                <span class="star-label">Phim chán</span>
+            </div>
+            <div class="star-picker-item" data-score="3" onclick="pickStar(3)">
+                <i class="fa-solid fa-star star-icon"></i>
+                <span class="star-label">Khá ổn</span>
+            </div>
+            <div class="star-picker-item" data-score="4" onclick="pickStar(4)">
+                <i class="fa-solid fa-star star-icon"></i>
+                <span class="star-label">Phim hay</span>
+            </div>
+            <div class="star-picker-item" data-score="5" onclick="pickStar(5)">
+                <i class="fa-solid fa-star star-icon"></i>
+                <span class="star-label">Tuyệt vời</span>
+            </div>
+        </div>
+        <textarea class="review-textarea" id="reviewInput" placeholder="Viết nhận xét về phim (tuỳ chọn)" maxlength="500"></textarea>
+        <div class="rating-modal-btns">
+            <button class="btn-submit-rating" onclick="submitRating()">Gửi đánh giá</button>
+        </div>
+        <div class="rating-modal-msg" id="ratingModalMsg"></div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 <script th:inline="javascript">
-    const episodeId = /*[[${episodeId}]]*/ '';
+    // Lưu email người dùng hiện tại vào biến toàn cục window
+    window.currentUserEmail = /*[[${currentUserEmail}]]*/ '';
+
+    window.watchMovieConfig = {
+        videoId: /*[[${videoId}]]*/ '',
+        episodeId: /*[[${episodeId}]]*/ '',
+        maxAllowedHeight: /*[[${maxAllowedHeight}]]*/ 480,
+        planQualityLabel: /*[[${planQualityLabel}]]*/ 'SD (480p)',
+        upgradePackagesUrl: '/packages',
+        streamApiBase: '/api/v1/streams',
+        streamHeartbeatIntervalMs: /*[[${streamHeartbeatIntervalMs}]]*/ 25000
+    };
+
+    const episodeId = window.watchMovieConfig.episodeId;
     const video = document.getElementById('video');
     const player = document.getElementById('player');
     const playPauseBtn = document.getElementById('playPauseBtn');
@@ -396,6 +581,297 @@
     video.addEventListener('playing', () => spinner.classList.add('hidden'));
     video.addEventListener('playing', touchWatchingState);
 
+    const videoContentId = window.watchMovieConfig.videoId;
+    const _movieId = videoContentId;
+    let _selectedScore = 0;
+
+    // ---- Tabs ----
+    function switchTab(tab) {
+        const btns = document.querySelectorAll('.tab-btn');
+        if (btns.length < 2) return;
+        btns[0].classList.toggle('active', tab === 'comment');
+        btns[1].classList.toggle('active', tab === 'rating');
+
+        document.getElementById('tabComment').classList.toggle('active', tab === 'comment');
+        document.getElementById('tabRating').classList.toggle('active', tab === 'rating');
+
+        const title = document.getElementById('tabTitle');
+        if (tab === 'comment') {
+            title.innerHTML = 'Bình luận (<span id="commentCount">' + (document.getElementById('commentCount')?.innerText || '0') + '</span>)';
+        } else {
+            title.innerHTML = 'Đánh giá (<span id="ratingTabCount">0</span>)';
+            loadRatings();
+        }
+    }
+
+    function scrollToCommentZone() {
+        const zone = document.getElementById('commentZone');
+        if (zone) {
+            zone.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setTimeout(() => document.getElementById('commentInput').focus(), 400);
+        }
+    }
+
+    // ---- Init content info ----
+    document.addEventListener('DOMContentLoaded', function () {
+        if (videoContentId) {
+            fetch('/api/movies/' + videoContentId)
+                .then(res => res.ok ? res.json() : Promise.reject(res.status))
+                .then(data => {
+                    document.getElementById('m-title').innerText = data.title || 'Không có tên';
+                    document.getElementById('m-rating').innerText = data.rating ? data.rating.toFixed(1) : '0';
+                })
+                .catch(() => {
+                    document.getElementById('m-title').innerText = 'Không tải được thông tin phim';
+                });
+
+            loadComments();
+        }
+
+        const btnRating = document.getElementById('btnRating');
+        if (btnRating) {
+            btnRating.addEventListener('click', openRatingModal);
+        }
+
+        console.log("WatchEpisode page loaded. videoId:", videoContentId);
+    });
+
+    // ---- Comments Logic ----
+    async function loadComments() {
+        if (!videoContentId) {
+            console.warn("No videoContentId found, cannot load comments.");
+            return;
+        }
+        try {
+            console.log("Fetching comments for videoContentId:", videoContentId);
+            const res = await fetch('/api/v1/comments?videoContentId=' + videoContentId);
+            if (!res.ok) throw new Error("Status " + res.status);
+            const data = await res.json();
+            const list = document.getElementById('commentList');
+
+            // Tính tổng (đệ quy)
+            let total = 0;
+            const countAll = (ary) => {
+                total += ary.length;
+                ary.forEach(item => { if(item.replies) countAll(item.replies) });
+            }
+            countAll(data);
+            document.getElementById('commentCount').innerText = total;
+
+            if (data.length === 0) {
+                list.innerHTML = '<p class="no-data-msg">Chưa có bình luận nào.</p>';
+            } else {
+                list.innerHTML = data.map(c => renderCommentHtml(c)).join('');
+            }
+        } catch (e) { 
+            console.error('Lỗi load comment:', e);
+            document.getElementById('commentList').innerHTML = '<p class="no-data-msg" style="color:red;">Lỗi tải bình luận</p>';
+        }
+    }
+
+    function renderCommentHtml(c, level = 0) {
+        const isOwner = window.currentUserEmail === c.email;
+        const avatarHtml = c.avatar
+            ? `<img src="${c.avatar}" style="width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0;">`
+            : `<div class="comment-avatar">${(c.userName || 'U').charAt(0).toUpperCase()}</div>`;
+        const deleteBtn = isOwner ? `<button onclick="deleteComment('${c.id}')" style="background:none; border:none; color:#888; cursor:pointer;" title="Xóa"><i class="fa-solid fa-trash"></i></button>` : '';
+
+        // Xử lý các phản hồi (nested replies)
+        let nestedRepliesHtml = '';
+        let toggleBtn = '';
+        if (c.replies && c.replies.length > 0) {
+            nestedRepliesHtml = `
+                <div class="reply-list" id="replyList-${c.id}" style="display: none;">
+                    ${c.replies.map(r => renderCommentHtml(r, level + 1)).join('')}
+                </div>
+            `;
+            toggleBtn = `
+                <button class="btn-toggle-replies" id="btnToggle-${c.id}" onclick="toggleReplies('${c.id}')">
+                    <i class="fa-solid fa-caret-down"></i> Xem ${c.replies.length} phản hồi
+                </button>
+            `;
+        }
+
+        const levelClass = level > 0 ? 'comment-nested' : '';
+
+        return `
+            <div class="comment-item ${levelClass}">
+                ${avatarHtml}
+                <div class="comment-body">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div class="comment-user-name">${escHtml(c.userName)}</div>
+                        ${deleteBtn}
+                    </div>
+                    <div class="comment-text">${escHtml(c.content)}</div>
+                    <div class="comment-actions">
+                        <span class="comment-date">${formatDate(c.createdAt)}</span>
+                        <button class="vote-btn" onclick="voteComment('${c.id}', true)"><i class="fa-regular fa-thumbs-up"></i> ${c.likeCount || 0}</button>
+                        <button class="vote-btn" onclick="voteComment('${c.id}', false)"><i class="fa-regular fa-thumbs-down"></i> ${c.dislikeCount || 0}</button>
+                        <button class="reply-btn" onclick="toggleReplyBox('${c.id}')"><i class="fa-solid fa-reply"></i> Trả lời</button>
+                    </div>
+                    <!-- Box phản hồi -->
+                    <div class="reply-box" id="replyBox-${c.id}">
+                        <textarea id="replyInput-${c.id}" placeholder="Viết phản hồi..." maxlength="500"></textarea>
+                        <div class="reply-box-footer">
+                            <button class="btn-cancel-reply" onclick="toggleReplyBox('${c.id}')">Hủy</button>
+                            <button class="btn-send-reply" onclick="sendReply('${c.id}')">Gửi</button>
+                        </div>
+                    </div>
+                    ${toggleBtn}
+                    ${nestedRepliesHtml}
+                </div>
+            </div>
+        `;
+    }
+
+    function toggleReplyBox(id) {
+        const box = document.getElementById('replyBox-' + id);
+        if (box) box.classList.toggle('show');
+    }
+
+    async function sendReply(parentId) {
+        const input = document.getElementById('replyInput-' + parentId);
+        const content = input.value.trim();
+        if (!content) return;
+        try {
+            const res = await fetch(`/api/v1/comments/${parentId}/replies`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content, videoContentId })
+            });
+            if (res.ok) { loadComments(); }
+            else { alert('Gửi phản hồi thất bại.'); }
+        } catch (e) { alert('Lỗi kết nối.'); }
+    }
+
+    function toggleReplies(id) {
+        const list = document.getElementById('replyList-' + id);
+        const btn = document.getElementById('btnToggle-' + id);
+        if (!list || !btn) return;
+
+        if (list.style.display === 'none') {
+            list.style.display = 'block';
+            const count = list.querySelectorAll(':scope > .comment-item').length;
+            btn.innerHTML = `<i class="fa-solid fa-caret-up"></i> Ẩn ${count} phản hồi`;
+            btn.classList.add('active');
+        } else {
+            list.style.display = 'none';
+            const count = list.querySelectorAll(':scope > .comment-item').length;
+            btn.innerHTML = `<i class="fa-solid fa-caret-down"></i> Xem ${count} phản hồi`;
+            btn.classList.remove('active');
+        }
+    }
+
+    async function sendComment() {
+        const input = document.getElementById('commentInput');
+        const content = input.value.trim();
+        if (!content) return;
+        try {
+            const res = await fetch('/api/v1/comments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content, videoContentId })
+            });
+            if (res.ok) { input.value = ''; loadComments(); }
+            else { alert('Gửi bình luận thất bại. Vui lòng đăng nhập.'); }
+        } catch (e) { alert('Lỗi kết nối.'); }
+    }
+
+    async function deleteComment(id) {
+        if (!confirm('Xóa bình luận này?')) return;
+        try {
+            const res = await fetch(`/api/v1/comments/${id}`, { method: 'DELETE' });
+            if (res.ok) loadComments();
+            else alert('Xóa thất bại.');
+        } catch (e) { alert('Lỗi kết nối.'); }
+    }
+
+    async function voteComment(id, isLike) {
+        const action = isLike ? 'like' : 'dislike';
+        try {
+            const res = await fetch(`/api/v1/comments/${id}/${action}`, { method: 'POST' });
+            if (res.ok) loadComments();
+            else { const msg = await res.text(); alert(msg || "Vui lòng đăng nhập."); }
+        } catch (e) {}
+    }
+
+    // ---- Ratings Logic ----
+    function openRatingModal() {
+        const title = document.getElementById('m-title').innerText;
+        document.getElementById('ratingModalTitle').innerText = title;
+        fetch('/api/v1/ratings?videoContentId=' + videoContentId)
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('ratingModalAvg').innerText = data.averageScore ? data.averageScore.toFixed(1) : '0';
+                document.getElementById('ratingModalCount').innerText = data.totalCount || 0;
+            }).catch(() => {});
+        _selectedScore = 0;
+        document.querySelectorAll('.star-picker-item').forEach(el => el.classList.remove('selected'));
+        document.getElementById('ratingModalOverlay').classList.add('show');
+    }
+
+    function closeRatingModal() { document.getElementById('ratingModalOverlay').classList.remove('show'); }
+
+    function pickStar(score) {
+        _selectedScore = score;
+        document.querySelectorAll('.star-picker-item').forEach(el => {
+            el.classList.toggle('selected', Number(el.dataset.score) <= score);
+        });
+    }
+
+    async function submitRating() {
+        if (_selectedScore < 1) { alert('Vui lòng chọn số sao!'); return; }
+        const review = document.getElementById('reviewInput').value.trim();
+        try {
+            const res = await fetch('/api/v1/ratings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ videoContentId, score: _selectedScore, review: review || null })
+            });
+            if (res.ok) { alert('Đánh giá thành công!'); closeRatingModal(); }
+            else { const msg = await res.text(); alert(msg || 'Đánh giá thất bại.'); }
+        } catch (e) { alert('Lỗi kết nối.'); }
+    }
+
+    async function loadRatings() {
+        if (!videoContentId) return;
+        try {
+            console.log("Fetching ratings for videoContentId:", videoContentId);
+            const res = await fetch('/api/v1/ratings?videoContentId=' + videoContentId);
+            if (!res.ok) throw new Error("Status " + res.status);
+            const data = await res.json(); // Data format: { averageScore, totalCount, ratings: [...] }
+            const list = document.getElementById('ratingList');
+            
+            const ratingsArray = data.ratings || [];
+            document.getElementById('ratingTabCount').innerText = data.totalCount || 0;
+            
+            if (ratingsArray.length === 0) {
+                list.innerHTML = '<p class="no-data-msg">Chưa có đánh giá nào.</p>';
+            } else {
+                list.innerHTML = ratingsArray.map(r => `
+                    <div class="comment-item">
+                        <div class="comment-body">
+                            <div class="comment-user-name">${escHtml(r.userName)} - ${r.score} sao</div>
+                            <div class="comment-text">${escHtml(r.review || '')}</div>
+                            <div class="comment-date">${formatTime(r.createdAt)}</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        } catch (e) {
+            console.error('Lỗi load ratings:', e);
+            document.getElementById('ratingList').innerHTML = '<p class="no-data-msg" style="color:red;">Lỗi tải đánh giá</p>';
+        }
+    }
+
+    function formatTime(isoStr) {
+        if (!isoStr) return '';
+        try {
+            const d = new Date(isoStr);
+            return d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN', {hour:'2-digit',minute:'2-digit'});
+        } catch { return isoStr; }
+    }
+
     // ---- Load video from API ----
     function showError(msg) {
         spinner.classList.add('hidden');
@@ -458,6 +934,9 @@
         }
     }
 
+    function escHtml(s) { return s ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''; }
+    function formatDate(s) { if (!s) return ''; const d = new Date(s); return d.toLocaleDateString('vi-VN'); }
+
     if (episodeId) {
         loadEpisode(episodeId);
     } else {
@@ -466,6 +945,7 @@
     window.addEventListener('beforeunload', () => {
         stopStreamSession(true);
     });
+
 </script>
 </body>
 </html>
