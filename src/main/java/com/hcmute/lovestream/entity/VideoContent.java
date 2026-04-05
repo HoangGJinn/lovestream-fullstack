@@ -67,6 +67,7 @@ public abstract class VideoContent {
             joinColumns = @JoinColumn(name = "video_content_id"),
             inverseJoinColumns = @JoinColumn(name = "genre_id")
     )
+        @BatchSize(size = 100)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Set<Genre> genres = new HashSet<>();

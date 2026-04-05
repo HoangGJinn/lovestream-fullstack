@@ -62,6 +62,8 @@ public class RatingRestController {
 
     @PostMapping("/{id}/dislike")
     public ResponseEntity<?> dislikeRating(Principal principal, @PathVariable String id) {
+
+
         if (principal == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Vui lòng đăng nhập để không thích đánh giá!");
         }

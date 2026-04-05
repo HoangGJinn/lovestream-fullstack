@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -53,6 +54,7 @@ public class ServicePlanRestController {
     // POST /api/v1/plans/{id}/purchase — Mua gói dịch vụ (yêu cầu đăng nhập)
     @PostMapping("/{id}/purchase")
     public ResponseEntity<?> purchasePackage(@PathVariable String id,
+                                             @RequestParam(required = false) String voucherCode,
                                              Authentication authentication,
                                              HttpServletRequest request) {
         if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
@@ -61,7 +63,7 @@ public class ServicePlanRestController {
         }
 
         try {
-            PurchaseResponse response = servicePlanService.purchasePlan(authentication.getName(), id, request);
+            PurchaseResponse response = servicePlanService.purchasePlan(authentication.getName(), id, voucherCode, request);
             return ResponseEntity.ok(response);
         } catch (RuntimeException ex) {
             return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
@@ -71,6 +73,7 @@ public class ServicePlanRestController {
     // POST /api/v1/plans/{id}/upgrade — Nâng cấp gói (thanh toán phần chênh lệch)
     @PostMapping("/{id}/upgrade")
     public ResponseEntity<?> upgradePackage(@PathVariable String id,
+                                            @RequestParam(required = false) String voucherCode,
                                             Authentication authentication,
                                             HttpServletRequest request) {
         if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
@@ -79,7 +82,7 @@ public class ServicePlanRestController {
         }
 
         try {
-            PurchaseResponse response = servicePlanService.upgradePlan(authentication.getName(), id, request);
+            PurchaseResponse response = servicePlanService.upgradePlan(authentication.getName(), id, voucherCode, request);
             return ResponseEntity.ok(response);
         } catch (RuntimeException ex) {
             return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));

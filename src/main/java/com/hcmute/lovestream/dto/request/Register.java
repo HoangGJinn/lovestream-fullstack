@@ -23,3 +23,6 @@ public class Register {
     @Size(min = 6, message = "Mật khẩu phải có ít nhất 6 ký tự")
     private String password;
 }
+
+
+

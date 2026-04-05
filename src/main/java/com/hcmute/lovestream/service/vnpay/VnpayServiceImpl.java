@@ -9,6 +9,7 @@ import com.hcmute.lovestream.entity.enums.SubscriptionStatus;
 import com.hcmute.lovestream.entity.enums.TransactionStatus;
 import com.hcmute.lovestream.repository.PaymentRepository;
 import com.hcmute.lovestream.repository.SubscriptionRepository;
+import com.hcmute.lovestream.repository.VoucherRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,15 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+/**
+ * Tích hợp thanh toán VNPAY.
+ * <p>
+ * <strong>Voucher / khuyến mãi:</strong> Giao diện trên {@code sandbox.vnpayment.vn} không tùy biến được;
+ * mọi áp dụng voucher phải xử lý trên LoveStream <em>trước</em> khi gọi
+ * {@link #createPaymentWithOrderCode}. Tham số {@code vnp_Amount} được khóa tại thời điểm tạo URL;
+ * {@link Vnpay#getAmount()} phải là số tiền cuối (VND) sau giảm, khớp {@code Payment.amount}.
+ * Chi tiết kiến trúc: {@code com/hcmute/lovestream/docs/Nhan/Voucher_Payment/01-vnpay-voucher-architecture.md}.
+ */
 @Service
 @Slf4j
 public class VnpayServiceImpl implements VnpayService {
@@ -37,6 +47,9 @@ public class VnpayServiceImpl implements VnpayService {
     @Autowired
     private SubscriptionRepository subscriptionRepository;
 
+    @Autowired
+    private VoucherRepository voucherRepository;
+
     @Override
     public String createPayment(Vnpay paymentRequest, HttpServletRequest request) throws UnsupportedEncodingException {
         // VNPay dùng vnp_TxnRef để định danh giao dịch.
@@ -44,6 +57,10 @@ public class VnpayServiceImpl implements VnpayService {
         return createPaymentWithOrderCode(paymentRequest, paymentRequest.getOrderId(), request);
     }
 
+    /**
+     * Tạo URL redirect VNPAY. {@code paymentRequest.amount} là số tiền (VND) khách trả; đã phải là giá sau voucher
+     * (nếu có) — không thể bổ sung giảm giá trên trang VNPAY.
+     */
     @Override
     public String createPaymentWithOrderCode(Vnpay paymentRequest, String orderCode, HttpServletRequest request)
             throws UnsupportedEncodingException {
@@ -159,6 +176,7 @@ public class VnpayServiceImpl implements VnpayService {
             String vnp_TxnRef = vnpParams.get("vnp_TxnRef");
             String vnp_TransactionNo = vnpParams.get("vnp_TransactionNo");
             String vnp_SecureHash = vnpParams.get("vnp_SecureHash");
+            String vnp_Amount = vnpParams.get("vnp_Amount");
 
             // Xóa vnp_SecureHash khỏi params để verify
             vnpParams.remove("vnp_SecureHash");
@@ -177,6 +195,24 @@ public class VnpayServiceImpl implements VnpayService {
                 return null;
             }
 
+            // Verify amount
+            if (!isBlank(vnp_Amount)) {
+                try {
+                    long vnpAmountLong = Long.parseLong(vnp_Amount);
+                    long expectedAmount = payment.getAmount()
+                            .multiply(BigDecimal.valueOf(100L))
+                            .setScale(0, RoundingMode.HALF_UP)
+                            .longValueExact();
+                    if (vnpAmountLong != expectedAmount) {
+                        log.warn("VNPay callback amount mismatch. txnRef={} vnp_Amount={} expectedAmount={}", vnp_TxnRef, vnpAmountLong, expectedAmount);
+                        return null;
+                    }
+                } catch (NumberFormatException e) {
+                    log.warn("VNPay callback vnp_Amount invalid format. txnRef={}", vnp_TxnRef);
+                    return null;
+                }
+            }
+
             boolean isSuccess = "00".equals(vnp_ResponseCode);
 
             if (payment.getStatus() == TransactionStatus.SUCCESS) {
@@ -191,6 +227,14 @@ public class VnpayServiceImpl implements VnpayService {
             paymentRepository.saveAndFlush(payment);
 
             if (isSuccess) {
+                // Tăng usedQuantity nếu có voucher (bước 6)
+                if (payment.getVoucher() != null) {
+                    int updatedRows = voucherRepository.incrementUsedQuantity(payment.getVoucher().getId());
+                    if (updatedRows == 0) {
+                        log.warn("Failed to increment used_quantity for voucher={}", payment.getVoucher().getId());
+                    }
+                }
+
                 Subscription activeSubscription = subscriptionRepository
                         .findTopByUserAndStatusOrderByEndDateDesc(payment.getUser(), SubscriptionStatus.ACTIVE)
                         .orElse(null);

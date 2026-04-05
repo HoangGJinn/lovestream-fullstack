@@ -5,13 +5,13 @@
 <div th:fragment="sidebar(activeMenu)" class="admin-sidebar">
     <div class="admin-logo">LoveStream Admin</div>
     <div class="admin-menu">
-        <a th:href="@{/admin/dashboard}" th:classappend="${activeMenu == 'dashboard'} ? 'active'">Dashboard</a>
-        <a th:href="@{/admin/users}" th:classappend="${activeMenu == 'users'} ? 'active'">Quan ly nguoi dung</a>
-        <a th:href="@{/admin/plans}" th:classappend="${activeMenu == 'plans'} ? 'active'">Quan ly goi dich vu</a>
-        <a th:href="@{/admin/vouchers}" th:classappend="${activeMenu == 'vouchers'} ? 'active'">Quan ly voucher</a>
-        <a th:href="@{/admin/transactions}" th:classappend="${activeMenu == 'transactions'} ? 'active'">Quan ly giao dich</a>
+        <a th:href="@{/admin/dashboard}" th:classappend="${activeMenu == 'dashboard'} ? 'active'">Thống kê</a>
+        <a th:href="@{/admin/users}" th:classappend="${activeMenu == 'users'} ? 'active'">Quản lý Người dùng</a>
+        <a th:href="@{/admin/plans}" th:classappend="${activeMenu == 'plans'} ? 'active'">Quản lý Gói dịch vụ</a>
+        <a th:href="@{/admin/vouchers}" th:classappend="${activeMenu == 'vouchers'} ? 'active'">Quan lý Voucher</a>
+        <a th:href="@{/admin/transactions}" th:classappend="${activeMenu == 'transactions'} ? 'active'">Quản lý Giao dịch</a>
 
-        <a href="#" onclick="handleAdminLogout(event)" style="margin-top: 50px; color: var(--netflix-red);">Dang xuat</a>
+        <a href="#" onclick="handleAdminLogout(event)" style="margin-top: 50px; color: var(--netflix-red);">Đăng xuất</a>
     </div>
 
     <script>

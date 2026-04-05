@@ -117,6 +117,21 @@ public class WatchTogetherWebController {
         return "redirect:/watch-together/my-rooms";
     }
 
+    @PostMapping("/{roomCode}/delete")
+    public String deleteRoom(
+            @PathVariable String roomCode,
+            Authentication authentication,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            Room room = watchTogetherService.deleteRoom(roomCode, authentication.getName());
+            redirectAttributes.addFlashAttribute("successMessage", "Đã xóa phòng " + room.getRoomName());
+        } catch (RuntimeException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/watch-together/my-rooms";
+    }
+
     @GetMapping("/api/rooms/{roomCode}/state")
     @ResponseBody
     public ResponseEntity<?> roomState(
