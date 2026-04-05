@@ -1042,9 +1042,16 @@ const video = document.getElementById('video');
 
     // --- Time format ---
     function formatTime(seconds) {
+        if (!Number.isFinite(seconds) || seconds <= 0) {
+            return '00:00';
+        }
         let m = Math.floor(seconds / 60);
         let s = Math.floor(seconds % 60);
         return `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
+    }
+
+    function syncDurationDisplay() {
+        durationDisplay.textContent = formatTime(video.duration);
     }
 
     function applyResumePosition(force = false) {
@@ -1070,7 +1077,7 @@ const video = document.getElementById('video');
     }
 
     video.addEventListener('loadedmetadata', () => {
-        durationDisplay.textContent = formatTime(video.duration);
+        syncDurationDisplay();
         applyResumePosition(true);
         if (isRoomMode && roomPlaybackStatus && !hasRealtimePlaybackEvent) {
             if (roomPlaybackStatus === 'PLAYING') {
@@ -1082,7 +1089,10 @@ const video = document.getElementById('video');
         syncWatchProgress();
     });
 
-    video.addEventListener('durationchange', () => applyResumePosition());
+    video.addEventListener('durationchange', () => {
+        syncDurationDisplay();
+        applyResumePosition();
+    });
     video.addEventListener('canplay', () => applyResumePosition(true));
 
     // --- Update progress (giảm lag UI) ---
@@ -1092,7 +1102,9 @@ const video = document.getElementById('video');
         if (now - lastUpdate < 200) return;
         lastUpdate = now;
 
-        const percent = (video.currentTime / video.duration) * 100;
+        const percent = Number.isFinite(video.duration) && video.duration > 0
+            ? (video.currentTime / video.duration) * 100
+            : 0;
         currentProgress.style.width = percent + '%';
         currentTimeDisplay.textContent = formatTime(video.currentTime);
 
