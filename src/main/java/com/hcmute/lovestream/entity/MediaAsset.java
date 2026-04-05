@@ -18,6 +18,7 @@ public class MediaAsset {
     @Convert(converter = com.hcmute.lovestream.entity.converter.AssetTypeConverter.class)
     private AssetType assetType;
 
+    @Column(length = 2048)
     private String assetUrl;
 
     // Có thể thuộc về 1 VideoContent (Movie/TVSeries chung)

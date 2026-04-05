@@ -198,7 +198,7 @@ public class ContentManagerSeriesWebController {
             RedirectAttributes redirectAttributes) {
         try {
             seriesService.addSeriesTrailerFromUrl(id, assetUrl);
-            redirectAttributes.addFlashAttribute("successMessage", "Gắn trailer Cloudinary thành công!");
+            redirectAttributes.addFlashAttribute("successMessage", "Lưu URL trailer thành công!");
         } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         } catch (Exception e) {

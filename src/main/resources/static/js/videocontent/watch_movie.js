@@ -95,6 +95,19 @@ const video = document.getElementById('video');
         return numeric;
     }
 
+    function isHlsSourceUrl(url) {
+        if (!url) {
+            return false;
+        }
+
+        try {
+            const parsed = new URL(url, window.location.origin);
+            return parsed.pathname.toLowerCase().endsWith('.m3u8');
+        } catch (_error) {
+            return String(url).toLowerCase().split('?')[0].endsWith('.m3u8');
+        }
+    }
+
     function setControlDisabled(control, disabled) {
         if (!control) {
             return;
@@ -1163,9 +1176,18 @@ const video = document.getElementById('video');
             }
 
             const res = await fetch(`/api/video/watch/${videoContentId}`);
-            const videoSrc = await res.text();
+            if (!res.ok) {
+                throw new Error(`Khong the tai URL video (${res.status})`);
+            }
 
-            if (Hls.isSupported()) {
+            const videoSrc = (await res.text()).trim();
+            if (!videoSrc) {
+                throw new Error('API khong tra ve URL video');
+            }
+
+            const isHlsSource = isHlsSourceUrl(videoSrc);
+
+            if (isHlsSource && Hls.isSupported()) {
                 hls = new Hls({
                     enableWorker: true,
                     lowLatencyMode: true,
@@ -1194,7 +1216,10 @@ const video = document.getElementById('video');
                 hls.loadSource(videoSrc);
                 hls.attachMedia(video);
 
-            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            } else if (isHlsSource && video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = videoSrc;
+                setQualityAvailability(false);
+            } else {
                 video.src = videoSrc;
                 setQualityAvailability(false);
             }

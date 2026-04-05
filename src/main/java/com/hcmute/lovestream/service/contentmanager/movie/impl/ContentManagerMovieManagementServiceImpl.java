@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -114,14 +115,14 @@ public class ContentManagerMovieManagementServiceImpl implements ContentManagerM
     @Override
     @Transactional
     public MediaAsset addMovieTrailerFromUrl(String movieId, String assetUrl) {
-        validateCloudinaryVideoUrl(assetUrl);
+        validatePublicVideoUrl(assetUrl);
         return upsertMovieAsset(movieId, AssetType.TRAILER, assetUrl);
     }
 
     @Override
     @Transactional
     public MediaAsset addMovieVideoFromUrl(String movieId, String assetUrl) {
-        validateCloudinaryVideoUrl(assetUrl);
+        validatePublicVideoUrl(assetUrl);
         return upsertMovieAsset(movieId, AssetType.FULL_VIDEO, assetUrl);
     }
 
@@ -223,7 +224,7 @@ public class ContentManagerMovieManagementServiceImpl implements ContentManagerM
                 .orElse(new MediaAsset());
 
         asset.setAssetType(assetType);
-        asset.setAssetUrl(assetUrl);
+        asset.setAssetUrl(assetUrl == null ? null : assetUrl.trim());
         asset.setVideoContent(movie);
 
         log.info("Saving {} to Movie ID: {}", assetType, movieId);
@@ -241,15 +242,25 @@ public class ContentManagerMovieManagementServiceImpl implements ContentManagerM
         }
     }
 
-    private void validateCloudinaryVideoUrl(String url) {
+    private void validatePublicVideoUrl(String url) {
         if (url == null || url.isBlank()) {
             throw new IllegalArgumentException("URL không hợp lệ. Đường dẫn không được để trống!");
         }
-        if (!url.contains("res.cloudinary.com")) {
-            throw new IllegalArgumentException("URL không hợp lệ. Chỉ chấp nhận link public từ nền tảng Cloudinary.");
+
+        URI uri;
+        try {
+            uri = URI.create(url.trim());
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("URL không hợp lệ. Đường dẫn phải đúng định dạng http/https.", ex);
         }
-        if (!url.contains("/video/upload/")) {
-            throw new IllegalArgumentException("URL không hợp lệ. Trailer và full video phải dùng Secure URL video từ Cloudinary.");
+
+        String scheme = uri.getScheme();
+        if (scheme == null || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https"))) {
+            throw new IllegalArgumentException("URL không hợp lệ. Chỉ chấp nhận link http/https công khai.");
+        }
+
+        if (uri.getHost() == null || uri.getHost().isBlank()) {
+            throw new IllegalArgumentException("URL không hợp lệ. Thiếu tên miền ở đường dẫn video.");
         }
     }
 }
