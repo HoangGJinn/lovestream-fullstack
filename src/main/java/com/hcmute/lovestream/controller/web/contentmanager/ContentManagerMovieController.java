@@ -241,7 +241,7 @@ public class ContentManagerMovieController {
             RedirectAttributes redirectAttributes) {
         try {
             movieManagementService.addMovieTrailerFromUrl(id, assetUrl);
-            redirectAttributes.addFlashAttribute("successMessage", "Gắn trailer Cloudinary thành công!");
+            redirectAttributes.addFlashAttribute("successMessage", "Lưu URL trailer thành công!");
         } catch (IllegalArgumentException e) {
             log.warn("Gắn trailer thất bại do dữ liệu không hợp lệ cho movie {}", id, e);
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
@@ -259,7 +259,7 @@ public class ContentManagerMovieController {
             RedirectAttributes redirectAttributes) {
         try {
             movieManagementService.addMovieVideoFromUrl(id, assetUrl);
-            redirectAttributes.addFlashAttribute("successMessage", "Gắn video phim Cloudinary thành công!");
+            redirectAttributes.addFlashAttribute("successMessage", "Lưu URL video phim thành công!");
         } catch (IllegalArgumentException e) {
             log.warn("Gắn full video thất bại do dữ liệu không hợp lệ cho movie {}", id, e);
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
