@@ -8,7 +8,9 @@
     var STYLE_ID = "ls-movie-transition-style";
     var LEAVE_CLASS = "ls-movie-transition-leave";
     var WAITING_CLASS = "ls-movie-transition-waiting";
+    var LIGHT_SURFACE_CLASS = "ls-page-transition-light";
     var CLICKED_CLASS = "ls-movie-card-clicked";
+    var LINK_CLICKED_CLASS = "ls-page-transition-link-clicked";
     var BLOCKER_CLASS = "ls-movie-transition-blocker";
     var PROGRESS_CLASS = "ls-movie-transition-progress";
     var MAX_DATA_AGE_MS = 15000;
@@ -53,10 +55,22 @@
             "body." + WAITING_CLASS + " > *:not(." + BLOCKER_CLASS + ") {",
             "  filter: saturate(0.92) blur(0.4px);",
             "}",
+            "html." + LIGHT_SURFACE_CLASS + " ." + BLOCKER_CLASS + " ." + PROGRESS_CLASS + " {",
+            "  background: linear-gradient(90deg, #111111, rgba(17, 17, 17, 0.65));",
+            "  box-shadow: 0 0 14px rgba(0, 0, 0, 0.22);",
+            "}",
+            "html." + LIGHT_SURFACE_CLASS + " body." + WAITING_CLASS + " > *:not(." + BLOCKER_CLASS + ") {",
+            "  filter: saturate(0.92) blur(0.25px);",
+            "}",
             "a.movie-card." + CLICKED_CLASS + " {",
             "  transition: opacity 150ms ease, transform 190ms cubic-bezier(0.2, 0.8, 0.2, 1);",
             "  opacity: 0.74;",
             "  transform: scale(0.97);",
+            "}",
+            "a." + LINK_CLICKED_CLASS + " {",
+            "  transition: opacity 150ms ease, transform 190ms cubic-bezier(0.2, 0.8, 0.2, 1);",
+            "  opacity: 0.76;",
+            "  transform: translateY(-1px);",
             "}",
             "." + BLOCKER_CLASS + " {",
             "  position: fixed;",
@@ -91,7 +105,8 @@
             "}",
             "@media (prefers-reduced-motion: reduce) {",
             "  body." + LEAVE_CLASS + " > *:not(." + BLOCKER_CLASS + "),",
-            "  a.movie-card." + CLICKED_CLASS + " {",
+            "  a.movie-card." + CLICKED_CLASS + ",",
+            "  a." + LINK_CLICKED_CLASS + " {",
             "    transition: none !important;",
             "    transform: none !important;",
             "  }",
@@ -106,6 +121,15 @@
 
     function isPrimaryClick(event) {
         return event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
+    }
+
+    function isLightSurfacePage() {
+        var path = window.location.pathname || "";
+        return path.startsWith("/account") || path.startsWith("/profile") || path.startsWith("/notifications");
+    }
+
+    function applySurfaceTheme() {
+        document.documentElement.classList.toggle(LIGHT_SURFACE_CLASS, isLightSurfacePage());
     }
 
     function isInternalNavigation(anchor) {
@@ -125,20 +149,53 @@
         }
     }
 
-    function parseMovieTarget(anchor) {
+    function parseInternalTarget(anchor) {
+        if (!isInternalNavigation(anchor)) {
+            return null;
+        }
+
         try {
             var url = new URL(anchor.href, window.location.href);
-            if (!url.pathname.startsWith("/movies/")) {
+            var currentPath = window.location.pathname + window.location.search;
+            var targetPath = url.pathname + url.search;
+
+            if (targetPath === currentPath) {
                 return null;
             }
 
             return {
                 href: url.href,
-                pathWithQuery: url.pathname + url.search
+                pathWithQuery: targetPath,
+                path: url.pathname
             };
         } catch (error) {
             return null;
         }
+    }
+
+    function parseMovieTarget(anchor) {
+        var target = parseInternalTarget(anchor);
+        if (!target || !target.path.startsWith("/movies/")) {
+            return null;
+        }
+
+        return target;
+    }
+
+    function isTransitionableLink(anchor) {
+        if (!anchor || anchor.tagName !== "A") {
+            return false;
+        }
+
+        if (anchor.hasAttribute("download") || anchor.target === "_blank") {
+            return false;
+        }
+
+        if (anchor.getAttribute("href") === "#") {
+            return false;
+        }
+
+        return parseInternalTarget(anchor) !== null;
     }
 
     function createInteractionBlocker() {
@@ -187,6 +244,11 @@
     function resetNavigationState() {
         isNavigating = false;
         unlockUserInteraction();
+
+        document.querySelectorAll("a." + CLICKED_CLASS + ", a." + LINK_CLICKED_CLASS).forEach(function (el) {
+            el.classList.remove(CLICKED_CLASS);
+            el.classList.remove(LINK_CLICKED_CLASS);
+        });
     }
 
     function persistTransitionData(target) {
@@ -237,15 +299,19 @@
             return true;
         }
 
-        var target = parseMovieTarget(anchor);
+        var target = parseInternalTarget(anchor);
         if (!target) {
             return false;
         }
 
         isNavigating = true;
         lockUserInteraction();
-        persistTransitionData(target);
-        anchor.classList.add(CLICKED_CLASS);
+        if (target.path.startsWith("/movies/")) {
+            persistTransitionData(target);
+            anchor.classList.add(CLICKED_CLASS);
+        } else {
+            anchor.classList.add(LINK_CLICKED_CLASS);
+        }
 
         window.requestAnimationFrame(function () {
             window.requestAnimationFrame(function () {
@@ -279,16 +345,8 @@
                 return;
             }
 
-            var anchor = event.target.closest("a.movie-card");
-            if (!anchor) {
-                return;
-            }
-
-            if (!isInternalNavigation(anchor)) {
-                return;
-            }
-
-            if (!parseMovieTarget(anchor)) {
+            var anchor = event.target.closest("a[href]");
+            if (!isTransitionableLink(anchor)) {
                 return;
             }
 
@@ -329,6 +387,7 @@
     }
 
     ensureTransitionStyle();
+    applySurfaceTheme();
     bindPosterClickTransition();
 
     if (document.documentElement.classList.contains("ls-movie-detail-loading")) {

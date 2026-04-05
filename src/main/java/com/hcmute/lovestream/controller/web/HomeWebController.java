@@ -20,6 +20,8 @@ import java.util.concurrent.ThreadLocalRandom;
 @RequiredArgsConstructor
 public class HomeWebController {
 
+        private static final int HOME_CATEGORY_LIMIT = 24;
+
     private final VideoContentRepository videoContentRepository;
     private final UserProfileService userProfileService;
     private final WebContentBannerService bannerService;
@@ -46,31 +48,45 @@ public class HomeWebController {
         model.addAttribute("displayedBanners", displayedBanners);
         model.addAttribute("hasDisplayedBanners", !displayedBanners.isEmpty());
 
-        List<VideoContent> activeContents = videoContentRepository.findAll().stream()
-                .filter(v -> v.getStatus() == ContentStatus.ACTIVE)
+        List<VideoContent> actionMovies = videoContentRepository
+                .findDistinctByStatusAndGenres_Name(ContentStatus.ACTIVE, "Action")
+                .stream()
+                .limit(HOME_CATEGORY_LIMIT)
+                .toList();
+        model.addAttribute("actionMovies", actionMovies);
+
+        List<VideoContent> dramaMovies = videoContentRepository
+                .findDistinctByStatusAndGenres_Name(ContentStatus.ACTIVE, "Drama")
+                .stream()
+                .limit(HOME_CATEGORY_LIMIT)
+                .toList();
+        model.addAttribute("dramaMovies", dramaMovies);
+
+        List<VideoContent> comedyMovies = videoContentRepository
+                .findDistinctByStatusAndGenres_Name(ContentStatus.ACTIVE, "Comedy")
+                .stream()
+                .limit(HOME_CATEGORY_LIMIT)
+                .toList();
+        model.addAttribute("comedyMovies", comedyMovies);
+
+        List<VideoContent> sciFiMovies = videoContentRepository
+                .findDistinctByStatusAndGenres_Name(ContentStatus.ACTIVE, "Science-Fiction")
+                .stream()
+                .limit(HOME_CATEGORY_LIMIT)
+                .toList();
+        model.addAttribute("sciFiMovies", sciFiMovies);
+
+        List<VideoContent> featuredPool = java.util.stream.Stream
+                .of(actionMovies, dramaMovies, comedyMovies, sciFiMovies)
+                .flatMap(List::stream)
+                .distinct()
                 .toList();
 
         VideoContent featuredMovie = resolveConfiguredFeaturedMovie()
-                .orElseGet(() -> activeContents.isEmpty()
+                .orElseGet(() -> featuredPool.isEmpty()
                         ? null
-                        : activeContents.get(ThreadLocalRandom.current().nextInt(activeContents.size())));
+                        : featuredPool.get(ThreadLocalRandom.current().nextInt(featuredPool.size())));
         model.addAttribute("featuredMovie", featuredMovie);
-
-        List<VideoContent> actionMovies = videoContentRepository.findByGenres_Name("Action").stream()
-                .filter(v -> v.getStatus() == ContentStatus.ACTIVE).toList();
-        model.addAttribute("actionMovies", actionMovies);
-
-        List<VideoContent> dramaMovies = videoContentRepository.findByGenres_Name("Drama").stream()
-                .filter(v -> v.getStatus() == ContentStatus.ACTIVE).toList();
-        model.addAttribute("dramaMovies", dramaMovies);
-
-        List<VideoContent> comedyMovies = videoContentRepository.findByGenres_Name("Comedy").stream()
-                .filter(v -> v.getStatus() == ContentStatus.ACTIVE).toList();
-        model.addAttribute("comedyMovies", comedyMovies);
-
-        List<VideoContent> sciFiMovies = videoContentRepository.findByGenres_Name("Science-Fiction").stream()
-                .filter(v -> v.getStatus() == ContentStatus.ACTIVE).toList();
-        model.addAttribute("sciFiMovies", sciFiMovies);
 
         return "home";
     }
