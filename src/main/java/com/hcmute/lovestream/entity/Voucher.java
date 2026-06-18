@@ -14,7 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Voucher {
+public class Voucher implements Cloneable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -53,4 +53,18 @@ public class Voucher {
      @ToString.Exclude
      @EqualsAndHashCode.Exclude
      private List<Payment> payments = new ArrayList<>();
+
+     @Override
+     public Voucher clone() {
+         try {
+             Voucher clone = (Voucher) super.clone();
+             clone.setId(null);
+             clone.setCode(null);
+             clone.setUsedQuantity(0);
+             clone.setPayments(new ArrayList<>());
+             return clone;
+         } catch (CloneNotSupportedException e) {
+             throw new AssertionError();
+         }
+     }
 }

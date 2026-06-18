@@ -10,4 +10,5 @@ public interface VoucherService {
     List<Map<String, Object>> getAllVouchers(String search);
 
     void toggleVoucherStatus(String code);
+    void duplicateVoucher(String sourceCode, String newCode);
 }

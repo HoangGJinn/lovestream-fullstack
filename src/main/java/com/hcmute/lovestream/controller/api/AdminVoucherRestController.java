@@ -55,4 +55,15 @@ public class AdminVoucherRestController {
         String errorMessage = ex.getBindingResult().getAllErrors().get(0).getDefaultMessage();
         return ResponseEntity.badRequest().body(Map.of("error", errorMessage));
     }
+
+    // 4. API Nhân bản Voucher (Ứng dụng Prototype Pattern)
+    @PostMapping("/{code}/duplicate")
+    public ResponseEntity<?> duplicateVoucher(@PathVariable String code, @RequestParam String newCode) {
+        try {
+            voucherService.duplicateVoucher(code, newCode);
+            return ResponseEntity.ok(Map.of("message", "Đã nhân bản thành công Voucher mới: " + newCode.toUpperCase()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }
