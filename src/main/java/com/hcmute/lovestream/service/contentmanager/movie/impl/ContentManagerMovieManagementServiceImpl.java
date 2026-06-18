@@ -17,6 +17,7 @@ import com.hcmute.lovestream.repository.PersonRepository;
 import com.hcmute.lovestream.service.contentmanager.movie.ContentManagerMovieManagementService;
 import com.hcmute.lovestream.service.storage.CloudinaryFolderTarget;
 import com.hcmute.lovestream.service.storage.MediaStorageService;
+import com.hcmute.lovestream.factory.MovieFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -41,6 +42,7 @@ public class ContentManagerMovieManagementServiceImpl implements ContentManagerM
     private final PersonRepository personRepository;
     private final ContentCreditRepository contentCreditRepository;
     private final MediaStorageService mediaStorageService;
+    private final MovieFactory movieFactory;
 
     // -- 1. Queries (Giữ code gộp hàm của BẠN) --
     @Override
@@ -69,9 +71,10 @@ public class ContentManagerMovieManagementServiceImpl implements ContentManagerM
     @Override
     @Transactional
     public Movie createMovie(MovieUpsertRequest request) {
-        Movie movie = new Movie();
-        mapRequestToMovie(request, movie);
-        movie.setId(null);
+        // Sử dụng MovieFactory để khởi tạo thay vì map thủ công
+        // Lưu ý: posterUrl và trailerUrl có thể truyền null nếu hệ thống 
+        // hiện tại đang upload riêng biệt qua API khác.
+        Movie movie = movieFactory.createContent(request, null, null);
         log.info("Creating new Movie: {}", request.getTitle());
         Movie saved = movieRepository.save(movie);
         syncCredits(saved, request.getDirectorNames(), request.getCastNames());
