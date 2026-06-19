@@ -36,6 +36,7 @@ function doCopyLink() {
             toast.className = "copy-toast show";
             setTimeout(() => { toast.className = "copy-toast"; }, 3000);
         }
+        logShareActivity('COPY_LINK');
         const popUp = document.getElementById("sharePopUp");
         if (popUp) popUp.style.display = "none";
     });
@@ -66,8 +67,36 @@ function doShare(platform) {
     }
 
     if (shareUrl) {
+        // Ghi nhận lịch sử xuống Backend trước khi mở popup
+        logShareActivity(platform);
+        
         window.open(shareUrl, '_blank', 'width=600,height=450');
         const popUp = document.getElementById("sharePopUp");
         if (popUp) popUp.style.display = "none";
+    }
+}
+
+// Hàm gửi request xuống backend ghi nhận lịch sử share
+function logShareActivity(platform) {
+    // Chỉ ghi nhận nếu có videoId (ở trang xem phim)
+    if (window.watchMovieConfig && window.watchMovieConfig.videoId) {
+        const payload = {
+            videoId: window.watchMovieConfig.videoId,
+            platform: platform.toUpperCase()
+        };
+        fetch('/api/v1/share', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            console.log("Log share activity:", data.message);
+        })
+        .catch(err => {
+            console.error("Error logging share activity:", err);
+        });
     }
 }
