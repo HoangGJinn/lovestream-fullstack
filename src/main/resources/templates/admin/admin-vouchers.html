@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -50,7 +51,8 @@
             transition: all 0.3s;
         }
 
-        .admin-menu a:hover, .admin-menu a.active {
+        .admin-menu a:hover,
+        .admin-menu a.active {
             color: var(--text-white);
             background-color: var(--netflix-dark-grey);
             border-left: 4px solid var(--netflix-red);
@@ -71,201 +73,383 @@
         }
 
         /* Toolbar */
-        .toolbar { display: flex; justify-content: space-between; margin-bottom: 20px; }
-        .search-bar { padding: 10px 15px; width: 300px; border-radius: 4px; border: 1px solid var(--netflix-dark-grey); background-color: #000; color: white; }
-        .btn-primary { background-color: var(--netflix-red); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .btn-primary:hover { background-color: #f40612; }
-
-        /* Table */
-        .table-container { background-color: var(--netflix-dark-grey); padding: 20px; border-radius: 8px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #404040; }
-        th { color: var(--netflix-light-grey); font-weight: normal; }
-
-        .status-active { color: var(--success-green); background-color: rgba(70, 211, 105, 0.1); padding: 5px 10px; border-radius: 4px; font-size: 13px; }
-        .status-blocked { color: #ff4d4d; background-color: rgba(255, 77, 77, 0.1); padding: 5px 10px; border-radius: 4px; font-size: 13px; }
-
-        .btn-action { background: none; border: 1px solid var(--netflix-light-grey); color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; }
-        .btn-action.block { border-color: #ff4d4d; color: #ff4d4d; }
-        .btn-action.block:hover { background-color: rgba(255, 77, 77, 0.1); }
-
-        /* Modal */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background-color: var(--netflix-dark-grey); padding: 30px; border-radius: 8px; width: 400px; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; color: var(--netflix-light-grey); }
-        .form-group input { width: 100%; padding: 10px; box-sizing: border-box; background: #000; border: 1px solid #404040; color: white; border-radius: 4px; }
-        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
-        .btn-secondary { background: transparent; color: white; border: 1px solid #b3b3b3; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
-    </style>
-</head>
-<body>
-
-<div class="admin-sidebar">
-    <div class="admin-logo">LOVESTREAM ADMIN</div>
-    <div class="admin-menu">
-        <a href="/admin/dashboard">Thống kê</a>
-        <a href="/admin/users">Quản lý Người dùng</a>
-        <a href="/admin/plans">Quản lý Gói dịch vụ</a>
-        <a href="/admin/vouchers" class="active">Quản lý Voucher</a>
-        <a href="/admin/plans">Quản lý Giao dịch</a>
-        <a href="#" onclick="handleAdminLogout(event)" style="margin-top: 50px; color: var(--netflix-red);">Đăng xuất</a>
-    </div>
-</div>
-
-<div class="admin-content">
-    <div class="admin-header">
-        <h2>Quản lý Voucher</h2>
-        <div>Xin chào, <b>Admin</b></div>
-    </div>
-
-    <div class="toolbar">
-        <input type="text" class="search-bar" placeholder="Tìm kiếm mã Voucher (Nhấn Enter)..." id="searchInput" onkeypress="handleSearch(event)">
-        <button class="btn-primary" onclick="openModal()">+ Tạo Voucher Mới</button>
-    </div>
-
-    <div class="table-container">
-        <table>
-            <thead>
-            <tr>
-                <th>Mã Voucher</th>
-                <th>Giảm giá</th>
-                <th>Đã dùng / Tổng</th>
-                <th>Ngày hết hạn</th>
-                <th>Trạng thái</th>
-                <th>Hành động</th>
-            </tr>
-            </thead>
-            <tbody id="voucherTableBody">
-            <tr><td colspan="6" style="text-align:center;">Đang tải dữ liệu...</td></tr>
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<div class="modal-overlay" id="createVoucherModal">
-    <div class="modal-content">
-        <h3 style="margin-top: 0;">Tạo Voucher Mới</h3>
-        <div class="form-group"><label>Mã Voucher (Code)</label><input type="text" id="vCode"></div>
-        <div class="form-group"><label>Phần trăm giảm (%)</label><input type="number" id="vDiscount"></div>
-        <div class="form-group"><label>Số lượng</label><input type="number" id="vQuantity"></div>
-        <div class="form-group"><label>Ngày hết hạn</label><input type="date" id="vExpiry"></div>
-        <div class="modal-actions">
-            <button class="btn-secondary" onclick="closeModal()">Hủy</button>
-            <button class="btn-primary" onclick="submitCreateVoucher()">Lưu Voucher</button>
-        </div>
-    </div>
-</div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', () => loadVouchers());
-
-    function loadVouchers(searchKeyword = '') {
-        let url = '/api/v1/admin/vouchers';
-        if(searchKeyword) url += `?search=${searchKeyword}`;
-
-        fetch(url)
-            .then(res => res.json())
-            .then(data => renderTable(data))
-            .catch(err => console.error("Lỗi tải dữ liệu", err));
-    }
-
-    function renderTable(vouchers) {
-        const tbody = document.getElementById('voucherTableBody');
-        tbody.innerHTML = '';
-
-        if(vouchers.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Không tìm thấy voucher nào.</td></tr>';
-            return;
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
         }
 
-        vouchers.forEach(v => {
-            const isActive = v.status === 'ACTIVE';
-            const statusSpan = isActive
-                ? `<span class="status-active">Đang hoạt động</span>`
-                : `<span class="status-blocked">Đã khóa</span>`;
+        .search-bar {
+            padding: 10px 15px;
+            width: 300px;
+            border-radius: 4px;
+            border: 1px solid var(--netflix-dark-grey);
+            background-color: #000;
+            color: white;
+        }
 
-            const actionBtn = isActive
-                ? `<button class="btn-action block" onclick="toggleStatus('${v.code}')">Khóa</button>`
-                : `<button class="btn-action" onclick="toggleStatus('${v.code}')">Mở khóa</button>`;
+        .btn-primary {
+            background-color: var(--netflix-red);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
 
-            tbody.innerHTML += `
+        .btn-primary:hover {
+            background-color: #f40612;
+        }
+
+        /* Table */
+        .table-container {
+            background-color: var(--netflix-dark-grey);
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #404040;
+        }
+
+        th {
+            color: var(--netflix-light-grey);
+            font-weight: normal;
+        }
+
+        .status-active {
+            color: var(--success-green);
+            background-color: rgba(70, 211, 105, 0.1);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .status-blocked {
+            color: #ff4d4d;
+            background-color: rgba(255, 77, 77, 0.1);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .btn-action {
+            background: none;
+            border: 1px solid var(--netflix-light-grey);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            margin-right: 5px;
+        }
+
+        .btn-action.block {
+            border-color: #ff4d4d;
+            color: #ff4d4d;
+        }
+
+        .btn-action.block:hover {
+            background-color: rgba(255, 77, 77, 0.1);
+        }
+
+        .btn-action.clone {
+            border-color: #3399ff;
+            color: #3399ff;
+        }
+
+        .btn-action.clone:hover {
+            background-color: rgba(51, 153, 255, 0.1);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: var(--netflix-dark-grey);
+            padding: 30px;
+            border-radius: 8px;
+            width: 400px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--netflix-light-grey);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            background: #000;
+            border: 1px solid #404040;
+            color: white;
+            border-radius: 4px;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 1px solid #b3b3b3;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="admin-sidebar">
+        <div class="admin-logo">LOVESTREAM ADMIN</div>
+        <div class="admin-menu">
+            <a href="/admin/dashboard">Thống kê</a>
+            <a href="/admin/users">Quản lý Người dùng</a>
+            <a href="/admin/plans">Quản lý Gói dịch vụ</a>
+            <a href="/admin/vouchers" class="active">Quản lý Voucher</a>
+            <a href="/admin/plans">Quản lý Giao dịch</a>
+            <a href="#" onclick="handleAdminLogout(event)" style="margin-top: 50px; color: var(--netflix-red);">Đăng
+                xuất</a>
+        </div>
+    </div>
+
+    <div class="admin-content">
+        <div class="admin-header">
+            <h2>Quản lý Voucher</h2>
+            <div>Xin chào, <b>Admin</b></div>
+        </div>
+
+        <div class="toolbar">
+            <input type="text" class="search-bar" placeholder="Tìm kiếm mã Voucher (Nhấn Enter)..." id="searchInput"
+                onkeypress="handleSearch(event)">
+            <button class="btn-primary" onclick="openModal()">+ Tạo Voucher Mới</button>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mã Voucher</th>
+                        <th>Giảm giá</th>
+                        <th>Đã dùng / Tổng</th>
+                        <th>Ngày hết hạn</th>
+                        <th>Trạng thái</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody id="voucherTableBody">
+                    <tr>
+                        <td colspan="6" style="text-align:center;">Đang tải dữ liệu...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="createVoucherModal">
+        <div class="modal-content">
+            <h3 style="margin-top: 0;">Tạo Voucher Mới</h3>
+            <div class="form-group"><label>Mã Voucher (Code)</label><input type="text" id="vCode"></div>
+            <div class="form-group"><label>Phần trăm giảm (%)</label><input type="number" id="vDiscount"></div>
+            <div class="form-group"><label>Số lượng</label><input type="number" id="vQuantity"></div>
+            <div class="form-group"><label>Ngày hết hạn</label><input type="date" id="vExpiry"></div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeModal()">Hủy</button>
+                <button class="btn-primary" onclick="submitCreateVoucher()">Lưu Voucher</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="duplicateVoucherModal">
+        <div class="modal-content">
+            <h3 style="margin-top: 0;">Nhân bản Voucher</h3>
+            <p style="color: var(--netflix-light-grey); font-size: 14px; margin-bottom: 15px;">Đang nhân bản từ mã: <strong id="dupSourceCode" style="color: white;"></strong></p>
+            <div class="form-group"><label>Mã Voucher Mới (Code)</label><input type="text" id="dupNewCode"></div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeDuplicateModal()">Hủy</button>
+                <button class="btn-primary" onclick="submitDuplicateVoucher()">Nhân bản</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => loadVouchers());
+
+        function loadVouchers(searchKeyword = '') {
+            let url = '/api/v1/admin/vouchers';
+            if (searchKeyword) url += `?search=${searchKeyword}`;
+
+            fetch(url)
+                .then(res => res.json())
+                .then(data => renderTable(data))
+                .catch(err => console.error("Lỗi tải dữ liệu", err));
+        }
+
+        function renderTable(vouchers) {
+            const tbody = document.getElementById('voucherTableBody');
+            tbody.innerHTML = '';
+
+            if (vouchers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Không tìm thấy voucher nào.</td></tr>';
+                return;
+            }
+
+            vouchers.forEach(v => {
+                const isActive = v.status === 'ACTIVE';
+                const statusSpan = isActive
+                    ? `<span class="status-active">Đang hoạt động</span>`
+                    : `<span class="status-blocked">Đã khóa</span>`;
+
+                const actionBtn = isActive
+                    ? `<button class="btn-action block" onclick="toggleStatus('${v.code}')">Khóa</button>`
+                    : `<button class="btn-action" onclick="toggleStatus('${v.code}')">Mở khóa</button>`;
+
+                const duplicateBtn = `<button class="btn-action clone" onclick="openDuplicateModal('${v.code}')">Nhân bản</button>`;
+
+                tbody.innerHTML += `
                 <tr>
                     <td><strong>${v.code}</strong></td>
                     <td>${v.discount}%</td>
                     <td>${v.used} / ${v.total}</td>
                     <td>${v.expiry}</td>
                     <td>${statusSpan}</td>
-                    <td>${actionBtn}</td>
+                    <td>${duplicateBtn} ${actionBtn}</td>
                 </tr>
             `;
-        });
-    }
-
-    function handleSearch(event) {
-        if (event.key === 'Enter') {
-            const keyword = document.getElementById('searchInput').value;
-            loadVouchers(keyword);
-        }
-    }
-
-    function toggleStatus(code) {
-        if(confirm(`Xác nhận thay đổi trạng thái mã ${code}?`)) {
-            fetch(`/api/v1/admin/vouchers/${code}/toggle-status`, { method: 'PUT' })
-            .then(res => res.json())
-            .then(data => {
-                alert(data.message);
-                loadVouchers();
             });
         }
-    }
 
-    function openModal() { document.getElementById('createVoucherModal').style.display = 'flex'; }
-    function closeModal() { document.getElementById('createVoucherModal').style.display = 'none'; }
-
-    // ĐÃ SỬA CHỖ NÀY: Khớp tên biến với DTO và xử lý lỗi JSON an toàn
-    function submitCreateVoucher() {
-        const payload = {
-            code: document.getElementById('vCode').value,
-            discountPercent: document.getElementById('vDiscount').value,
-            totalQuantity: document.getElementById('vQuantity').value,
-            expiryDate: document.getElementById('vExpiry').value
-        };
-
-        fetch('/api/v1/admin/vouchers', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.error) {
-                alert(" Lỗi: " + data.error);
-            } else {
-                alert(" " + data.message);
-                closeModal();
-                loadVouchers();
-
-                // Clear form
-                document.getElementById('vCode').value = '';
-                document.getElementById('vDiscount').value = '';
-                document.getElementById('vQuantity').value = '';
-                document.getElementById('vExpiry').value = '';
+        function handleSearch(event) {
+            if (event.key === 'Enter') {
+                const keyword = document.getElementById('searchInput').value;
+                loadVouchers(keyword);
             }
-        })
-        .catch(err => {
-            console.error('Lỗi mạng:', err);
-            alert(" Đã xảy ra lỗi, vui lòng thử lại sau!");
-        });
-    }
+        }
 
-    function handleAdminLogout(event) {
-        event.preventDefault();
-        fetch('/api/v1/auth/logout', { method: 'POST' })
-        .then(response => response.json())
-        .then(data => window.location.href = data.redirectUrl ? data.redirectUrl : '/login')
-        .catch(() => window.location.href = '/login');
-    }
-</script>
+        function toggleStatus(code) {
+            if (confirm(`Xác nhận thay đổi trạng thái mã ${code}?`)) {
+                fetch(`/api/v1/admin/vouchers/${code}/toggle-status`, { method: 'PUT' })
+                    .then(res => res.json())
+                    .then(data => {
+                        alert(data.message);
+                        loadVouchers();
+                    });
+            }
+        }
+
+        function openModal() { document.getElementById('createVoucherModal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('createVoucherModal').style.display = 'none'; }
+
+        let currentDuplicateSource = '';
+        function openDuplicateModal(code) { 
+            currentDuplicateSource = code;
+            document.getElementById('dupSourceCode').innerText = code;
+            document.getElementById('dupNewCode').value = '';
+            document.getElementById('duplicateVoucherModal').style.display = 'flex'; 
+        }
+        function closeDuplicateModal() { document.getElementById('duplicateVoucherModal').style.display = 'none'; }
+
+        function submitDuplicateVoucher() {
+            const newCode = document.getElementById('dupNewCode').value.trim();
+            if (!newCode) {
+                alert("Vui lòng nhập mã voucher mới!");
+                return;
+            }
+
+            fetch(`/api/v1/admin/vouchers/${currentDuplicateSource}/duplicate?newCode=${newCode}`, {
+                method: 'POST'
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    alert(" Lỗi: " + data.error);
+                } else {
+                    alert(" " + data.message);
+                    closeDuplicateModal();
+                    loadVouchers();
+                }
+            })
+            .catch(err => {
+                console.error('Lỗi mạng:', err);
+                alert(" Đã xảy ra lỗi, vui lòng thử lại sau!");
+            });
+        }
+
+        function submitCreateVoucher() {
+            const payload = {
+                code: document.getElementById('vCode').value,
+                discountPercent: document.getElementById('vDiscount').value,
+                totalQuantity: document.getElementById('vQuantity').value,
+                expiryDate: document.getElementById('vExpiry').value
+            };
+
+            fetch('/api/v1/admin/vouchers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(" Lỗi: " + data.error);
+                    } else {
+                        alert(" " + data.message);
+                        closeModal();
+                        loadVouchers();
+
+                        // Clear form
+                        document.getElementById('vCode').value = '';
+                        document.getElementById('vDiscount').value = '';
+                        document.getElementById('vQuantity').value = '';
+                        document.getElementById('vExpiry').value = '';
+                    }
+                })
+                .catch(err => {
+                    console.error('Lỗi mạng:', err);
+                    alert(" Đã xảy ra lỗi, vui lòng thử lại sau!");
+                });
+        }
+
+        function handleAdminLogout(event) {
+            event.preventDefault();
+            fetch('/api/v1/auth/logout', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => window.location.href = data.redirectUrl ? data.redirectUrl : '/login')
+                .catch(() => window.location.href = '/login');
+        }
+    </script>
 </body>
+
 </html>

@@ -79,4 +79,23 @@ public class VoucherServiceImpl implements VoucherService {
         // Nhờ có @Transactional, Hibernate sẽ tự động update xuống DB khi hàm này chạy xong
         // Không cần gọi voucherRepository.save(voucher)
     }
+
+    @Override
+    @Transactional
+    public void duplicateVoucher(String sourceCode, String newCode) {
+        String standardizedNewCode = newCode.trim().toUpperCase();
+
+        if (voucherRepository.existsByCode(standardizedNewCode)) {
+            throw new RuntimeException("Mã Voucher mới '" + standardizedNewCode + "' đã tồn tại trong hệ thống!");
+        }
+
+        Voucher sourceVoucher = voucherRepository.findByCode(sourceCode)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy Voucher gốc với mã: " + sourceCode));
+
+        // Ứng dụng Prototype Pattern (Rất ngắn gọn!)
+        Voucher clonedVoucher = sourceVoucher.clone();
+        clonedVoucher.setCode(standardizedNewCode);
+
+        voucherRepository.save(clonedVoucher);
+    }
 }
