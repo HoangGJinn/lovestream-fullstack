@@ -1,6 +1,8 @@
 package com.hcmute.lovestream.controller.api;
 
 import com.hcmute.lovestream.dto.request.*;
+import com.hcmute.lovestream.ratelimit.RateLimitExceededException;
+import com.hcmute.lovestream.ratelimit.proxy.RateLimitedAuthServiceProxy;
 import com.hcmute.lovestream.repository.UserRepository;
 import com.hcmute.lovestream.service.authentication.AuthService;
 import jakarta.servlet.http.Cookie;
@@ -18,15 +20,33 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AuthRestController {
 
-    private final AuthService authService;
+    private final AuthService authService;           // Được Spring inject RateLimitedAuthServiceProxy (@Primary)
+    private final RateLimitedAuthServiceProxy authProxy; // Dùng trực tiếp cho các method có overload IP
     private final UserRepository userRepository; // Đã dọn lại import cho gọn
 
-    // UC1: Đăng ký
+    /**
+     * Trích xuất IP thực của client.
+     * Hỗ trợ reverse proxy (Nginx, load balancer) qua header X-Forwarded-For.
+     */
+    private String extractClientIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            // X-Forwarded-For có thể chứa nhiều IP: "client, proxy1, proxy2"
+            // Lấy IP đầu tiên = IP thực của client
+            return forwarded.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
+    }
+
+    // UC1: Đăng ký — Rate limited: 5 lần / 1 giờ / IP
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody Register request) {
+    public ResponseEntity<?> register(@Valid @RequestBody Register request,
+                                      HttpServletRequest httpRequest) {
         try {
-            authService.register(request);
+            authProxy.register(request, extractClientIp(httpRequest));
             return ResponseEntity.ok(Map.of("message", "Đăng ký thành công. Vui lòng kiểm tra email để xác nhận."));
+        } catch (RateLimitExceededException e) {
+            throw e; // Để GlobalExceptionHandler xử lý → HTTP 429
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -43,13 +63,13 @@ public class AuthRestController {
         }
     }
 
-    // UC3: Đăng nhập
+    // UC3: Đăng nhập — Rate limited: 10 lần / 15 phút / IP
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody Login request,
                                    HttpServletRequest httpRequest,
                                    HttpServletResponse response) {
         try {
-            Map<String, String> tokens = authService.login(request, httpRequest.getHeader("User-Agent"));
+            Map<String, String> tokens = authProxy.login(request, httpRequest.getHeader("User-Agent"), extractClientIp(httpRequest));
 
             // 1. Nhét Access Token vào Cookie
             Cookie accessCookie = new Cookie("JWT_TOKEN", tokens.get("accessToken"));
@@ -102,8 +122,11 @@ public class AuthRestController {
             return ResponseEntity.ok(Map.of(
                     "message", "Đăng nhập thành công",
                     "redirectUrl", redirectUrl));
+        } catch (RateLimitExceededException e) {
+            throw e; // Để GlobalExceptionHandler xử lý → HTTP 429
         } catch (Exception e) {
-            if ("Tài khoản chưa được xác minh email".equals(e.getMessage())) {
+            if ("Ôi không, tài khoản chưa được xác minh email".equals(e.getMessage())
+                    || "Tài khoản chưa được xác minh email".equals(e.getMessage())) {
                 return ResponseEntity.status(403).body(Map.of(
                         "error", e.getMessage(),
                         "isUnverified", true));
@@ -112,23 +135,29 @@ public class AuthRestController {
         }
     }
 
-    // UC4: Quên mật khẩu (Gửi email)
+    // UC4: Quên mật khẩu — Rate limited: 3 lần / 10 phút / IP
     @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPassword request) {
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPassword request,
+                                            HttpServletRequest httpRequest) {
         try {
-            authService.forgotPassword(request.getEmail());
+            authProxy.forgotPassword(request.getEmail(), extractClientIp(httpRequest));
             return ResponseEntity.ok(Map.of("message", "Mã xác nhận đã được gửi đến email."));
+        } catch (RateLimitExceededException e) {
+            throw e;
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-    // UC4: Đặt lại mật khẩu (Sau khi nhập mã OTP)
+    // UC4: Xác minh OTP — Rate limited: 5 lần / 5 phút / IP (chống brute-force OTP)
     @PostMapping("/verify-forgot-password-otp")
-    public ResponseEntity<?> verifyForgotPasswordOtp(@Valid @RequestBody VerifyEmail request) {
+    public ResponseEntity<?> verifyForgotPasswordOtp(@Valid @RequestBody VerifyEmail request,
+                                                     HttpServletRequest httpRequest) {
         try {
-            authService.verifyForgotPasswordOtp(request.getToken());
+            authProxy.verifyForgotPasswordOtp(request.getToken(), extractClientIp(httpRequest));
             return ResponseEntity.ok(Map.of("message", "Xác minh OTP thành công."));
+        } catch (RateLimitExceededException e) {
+            throw e;
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -185,11 +214,15 @@ public class AuthRestController {
         return ResponseEntity.ok(Map.of("message", "Đăng xuất thành công", "redirectUrl", "/login"));
     }
 
+    // UC2: Gửi lại OTP — Rate limited: 3 lần / 10 phút / IP (chống spam email)
     @PostMapping("/resend-otp")
-    public ResponseEntity<?> resendOtp(@RequestBody Map<String, String> payload) {
+    public ResponseEntity<?> resendOtp(@RequestBody Map<String, String> payload,
+                                       HttpServletRequest httpRequest) {
         try {
-            authService.resendOtp(payload.get("email"));
+            authProxy.resendOtp(payload.get("email"), extractClientIp(httpRequest));
             return ResponseEntity.ok(Map.of("message", "Mã xác nhận mới đã được gửi."));
+        } catch (RateLimitExceededException e) {
+            throw e;
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
