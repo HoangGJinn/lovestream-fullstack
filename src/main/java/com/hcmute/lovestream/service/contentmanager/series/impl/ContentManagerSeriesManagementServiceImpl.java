@@ -26,6 +26,7 @@ import com.hcmute.lovestream.service.contentmanager.series.ContentManagerSeriesM
 import com.hcmute.lovestream.service.notification.SeriesReleaseNotificationService;
 import com.hcmute.lovestream.service.storage.CloudinaryFolderTarget;
 import com.hcmute.lovestream.service.storage.MediaStorageService;
+import com.hcmute.lovestream.factory.TVSeriesFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -75,6 +76,7 @@ public class ContentManagerSeriesManagementServiceImpl implements ContentManager
     private final ContentCreditRepository contentCreditRepository;
     private final MediaStorageService mediaStorageService;
     private final SeriesReleaseNotificationService seriesReleaseNotificationService;
+    private final TVSeriesFactory tvSeriesFactory;
 
     @Override
     @Transactional(readOnly = true)
@@ -101,9 +103,8 @@ public class ContentManagerSeriesManagementServiceImpl implements ContentManager
     @Override
     @Transactional
     public TVSeries createSeries(TVSeriesUpsertRequest request) {
-        TVSeries series = new TVSeries();
-        mapRequestToSeries(request, series);
-        series.setId(null);
+        // Sử dụng TVSeriesFactory để khởi tạo, tự động map thông tin và tạo Season mặc định
+        TVSeries series = tvSeriesFactory.createContent(request, null, null);
         log.info("Creating TV Series: {}", request.getTitle());
         TVSeries saved = tvSeriesRepository.save(series);
         syncCredits(saved, request.getDirectorNames(), request.getCastNames());
