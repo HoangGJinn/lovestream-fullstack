@@ -34,7 +34,7 @@ public class MovieFactory implements VideoContentFactory<MovieUpsertRequest, Mov
         
         // 2. Map các trường đặc thù của Movie
         if (request.getReleaseDate() != null) {
-            movie.setReleaseDate(java.sql.Date.valueOf(request.getReleaseDate()));
+            movie.setReleaseDate(java.util.Date.from(request.getReleaseDate().atStartOfDay(java.time.ZoneId.systemDefault()).toInstant()));
         }
         movie.setDurationMinutes(request.getDurationMinutes());
         

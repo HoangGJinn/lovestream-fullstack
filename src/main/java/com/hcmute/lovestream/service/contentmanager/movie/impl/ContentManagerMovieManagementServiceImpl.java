@@ -150,7 +150,7 @@ public class ContentManagerMovieManagementServiceImpl implements ContentManagerM
         target.setReleaseYear(request.getReleaseYear());
 
         if (request.getReleaseDate() != null) {
-            target.setReleaseDate(java.sql.Date.valueOf(request.getReleaseDate()));
+            target.setReleaseDate(java.util.Date.from(request.getReleaseDate().atStartOfDay(java.time.ZoneId.systemDefault()).toInstant()));
         }
 
         target.setDurationMinutes(request.getDurationMinutes());

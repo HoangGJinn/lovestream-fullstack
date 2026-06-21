@@ -218,7 +218,7 @@ public class ContentManagerSeriesManagementServiceImpl implements ContentManager
         episode.setTitle(request.getTitle());
         episode.setDurationInMinutes(request.getDurationInMinutes());
         if (request.getAirDate() != null) {
-            episode.setAirDate(java.sql.Date.valueOf(request.getAirDate()));
+            episode.setAirDate(java.util.Date.from(request.getAirDate().atStartOfDay(java.time.ZoneId.systemDefault()).toInstant()));
         }
         log.info("Creating Episode {} for Season ID: {}", request.getEpisodeNumber(), season.getId());
         return episodeRepository.save(episode);
@@ -238,7 +238,7 @@ public class ContentManagerSeriesManagementServiceImpl implements ContentManager
         episode.setTitle(request.getTitle());
         episode.setDurationInMinutes(request.getDurationInMinutes());
         if (request.getAirDate() != null) {
-            episode.setAirDate(java.sql.Date.valueOf(request.getAirDate()));
+            episode.setAirDate(java.util.Date.from(request.getAirDate().atStartOfDay(java.time.ZoneId.systemDefault()).toInstant()));
         }
         log.info("Updating Episode ID: {}", id);
         return episodeRepository.save(episode);

@@ -240,8 +240,7 @@
             <a href="/admin/plans">Quản lý Gói dịch vụ</a>
             <a href="/admin/vouchers" class="active">Quản lý Voucher</a>
             <a href="/admin/plans">Quản lý Giao dịch</a>
-            <a href="#" onclick="handleAdminLogout(event)" style="margin-top: 50px; color: var(--netflix-red);">Đăng
-                xuất</a>
+            <a href="#" onclick="handleAdminLogout(event)" style="margin-top: 50px; color: var(--netflix-red);">Đăng xuất</a>
         </div>
     </div>
 
@@ -252,8 +251,7 @@
         </div>
 
         <div class="toolbar">
-            <input type="text" class="search-bar" placeholder="Tìm kiếm mã Voucher (Nhấn Enter)..." id="searchInput"
-                onkeypress="handleSearch(event)">
+            <input type="text" class="search-bar" placeholder="Tìm kiếm mã Voucher (Nhấn Enter)..." id="searchInput" onkeypress="handleSearch(event)">
             <button class="btn-primary" onclick="openModal()">+ Tạo Voucher Mới</button>
         </div>
 
@@ -339,15 +337,15 @@
                 const duplicateBtn = `<button class="btn-action clone" onclick="openDuplicateModal('${v.code}')">Nhân bản</button>`;
 
                 tbody.innerHTML += `
-                <tr>
-                    <td><strong>${v.code}</strong></td>
-                    <td>${v.discount}%</td>
-                    <td>${v.used} / ${v.total}</td>
-                    <td>${v.expiry}</td>
-                    <td>${statusSpan}</td>
-                    <td>${duplicateBtn} ${actionBtn}</td>
-                </tr>
-            `;
+                    <tr>
+                        <td><strong>${v.code}</strong></td>
+                        <td>${v.discount}%</td>
+                        <td>${v.used} / ${v.total}</td>
+                        <td>${v.expiry}</td>
+                        <td>${statusSpan}</td>
+                        <td>${duplicateBtn} ${actionBtn}</td>
+                    </tr>
+                `;
             });
         }
 
@@ -373,12 +371,14 @@
         function closeModal() { document.getElementById('createVoucherModal').style.display = 'none'; }
 
         let currentDuplicateSource = '';
+        
         function openDuplicateModal(code) { 
             currentDuplicateSource = code;
             document.getElementById('dupSourceCode').innerText = code;
             document.getElementById('dupNewCode').value = '';
             document.getElementById('duplicateVoucherModal').style.display = 'flex'; 
         }
+        
         function closeDuplicateModal() { document.getElementById('duplicateVoucherModal').style.display = 'none'; }
 
         function submitDuplicateVoucher() {
@@ -391,20 +391,20 @@
             fetch(`/api/v1/admin/vouchers/${currentDuplicateSource}/duplicate?newCode=${newCode}`, {
                 method: 'POST'
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.error) {
-                    alert(" Lỗi: " + data.error);
-                } else {
-                    alert(" " + data.message);
-                    closeDuplicateModal();
-                    loadVouchers();
-                }
-            })
-            .catch(err => {
-                console.error('Lỗi mạng:', err);
-                alert(" Đã xảy ra lỗi, vui lòng thử lại sau!");
-            });
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(" Lỗi: " + data.error);
+                    } else {
+                        alert(" " + data.message);
+                        closeDuplicateModal();
+                        loadVouchers();
+                    }
+                })
+                .catch(err => {
+                    console.error('Lỗi mạng:', err);
+                    alert(" Đã xảy ra lỗi, vui lòng thử lại sau!");
+                });
         }
 
         function submitCreateVoucher() {
