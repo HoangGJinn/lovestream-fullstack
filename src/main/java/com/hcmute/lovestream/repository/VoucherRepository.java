@@ -26,6 +26,10 @@ public interface VoucherRepository extends JpaRepository<Voucher, String> {
     @Query("UPDATE Voucher v SET v.usedQuantity = v.usedQuantity + 1 WHERE v.id = :id AND v.usedQuantity < v.totalQuantity")
     int incrementUsedQuantity(@Param("id") String id);
 
+    @Modifying
+    @Query("UPDATE Voucher v SET v.usedQuantity = v.usedQuantity - 1 WHERE v.id = :id AND v.usedQuantity > 0")
+    int decrementUsedQuantity(@Param("id") String id);
+
     @Query("SELECT v FROM Voucher v WHERE v.status = 'ACTIVE' AND v.expiryDate >= CURRENT_DATE AND v.usedQuantity < v.totalQuantity")
     List<Voucher> findAvailableVouchers();
 }
