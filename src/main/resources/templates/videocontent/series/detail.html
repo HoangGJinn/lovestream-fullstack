@@ -169,6 +169,7 @@
             <div class="series-meta">
                 <span th:text="${series.releaseYear}">2024</span>
                 <span th:if="${series.durationMinutes != null}"> • <span th:text="${series.durationMinutes}"></span> phút/tập</span>
+                <span th:if="${series.totalDurationMinutes != null and series.totalDurationMinutes > 0}"> • Tổng thời lượng: <strong th:text="${series.totalDurationMinutes}"></strong> phút</span>
                 <span th:if="${series.director != null}"> • Đạo diễn: <strong th:text="${series.director}"></strong></span>
             </div>
 
@@ -219,6 +220,9 @@
                 <span style="font-weight:400;color:#999;font-size:0.9rem;" th:if="${season.releaseYear > 0}">
                     (<span th:text="${season.releaseYear}"></span>)
                 </span>
+                <span style="font-weight:400;color:#2ecc71;font-size:0.9rem;margin-left:10px;"
+                      th:if="${season.totalDurationMinutes != null and season.totalDurationMinutes > 0}"
+                      th:text="' • ' + ${season.totalDurationMinutes} + ' phút tổng cộng'"></span>
             </div>
 
             <div th:if="${season.episodes == null or season.episodes.isEmpty()}" class="empty-season">
