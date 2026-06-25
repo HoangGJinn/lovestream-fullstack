@@ -4,6 +4,7 @@ import com.hcmute.lovestream.security.HttpCookieOAuth2AuthorizationRequestReposi
 import com.hcmute.lovestream.security.JwtAuthenticationFilter;
 import com.hcmute.lovestream.security.OAuth2AuthenticationSuccessHandler;
 import com.hcmute.lovestream.service.authentication.GoogleOAuth2UserService;
+import com.hcmute.lovestream.service.authentication.FacebookOAuth2UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -26,6 +27,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final GoogleOAuth2UserService googleOAuth2UserService;
+    private final FacebookOAuth2UserService facebookOAuth2UserService;
     private final OAuth2AuthenticationSuccessHandler oauth2SuccessHandler;
 
     // Lưu trạng thái OAuth2 vào Cookie thay vì Session → tiết kiệm RAM
@@ -108,6 +110,7 @@ public class SecurityConfig {
                         )
                         .userInfoEndpoint(userInfo -> userInfo
                                 .oidcUserService(googleOAuth2UserService)
+                                .userService(facebookOAuth2UserService)
                         )
                         .successHandler(oauth2SuccessHandler)
                         .failureHandler((request, response, exception) -> {

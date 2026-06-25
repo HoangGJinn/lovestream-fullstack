@@ -139,6 +139,7 @@ body {
     align-items: center;
     justify-content: center;
     gap: 12px;
+    text-decoration: none;
 }
 .btn:active { transform: scale(0.98); }
 .btn:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -188,4 +189,18 @@ body {
     font-size: 13px;
     color: var(--text-muted);
     margin-top: 12px;
+}
+
+.btn-facebook {
+    background: #1877f2;
+    color: #fff;
+    margin-top: 12px;
+}
+
+.btn-facebook:hover {
+    background: #166fe5;
+}
+
+.btn-facebook i {
+    font-size: 20px;
 }
