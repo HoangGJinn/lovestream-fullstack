@@ -39,16 +39,21 @@ public class MovieService {
 
     @Transactional(readOnly = true)
     public List<MovieResponse> getAllMovies() {
-        return getMoviesForListing("default", null);
+        return getMoviesForListing("default", null, null, null);
     }
 
     @Transactional(readOnly = true)
     public List<MovieResponse> getMoviesForListing(String sortKey, String userEmail) {
-        return getMoviesForListing(sortKey, userEmail, null);
+        return getMoviesForListing(sortKey, userEmail, null, null);
     }
 
     @Transactional(readOnly = true)
     public List<MovieResponse> getMoviesForListing(String sortKey, String userEmail, String keyword) {
+        return getMoviesForListing(sortKey, userEmail, keyword, null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<MovieResponse> getMoviesForListing(String sortKey, String userEmail, String keyword, Integer age) {
         try {
             List<Movie> movies = new ArrayList<>(movieRepository.findAllByStatusOrderByTitleAsc(ContentStatus.ACTIVE));
 
@@ -90,7 +95,18 @@ public class MovieService {
                 Comparator<Movie> comparator = strategy.getComparator(averageRatings, ratingCounts, favoriteCounts, resolvedUserId);
             movies.sort(comparator);
 
-            return movies.stream()
+            List<Movie> filteredMovies = movies;
+            if (age != null) {
+                List<Movie> temp = new ArrayList<>();
+                com.hcmute.lovestream.util.AgeRestrictedIterator<Movie> ageIterator = 
+                        new com.hcmute.lovestream.util.AgeRestrictedIterator<>(movies.iterator(), age);
+                while (ageIterator.hasNext()) {
+                    temp.add(ageIterator.next());
+                }
+                filteredMovies = temp;
+            }
+
+            return filteredMovies.stream()
                     .map(movieMapper::toMovieResponse)
                     .collect(Collectors.toList());
         } catch (org.springframework.dao.DataAccessException e) {

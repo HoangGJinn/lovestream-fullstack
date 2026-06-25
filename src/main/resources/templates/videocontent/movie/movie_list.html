@@ -120,7 +120,7 @@
 
         <form class="movie-filter-form" method="get" action="/movies">
             <label class="movie-filter-label" for="sort">Sắp xếp theo</label>
-            <select id="sort" name="sort" class="movie-filter-select">
+            <select id="sort" name="sort" class="movie-filter-select" style="min-width: auto;">
                 <option value="default" th:selected="${selectedSort == 'default'}">Mặc định (Đề xuất cho bạn)</option>
                 <option value="recommended" th:selected="${selectedSort == 'recommended'}">Đề xuất cho bạn (Recommended for You)</option>
                 <option value="popularity" th:selected="${selectedSort == 'popularity'}">Phổ biến (Popularity / Trending)</option>
@@ -131,6 +131,16 @@
                 <option value="duration_asc" th:selected="${selectedSort == 'duration_asc'}">Thời lượng: ngắn → dài</option>
                 <option value="duration_desc" th:selected="${selectedSort == 'duration_desc'}">Thời lượng: dài → ngắn</option>
             </select>
+
+            <label class="movie-filter-label" for="age" style="margin-left: 16px;">Độ tuổi người xem</label>
+            <select id="age" name="age" class="movie-filter-select" style="min-width: auto;">
+                <option value="" th:selected="${selectedAge == null}">Tất cả (Không lọc)</option>
+                <option value="10" th:selected="${selectedAge == 10}">Trẻ em (&lt; 13 tuổi)</option>
+                <option value="14" th:selected="${selectedAge == 14}">Thiếu niên (13 - 15 tuổi)</option>
+                <option value="16" th:selected="${selectedAge == 16}">Thanh thiếu niên (16 - 17 tuổi)</option>
+                <option value="18" th:selected="${selectedAge == 18}">Người lớn (&gt;= 18 tuổi)</option>
+            </select>
+
             <input id="keyword" name="keyword" class="movie-filter-hidden" type="hidden" th:value="${currentKeyword}">
             <button class="movie-filter-btn" type="submit">Áp dụng</button>
         </form>

@@ -110,7 +110,17 @@
         <form class="series-filter-form" method="get" action="/series">
             <label class="series-filter-label" for="keyword">Tìm kiếm</label>
             <input id="keyword" name="keyword" class="series-filter-input" type="text"
-                   placeholder="Tìm theo tên series..." th:value="${currentKeyword}">
+                   placeholder="Tìm theo tên series..." th:value="${currentKeyword}" style="min-width: auto;">
+
+            <label class="series-filter-label" for="age" style="margin-left: 16px;">Độ tuổi người xem</label>
+            <select id="age" name="age" class="series-filter-input" style="min-width: auto;">
+                <option value="" th:selected="${selectedAge == null}">Tất cả (Không lọc)</option>
+                <option value="10" th:selected="${selectedAge == 10}">Trẻ em (&lt; 13 tuổi)</option>
+                <option value="14" th:selected="${selectedAge == 14}">Thiếu niên (13 - 15 tuổi)</option>
+                <option value="16" th:selected="${selectedAge == 16}">Thanh thiếu niên (16 - 17 tuổi)</option>
+                <option value="18" th:selected="${selectedAge == 18}">Người lớn (&gt;= 18 tuổi)</option>
+            </select>
+
             <button class="series-filter-btn" type="submit">Áp dụng</button>
         </form>
     </header>
