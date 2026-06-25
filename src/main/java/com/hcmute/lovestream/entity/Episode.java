@@ -11,7 +11,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Episode {
+public class Episode implements PlayableContent {
     // SỬA Ở ĐÂY: Đổi IDENTITY thành UUID
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -39,4 +39,20 @@ public class Episode {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private List<Comment> comments = new ArrayList<>();
+
+    @Override
+    public String getTitle() {
+        return this.title;
+    }
+
+    @Override
+    @Transient
+    public int getTotalDurationMinutes() {
+        return this.durationInMinutes;
+    }
+
+    @Override
+    public void getDetails() {
+        System.out.println("    - Episode " + episodeNumber + ": " + getTitle() + " (" + getTotalDurationMinutes() + " mins)");
+    }
 }

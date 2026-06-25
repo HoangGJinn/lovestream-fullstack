@@ -34,6 +34,7 @@ public class VideoContentListWebController {
     @GetMapping("/movies")
     public String getMovies(@RequestParam(name = "sort", defaultValue = "default") String sort,
                             @RequestParam(required = false) String keyword,
+                            @RequestParam(required = false) Integer age,
                             Authentication authentication,
                             Model model) {
         // Normalize keyword so /movies works independently (trim + treat blank as null)
@@ -50,7 +51,7 @@ public class VideoContentListWebController {
             }
         }
 
-        List<MovieResponse> movies = movieService.getMoviesForListing(sort, userEmail, keyword);
+        List<MovieResponse> movies = movieService.getMoviesForListing(sort, userEmail, keyword, age);
 
         List<List<MovieResponse>> rows = new ArrayList<>();
         int size = 6;
@@ -62,12 +63,14 @@ public class VideoContentListWebController {
         model.addAttribute("movieRows", rows);
         model.addAttribute("selectedSort", sort);
         model.addAttribute("currentKeyword", keyword);
+        model.addAttribute("selectedAge", age);
         return "videocontent/movie/movie_list";
     }
 
     @GetMapping("/series")
     public String getSeries(@RequestParam(required = false) String keyword,
                             @RequestParam(name = "sort", defaultValue = "default") String sort,
+                            @RequestParam(required = false) Integer age,
                             Authentication authentication,
                             Model model) {
         keyword = (StringUtils.hasText(keyword) ? keyword.trim() : null);
@@ -95,6 +98,16 @@ public class VideoContentListWebController {
                     .toList();
         }
 
+        if (age != null) {
+            List<TVSeries> temp = new ArrayList<>();
+            com.hcmute.lovestream.util.AgeRestrictedIterator<TVSeries> ageIterator = 
+                    new com.hcmute.lovestream.util.AgeRestrictedIterator<>(series.iterator(), age);
+            while (ageIterator.hasNext()) {
+                temp.add(ageIterator.next());
+            }
+            series = temp;
+        }
+
         List<List<TVSeries>> rows = new ArrayList<>();
         int size = 6;
 
@@ -105,6 +118,7 @@ public class VideoContentListWebController {
         model.addAttribute("seriesRows", rows);
         model.addAttribute("currentKeyword", keyword);
         model.addAttribute("selectedSort", sort);
+        model.addAttribute("selectedAge", age);
         return "videocontent/series/series_list";
     }
 }
