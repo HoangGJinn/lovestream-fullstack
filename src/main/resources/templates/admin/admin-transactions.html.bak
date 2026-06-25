@@ -93,8 +93,6 @@
             </select>
         </div>
         <button class="btn-filter" onclick="applyFilter()">Lọc Dữ Liệu</button>
-        <button class="btn-filter" onclick="exportReport('pdf')">Xuất PDF</button>
-        <button class="btn-filter" onclick="exportReport('xlsx')">Xuất Excel</button>
     </div>
 
     <div class="summary-container">
@@ -212,48 +210,6 @@
 
         document.getElementById('totalCount').innerText = successfulTransactions.length + ' thành công (trên tổng ' + transactions.length + ')';
         document.getElementById('totalRevenue').innerText = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalAmount);
-    }
-
-    function getFilenameFromDisposition(disposition) {
-        if (!disposition) return null;
-        const match = /filename\*?=(?:UTF-8'')?"?([^;\"]+)"?/i.exec(disposition);
-        return match ? decodeURIComponent(match[1]) : null;
-    }
-
-    function exportReport(format) {
-        const fromDate = document.getElementById('fromDate').value;
-        const toDate = document.getElementById('toDate').value;
-        const plan = document.getElementById('planFilter').value;
-        const status = document.getElementById('statusFilter').value;
-
-        const queryParams = new URLSearchParams({
-            fromDate: fromDate,
-            toDate: toDate,
-            plan: plan,
-            status: status
-        });
-
-        fetch('/api/v1/admin/payments/export?format=' + encodeURIComponent(format) + '&' + queryParams.toString())
-            .then(res => {
-                if (!res.ok) throw new Error('Lỗi khi tạo file');
-                const disp = res.headers.get('Content-Disposition');
-                const filename = getFilenameFromDisposition(disp) || (format === 'pdf' ? 'transactions.pdf' : 'transactions.xlsx');
-                return res.blob().then(blob => ({ blob, filename }));
-            })
-            .then(({ blob, filename }) => {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                window.URL.revokeObjectURL(url);
-            })
-            .catch(err => {
-                console.error('Xuất file thất bại', err);
-                alert('Không thể xuất file: ' + err.message);
-            });
     }
 </script>
 </body>
