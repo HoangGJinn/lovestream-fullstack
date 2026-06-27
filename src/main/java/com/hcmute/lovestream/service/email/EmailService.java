@@ -67,6 +67,16 @@ public class EmailService {
     }
 
     /**
+     * Gửi email chia sẻ phim
+     */
+    @Async
+    public void sendShareEmail(String toEmail, String senderName, String movieTitle, String shareLink) {
+        String subject = senderName + " muốn chia sẻ một bộ phim với bạn!";
+        String htmlContent = buildShareEmailTemplate(senderName, movieTitle, shareLink);
+        sendHtmlEmail(toEmail, subject, htmlContent);
+    }
+
+    /**
      * Hàm dùng chung để gửi email HTML
      */
     private void sendHtmlEmail(String to, String subject, String htmlBody) {
@@ -135,6 +145,25 @@ public class EmailService {
                 + "Hoặc mở trực tiếp link này: " + confirmLink
                 + "</p>"
                 + "<p style=\"color: #8f8f8f; font-size: 12px; line-height: 1.5;\">Nếu bạn không thực hiện thao tác này, vui lòng bỏ qua email.</p>"
+                + "</div>"
+                + "</div>";
+    }
+
+    private String buildShareEmailTemplate(String senderName, String movieTitle, String shareLink) {
+        return "<div style=\"font-family: Arial, sans-serif; background-color: #141414; color: #ffffff; padding: 40px 20px; text-align: center;\">"
+                + "<div style=\"max-width: 560px; margin: auto; background-color: #000000; padding: 30px; border-radius: 8px; border: 1px solid #333;\">"
+                + "<h1 style=\"color: #e50914; margin-bottom: 20px; font-weight: 900; letter-spacing: -1px;\">LoveStream</h1>"
+                + "<h2 style=\"color: #ffffff; font-size: 22px; margin-bottom: 10px;\">Thưởng thức phim hay cùng bạn bè</h2>"
+                + "<p style=\"color: #b3b3b3; font-size: 15px; line-height: 1.6; margin-bottom: 24px;\">"
+                + "Bạn của bạn là <b>" + senderName + "</b> đã chia sẻ bộ phim <b>" + movieTitle + "</b> cho bạn. "
+                + "Hãy nhấp vào nút bên dưới để cùng thưởng thức nhé!"
+                + "</p>"
+                + "<a href=\"" + shareLink + "\" style=\"display: inline-block; background-color: #e50914; color: #fff; text-decoration: none; padding: 12px 18px; border-radius: 4px; font-weight: bold; margin-bottom: 18px;\">"
+                + "Xem phim ngay"
+                + "</a>"
+                + "<p style=\"color: #8f8f8f; font-size: 12px; line-height: 1.5; word-break: break-all;\">"
+                + "Hoặc mở trực tiếp link này: " + shareLink
+                + "</p>"
                 + "</div>"
                 + "</div>";
     }

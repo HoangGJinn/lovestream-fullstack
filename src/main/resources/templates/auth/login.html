@@ -7,6 +7,7 @@
     <title>Đăng nhập - LoveStream</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" th:href="@{/css/auth.css}">
 </head>
 
@@ -62,6 +63,11 @@
             <a href="/oauth2/authorization/google" id="googleBtn" class="btn btn-google">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo">
                 Đăng nhập bằng Google
+            </a>
+
+            <a href="/oauth2/authorization/facebook" id="facebookBtn" class="btn btn-facebook">
+                <i class="fa-brands fa-facebook"></i>
+                Đăng nhập bằng Facebook
             </a>
 
             <div class="auth-prompt">
@@ -144,6 +150,13 @@
         const googleBtn = document.getElementById('googleBtn');
         if (googleBtn) {
             googleBtn.addEventListener('click', () => {
+                getOrCreateDeviceId();
+            });
+        }
+
+        const facebookBtn = document.getElementById('facebookBtn');
+        if (facebookBtn) {
+            facebookBtn.addEventListener('click', () => {
                 getOrCreateDeviceId();
             });
         }

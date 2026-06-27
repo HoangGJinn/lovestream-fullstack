@@ -3,6 +3,7 @@ package com.hcmute.lovestream.entity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,7 +22,13 @@ public class Movie extends VideoContent{
     private Date releaseDate;
 
     @Override
+    @Transient
+    public int getTotalDurationMinutes() {
+        return this.durationMinutes;
+    }
+
+    @Override
     public void getDetails() {
-        // Cài đặt logic riêng cho Movie
+        System.out.println("Movie: " + getTitle() + " | Duration: " + getTotalDurationMinutes() + " mins");
     }
 }

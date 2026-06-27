@@ -69,6 +69,7 @@ public class SeriesDetailService {
                     .seasonNumber(season.getSeasonNumber())
                     .name(season.getName())
                     .releaseYear(season.getReleaseYear())
+                    .totalDurationMinutes(season.getTotalDurationMinutes())
                     .episodes(episodes)
                     .build();
         }).toList();
@@ -86,6 +87,7 @@ public class SeriesDetailService {
                 .posterUrl(posterUrl)
                 .trailerUrl(trailerUrl)
                 .durationMinutes(series.getDurationMinutes())
+                .totalDurationMinutes(series.getTotalDurationMinutes())
                 .seasons(seasonDtos)
                 .watchAction(watchAction)
                 .build();
@@ -138,6 +140,7 @@ public class SeriesDetailService {
         private String posterUrl;
         private String trailerUrl;
         private Integer durationMinutes;
+        private Integer totalDurationMinutes;
         private List<SeasonDto> seasons;
         private String watchAction;
     }
@@ -148,6 +151,7 @@ public class SeriesDetailService {
         private int seasonNumber;
         private String name;
         private int releaseYear;
+        private Integer totalDurationMinutes;
         private List<EpisodeDto> episodes;
     }
 

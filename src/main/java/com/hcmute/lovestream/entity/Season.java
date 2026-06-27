@@ -10,7 +10,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Season {
+public class Season implements PlayableContent {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
@@ -32,4 +32,26 @@ public class Season {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private List<MediaAsset> mediaAssets = new ArrayList<>();
+
+    @Override
+    public String getTitle() {
+        return this.name;
+    }
+
+    @Override
+    @Transient
+    public int getTotalDurationMinutes() {
+        if (episodes == null) return 0;
+        return episodes.stream()
+                .mapToInt(Episode::getTotalDurationMinutes)
+                .sum();
+    }
+
+    @Override
+    public void getDetails() {
+        System.out.println(" * Season: " + getTitle() + " | Total Duration: " + getTotalDurationMinutes() + " mins");
+        if (episodes != null) {
+            episodes.forEach(Episode::getDetails);
+        }
+    }
 }

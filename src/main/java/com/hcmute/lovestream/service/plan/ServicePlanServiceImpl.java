@@ -3,7 +3,6 @@ package com.hcmute.lovestream.service.plan;
 import com.hcmute.lovestream.dto.response.PurchaseResponse;
 import com.hcmute.lovestream.dto.response.ServicePlanResponse;
 import com.hcmute.lovestream.dto.response.VoucherQuoteResponse;
-import com.hcmute.lovestream.dto.request.Vnpay;
 import com.hcmute.lovestream.entity.Payment;
 import com.hcmute.lovestream.entity.ServicePlan;
 import com.hcmute.lovestream.entity.Subscription;
@@ -17,7 +16,8 @@ import com.hcmute.lovestream.repository.ServicePlanRepository;
 import com.hcmute.lovestream.repository.SubscriptionRepository;
 import com.hcmute.lovestream.repository.UserRepository;
 import com.hcmute.lovestream.repository.VoucherRepository;
-import com.hcmute.lovestream.service.vnpay.VnpayService;
+import com.hcmute.lovestream.service.payment.PaymentGatewayFactory;
+import com.hcmute.lovestream.service.payment.strategy.PaymentGatewayStrategy;
 import com.hcmute.lovestream.service.voucher.VoucherCheckoutService;
 import com.hcmute.lovestream.util.VnpayUtil;
 import lombok.RequiredArgsConstructor;
@@ -52,7 +52,7 @@ public class ServicePlanServiceImpl implements ServicePlanService {
     private final UserRepository userRepository;
     private final VoucherCheckoutService voucherCheckoutService;
     private final VoucherRepository voucherRepository;
-    private final VnpayService vnpayService;
+    private final PaymentGatewayFactory paymentGatewayFactory;
 
     @Override
     @Transactional(readOnly = true)
@@ -110,21 +110,19 @@ public class ServicePlanServiceImpl implements ServicePlanService {
                 .build();
         paymentRepository.save(payment);
 
-        // 2) Tạo paymentUrl và trả về cho frontend redirect sang VNPay
-        Vnpay paymentRequest = Vnpay.builder()
-                .amount(payAmount.stripTrailingZeros().toPlainString())
-                .orderInfo(buildPurchaseOrderInfo(plan.getName(), normalizedVoucherCode))
-                .orderId(orderCode)
-                .build();
-
+        PaymentGatewayStrategy strategy = paymentGatewayFactory.getStrategy(PaymentGateway.VNPAY);
         String paymentUrl;
         try {
-            paymentUrl = vnpayService.createPaymentWithOrderCode(paymentRequest, orderCode, request);
+            paymentUrl = strategy.createPaymentUrl(
+                    payment,
+                    buildPurchaseOrderInfo(plan.getName(), normalizedVoucherCode),
+                    request
+            );
         } catch (Exception e) {
                         String detail = (e.getMessage() == null || e.getMessage().isBlank())
                                         ? "Lỗi không xác định"
                                         : e.getMessage();
-                        throw new RuntimeException("Không thể tạo link thanh toán VNPay: " + detail, e);
+                        throw new RuntimeException("Không thể tạo link thanh toán: " + detail, e);
         }
 
         return PurchaseResponse.builder()
@@ -197,20 +195,19 @@ public class ServicePlanServiceImpl implements ServicePlanService {
                 .build();
         paymentRepository.save(payment);
 
-        Vnpay paymentRequest = Vnpay.builder()
-                .amount(payAmount.stripTrailingZeros().toPlainString())
-                .orderInfo(buildUpgradeOrderInfo(currentPlan.getName(), targetPlan.getName(), normalizedVoucherCode))
-                .orderId(orderCode)
-                .build();
-
+        PaymentGatewayStrategy strategy = paymentGatewayFactory.getStrategy(PaymentGateway.VNPAY);
         String paymentUrl;
         try {
-            paymentUrl = vnpayService.createPaymentWithOrderCode(paymentRequest, orderCode, request);
+            paymentUrl = strategy.createPaymentUrl(
+                    payment,
+                    buildUpgradeOrderInfo(currentPlan.getName(), targetPlan.getName(), normalizedVoucherCode),
+                    request
+            );
         } catch (Exception e) {
             String detail = (e.getMessage() == null || e.getMessage().isBlank())
                     ? "Lỗi không xác định"
                     : e.getMessage();
-            throw new RuntimeException("Không thể tạo link thanh toán VNPay: " + detail, e);
+            throw new RuntimeException("Không thể tạo link thanh toán: " + detail, e);
         }
 
         return PurchaseResponse.builder()

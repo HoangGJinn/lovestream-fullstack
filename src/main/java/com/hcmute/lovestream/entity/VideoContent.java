@@ -20,7 +20,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Inheritance(strategy = InheritanceType.JOINED) // Kế thừa JOINED
 
-public abstract class VideoContent {
+public abstract class VideoContent implements PlayableContent {
     // SỬA Ở ĐÂY: Đổi IDENTITY thành UUID cho kiểu String
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -164,5 +164,7 @@ public abstract class VideoContent {
     }
 
     public abstract void getDetails(); // Khai báo method như trong UML
+
+    public abstract int getTotalDurationMinutes();
 
 }

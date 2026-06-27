@@ -219,61 +219,56 @@ public class VnpayServiceImpl implements VnpayService {
                 return payment.getId();
             }
 
-            payment.setStatus(isSuccess ? TransactionStatus.SUCCESS : TransactionStatus.FAILED);
-            if (isSuccess) {
-                assignGatewayTransactionCode(payment, vnp_TransactionNo);
+            if (!isSuccess) {
+                // Thanh toán thất bại, chỉ cần cập nhật trạng thái
+                payment.setStatus(TransactionStatus.FAILED);
+                paymentRepository.saveAndFlush(payment);
+                return null;
             }
 
-            paymentRepository.saveAndFlush(payment);
-
-            if (isSuccess) {
-                // Tăng usedQuantity nếu có voucher (bước 6)
-                if (payment.getVoucher() != null) {
-                    int updatedRows = voucherRepository.incrementUsedQuantity(payment.getVoucher().getId());
-                    if (updatedRows == 0) {
-                        log.warn("Failed to increment used_quantity for voucher={}", payment.getVoucher().getId());
-                    }
-                }
-
-                Subscription activeSubscription = subscriptionRepository
-                        .findTopByUserAndStatusOrderByEndDateDesc(payment.getUser(), SubscriptionStatus.ACTIVE)
-                        .orElse(null);
-
-                LocalDateTime startDate = LocalDateTime.now();
-                LocalDateTime endDate = startDate.plusDays(payment.getServicePlan().getDurationDays());
-
-                if (activeSubscription == null) {
-                    Subscription subscription = Subscription.builder()
-                            .user(payment.getUser())
-                            .plan(payment.getServicePlan())
-                            .startDate(startDate)
-                            .endDate(endDate)
-                            .status(SubscriptionStatus.ACTIVE)
-                            .autoRenew(false)
-                            .build();
-                    subscriptionRepository.save(subscription);
-                } else {
-                    int comparePlanPrice = payment.getServicePlan().getPrice()
-                            .compareTo(activeSubscription.getPlan().getPrice());
-
-                    // Thanh toán nâng cấp: đóng gói cũ và kích hoạt gói mới ngay.
-                    if (comparePlanPrice > 0) {
-                        activeSubscription.setStatus(SubscriptionStatus.CANCELED);
-                        activeSubscription.setEndDate(startDate);
-                        subscriptionRepository.save(activeSubscription);
-
-                        Subscription upgradedSubscription = Subscription.builder()
-                                .user(payment.getUser())
-                                .plan(payment.getServicePlan())
-                                .startDate(startDate)
-                                .endDate(endDate)
-                                .status(SubscriptionStatus.ACTIVE)
-                                .autoRenew(false)
-                                .build();
-                        subscriptionRepository.save(upgradedSubscription);
-                    }
-                }
+            // ==========================================
+            // ÁP DỤNG COMPENSATING COMMAND (SAGA PATTERN)
+            // ==========================================
+            
+            // 1. Khởi tạo danh sách các Command cần chạy
+            List<com.hcmute.lovestream.service.payment.command.CompensatingCommand> commands = new ArrayList<>();
+            
+            commands.add(new com.hcmute.lovestream.service.payment.command.UpdatePaymentStatusCommand(
+                    paymentRepository, payment, TransactionStatus.SUCCESS, vnp_TransactionNo));
+                    
+            if (payment.getVoucher() != null) {
+                commands.add(new com.hcmute.lovestream.service.payment.command.UseVoucherCommand(
+                        voucherRepository, payment.getVoucher().getId()));
             }
+            
+            commands.add(new com.hcmute.lovestream.service.payment.command.ActivateSubscriptionCommand(
+                    subscriptionRepository, payment));
+
+            // 2. Bộ điều phối (Invoker) chạy các Command
+            Stack<com.hcmute.lovestream.service.payment.command.CompensatingCommand> executedCommands = new Stack<>();
+            
+            try {
+                for (com.hcmute.lovestream.service.payment.command.CompensatingCommand command : commands) {
+                    command.execute();
+                    executedCommands.push(command); // Đẩy vào stack nếu thành công
+                }
+            } catch (Exception ex) {
+                log.error("Lỗi khi thực thi chuỗi giao dịch thanh toán. Đang tiến hành Rollback (Undo)...", ex);
+                
+                // Chạy lùi (LIFO) để hoàn tác
+                while (!executedCommands.isEmpty()) {
+                    try {
+                        com.hcmute.lovestream.service.payment.command.CompensatingCommand cmd = executedCommands.pop();
+                        cmd.undo();
+                    } catch (Exception undoEx) {
+                        log.error("LỖI NGHIÊM TRỌNG: Quá trình Undo cũng bị lỗi!", undoEx);
+                        // Ở hệ thống thực tế cần gửi cảnh báo cho Dev/Admin để can thiệp bằng tay
+                    }
+                }
+                
+                return null; // Báo lỗi callback
+            }
+            // ==========================================
 
             // Trả về paymentId nếu thành công, ngược lại trả về null.
             return isSuccess ? payment.getId() : null;

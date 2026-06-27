@@ -4,6 +4,7 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -30,7 +31,19 @@ public class TVSeries extends VideoContent {
     private List<Season> seasons = new ArrayList<>();
 
     @Override
+    @Transient
+    public int getTotalDurationMinutes() {
+        if (seasons == null) return 0;
+        return seasons.stream()
+                .mapToInt(Season::getTotalDurationMinutes)
+                .sum();
+    }
+
+    @Override
     public void getDetails() {
-        // Cài đặt logic riêng cho TV Series
+        System.out.println("TV Series: " + getTitle() + " | Total Duration: " + getTotalDurationMinutes() + " mins");
+        if (seasons != null) {
+            seasons.forEach(Season::getDetails);
+        }
     }
 }

@@ -5,6 +5,7 @@ import com.hcmute.lovestream.service.admin.VoucherService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -28,7 +29,8 @@ public class AdminVoucherRestController {
     public ResponseEntity<?> createVoucher(@Valid @RequestBody VoucherCreateRequest request) {
         try {
             voucherService.createVoucher(request);
-            return ResponseEntity.ok(Map.of("message", "Tạo voucher " + request.getCode().toUpperCase() + " thành công!"));
+            return ResponseEntity
+                    .ok(Map.of("message", "Tạo voucher " + request.getCode().toUpperCase() + " thành công!"));
         } catch (Exception e) {
             // Trả về lỗi 400 Bad Request nếu bị trùng mã hoặc lỗi logic
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -50,9 +52,21 @@ public class AdminVoucherRestController {
 
     // Bắt lỗi Validation từ DTO và chuyển thành JSON báo cho Frontend
     @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
-    public ResponseEntity<?> handleValidationExceptions(org.springframework.web.bind.MethodArgumentNotValidException ex) {
+    public ResponseEntity<?> handleValidationExceptions(
+            MethodArgumentNotValidException ex) {
         // Lấy câu thông báo lỗi đầu tiên (Ví dụ: "Mã voucher không được để trống")
         String errorMessage = ex.getBindingResult().getAllErrors().get(0).getDefaultMessage();
         return ResponseEntity.badRequest().body(Map.of("error", errorMessage));
+    }
+
+    // 4. API Nhân bản Voucher (Ứng dụng Prototype Pattern)
+    @PostMapping("/{code}/duplicate")
+    public ResponseEntity<?> duplicateVoucher(@PathVariable String code, @RequestParam String newCode) {
+        try {
+            voucherService.duplicateVoucher(code, newCode);
+            return ResponseEntity.ok(Map.of("message", "Đã nhân bản thành công Voucher mới: " + newCode.toUpperCase()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 }

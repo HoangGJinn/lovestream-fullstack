@@ -16,6 +16,7 @@ import com.hcmute.lovestream.repository.RoomRepository;
 import com.hcmute.lovestream.repository.UserRepository;
 import com.hcmute.lovestream.repository.VideoContentRepository;
 import com.hcmute.lovestream.service.plan.ServicePlanService;
+import com.hcmute.lovestream.service.watchtogether.state.RoomStateContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -41,6 +42,7 @@ public class WatchTogetherService {
     private final VideoContentRepository videoContentRepository;
     private final UserRepository userRepository;
     private final ServicePlanService servicePlanService;
+    private final RoomStateContext roomStateContext;
 
     @Transactional(readOnly = true)
     public List<VideoContent> getCreateRoomMovieOptions() {
@@ -245,17 +247,11 @@ public class WatchTogetherService {
         validateHost(room, hostEmail);
 
         String normalizedAction = action == null ? "" : action.trim().toUpperCase(Locale.ROOT);
-        switch (normalizedAction) {
-            case "PLAY" -> room.setStatus(RoomStatus.PLAYING);
-            case "PAUSE" -> room.setStatus(RoomStatus.PAUSED);
-            case "SEEK" -> {
-                // Keep current status, only update time.
-            }
-            case "STOP" -> room.setStatus(RoomStatus.WAITING);
-            default -> throw new IllegalArgumentException("Action khong hop le");
-        }
+        double normalizedTime = normalizeCurrentTime(currentTime);
 
-        room.setCurrentVideoTime(normalizeCurrentTime(currentTime));
+        // Ủy quyền toàn bộ logic chuyển trạng thái cho RoomStateContext (State Pattern)
+        roomStateContext.applyAction(room, normalizedAction, normalizedTime);
+
         return roomRepository.save(room);
     }
 
