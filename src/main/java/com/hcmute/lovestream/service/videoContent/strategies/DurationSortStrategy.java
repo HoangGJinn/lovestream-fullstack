@@ -1,7 +1,6 @@
 package com.hcmute.lovestream.service.videoContent.strategies;
 
 import com.hcmute.lovestream.entity.Movie;
-import com.hcmute.lovestream.service.videoContent.MovieService;
 import com.hcmute.lovestream.service.videoContent.MovieSortStrategy;
 
 import java.util.Comparator;
@@ -16,8 +15,13 @@ public class DurationSortStrategy implements MovieSortStrategy {
     }
 
     @Override
-    public Comparator<Movie> getComparator(Optional<String> resolvedUserId, Map<String, Double> averageRatings, Map<String, Long> ratingCounts, Map<String, Long> favoriteCounts, MovieService movieService) {
-        Comparator<Movie> comp = Comparator.comparingInt(Movie::getDurationMinutes).thenComparing(movie -> movieService.safeTitle(movie.getTitle()));
+    public boolean supports(String sortKey) {
+        return "duration_asc".equals(sortKey) || "duration_desc".equals(sortKey);
+    }
+
+    @Override
+    public Comparator<Movie> getComparator(Map<String, Double> averageRatings, Map<String, Long> ratingCounts, Map<String, Long> favoriteCounts, Optional<String> userId) {
+        Comparator<Movie> comp = Comparator.comparingInt(Movie::getDurationMinutes).thenComparing(movie -> safeTitle(movie.getTitle()));
         return asc ? comp : comp.reversed();
     }
 }
