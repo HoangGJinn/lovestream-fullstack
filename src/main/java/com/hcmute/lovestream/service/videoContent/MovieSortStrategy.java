@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 
 public interface MovieSortStrategy {
+    
     boolean supports(String sortKey);
 
     Comparator<Movie> getComparator(

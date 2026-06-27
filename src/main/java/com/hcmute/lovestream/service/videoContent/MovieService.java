@@ -28,7 +28,6 @@ import com.hcmute.lovestream.service.videoContent.MovieSortStrategy;
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE, makeFinal = true)
-
 public class MovieService {
     MovieMapper movieMapper;
     MovieRepository movieRepository;
@@ -82,17 +81,17 @@ public class MovieService {
                     .filter(s -> !s.isEmpty())
                     .orElse("default");
 
-                Optional<String> resolvedUserId = resolveUserId(userEmail);
+            Optional<String> resolvedUserId = resolveUserId(userEmail);
 
-                MovieSortStrategy strategy = sortStrategies.stream()
-                        .filter(s -> s.supports(normalizedSort))
-                        .findFirst()
-                        .orElseGet(() -> sortStrategies.stream()
-                                .filter(s -> s.supports("default"))
-                                .findFirst()
-                                .orElseThrow(() -> new IllegalStateException("Default sort strategy not found")));
+            MovieSortStrategy strategy = sortStrategies.stream()
+                    .filter(s -> s.supports(normalizedSort))
+                    .findFirst()
+                    .orElseGet(() -> sortStrategies.stream()
+                            .filter(s -> s.supports("default"))
+                            .findFirst()
+                            .orElseThrow(() -> new IllegalStateException("Default sort strategy not found")));
 
-                Comparator<Movie> comparator = strategy.getComparator(averageRatings, ratingCounts, favoriteCounts, resolvedUserId);
+            Comparator<Movie> comparator = strategy.getComparator(averageRatings, ratingCounts, favoriteCounts, resolvedUserId);
             movies.sort(comparator);
 
             List<Movie> filteredMovies = movies;
@@ -120,16 +119,89 @@ public class MovieService {
         return movieRepository.countByStatus(ContentStatus.ACTIVE) > 0;
     }
 
+    private Comparator<Movie> buildComparator(String sortKey,
+                                              Optional<String> resolvedUserId,
+                                              Map<String, Double> averageRatings,
+                                              Map<String, Long> ratingCounts,
+                                              Map<String, Long> favoriteCounts) {
+        return MovieSortStrategyFactory.create(sortKey, this, resolvedUserId, averageRatings, ratingCounts, favoriteCounts);
+    }
 
+    // dựa trên sở thích thể loại của user, điểm cá nhân user đã chấm cho phim, điểm trung bình, độ phổ biến của phim để tính điểm đề xuất
+    public Comparator<Movie> buildRecommendedComparator(Optional<String> resolvedUserId,
+                                                        Map<String, Double> averageRatings,
+                                                        Map<String, Long> ratingCounts,
+                                                        Map<String, Long> favoriteCounts) {
+        Map<String, Integer> genreAffinity = buildGenreAffinity(resolvedUserId);
+        Map<String, Integer> personalScores = buildPersonalScores(resolvedUserId);
 
-    private Optional<String> resolveUserId(String userEmail) {
+        return Comparator
+                .comparingDouble((Movie movie) -> recommendationScore(movie, genreAffinity, personalScores,
+                        averageRatings, ratingCounts, favoriteCounts))
+                .reversed()
+                .thenComparing(movie -> safeTitle(movie.getTitle()));
+    }
+
+    public double recommendationScore(Movie movie,
+                                      Map<String, Integer> genreAffinity,
+                                      Map<String, Integer> personalScores,
+                                      Map<String, Double> averageRatings,
+                                      Map<String, Long> ratingCounts,
+                                      Map<String, Long> favoriteCounts) {
+        int affinityScore = movie.getGenres() == null
+                ? 0
+                : movie.getGenres().stream()
+                .map(Genre::getName)
+                .mapToInt(name -> genreAffinity.getOrDefault(name, 0))
+                .sum();
+
+        // Lấy điểm user đã chấm cho phim này (nếu có)
+        int personalScore = personalScores.getOrDefault(movie.getId(), 0);
+        double avgRating = averageRatings.getOrDefault(movie.getId(), 0.0);
+        double popularity = popularityScore(movie.getId(), ratingCounts, favoriteCounts);
+
+        return (affinityScore * 2.2) + (personalScore * 2.0) + (avgRating * 1.2) + popularity;
+    }
+
+    Map<String, Integer> buildGenreAffinity(Optional<String> userId) {
+        if (userId.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<String, Integer> affinity = new HashMap<>();
+        for (String genreName : favoriteListRepository.findFavoriteGenreNamesByUserId(userId.get())) {
+            affinity.merge(genreName, 3, Integer::sum);
+        }
+        for (String genreName : ratingRepository.findPreferredGenreNamesByUserId(userId.get())) {
+            affinity.merge(genreName, 2, Integer::sum);
+        }
+        return affinity;
+    }
+
+    Map<String, Integer> buildPersonalScores(Optional<String> userId) {
+        if (userId.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<String, Integer> scores = new HashMap<>();
+        for (Object[] row : ratingRepository.findUserScoresByUserId(userId.get())) {
+            String videoId = (String) row[0];
+            Integer score = (Integer) row[1];
+            if (videoId != null && score != null) {
+                scores.put(videoId, score);
+            }
+        }
+        return scores;
+    }
+
+    Optional<String> resolveUserId(String userEmail) {
         if (userEmail == null || userEmail.isBlank()) {
             return Optional.empty();
         }
         return userRepository.findByEmail(userEmail).map(user -> user.getId());
     }
 
-    private RatingStatsBundle buildRatingStats(Collection<String> movieIds) {
+    RatingStatsBundle buildRatingStats(Collection<String> movieIds) {
         Map<String, Double> averageMap = new HashMap<>();
         Map<String, Long> countMap = new HashMap<>();
 
@@ -144,7 +216,7 @@ public class MovieService {
         return new RatingStatsBundle(averageMap, countMap);
     }
 
-    private Map<String, Long> buildFavoriteCountMap(Collection<String> movieIds) {
+    Map<String, Long> buildFavoriteCountMap(Collection<String> movieIds) {
         Map<String, Long> map = new HashMap<>();
         for (Object[] row : favoriteListRepository.countFavoritesByVideoIds(movieIds)) {
             String movieId = (String) row[0];
@@ -154,9 +226,13 @@ public class MovieService {
         return map;
     }
 
+    public double popularityScore(String movieId, Map<String, Long> ratingCounts, Map<String, Long> favoriteCounts) {
+        long ratingCount = ratingCounts.getOrDefault(movieId, 0L);
+        long favoriteCount = favoriteCounts.getOrDefault(movieId, 0L);
+        return (favoriteCount * 2.0) + ratingCount;
+    }
 
-
-    private String safeTitle(String title) {
+    public String safeTitle(String title) {
         return title == null ? "" : title.toLowerCase(Locale.ROOT);
     }
 
