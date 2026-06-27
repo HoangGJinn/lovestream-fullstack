@@ -17,17 +17,15 @@ public final class MovieSortStrategyFactory {
                                            Map<String, Long> ratingCounts,
                                            Map<String, Long> favoriteCounts) {
         String key = sortKey == null ? "default" : sortKey.trim().toLowerCase();
-        MovieSortStrategy strategy;
         return switch (key) {
-            case "popularity" -> new PopularitySortStrategy().getComparator(resolvedUserId, averageRatings, ratingCounts, favoriteCounts, movieService);
-            case "newest" -> new NewestSortStrategy().getComparator(resolvedUserId, averageRatings, ratingCounts, favoriteCounts, movieService);
-            case "top_rated" -> new TopRatedSortStrategy().getComparator(resolvedUserId, averageRatings, ratingCounts, favoriteCounts, movieService);
-            case "az" -> new AlphabeticalSortStrategy(true).getComparator(resolvedUserId, averageRatings, ratingCounts, favoriteCounts, movieService);
-            case "za" -> new AlphabeticalSortStrategy(false).getComparator(resolvedUserId, averageRatings, ratingCounts, favoriteCounts, movieService);
-            case "duration_asc" -> new DurationSortStrategy(true).getComparator(resolvedUserId, averageRatings, ratingCounts, favoriteCounts, movieService);
-            case "duration_desc" -> new DurationSortStrategy(false).getComparator(resolvedUserId, averageRatings, ratingCounts, favoriteCounts, movieService);
-            case "recommended", "default" -> new RecommendedSortStrategy().getComparator(resolvedUserId, averageRatings, ratingCounts, favoriteCounts, movieService);
-            default -> new RecommendedSortStrategy().getComparator(resolvedUserId, averageRatings, ratingCounts, favoriteCounts, movieService);
+            case "popularity"   -> new PopularitySortStrategy().getComparator(averageRatings, ratingCounts, favoriteCounts, resolvedUserId);
+            case "newest"       -> new NewestSortStrategy().getComparator(averageRatings, ratingCounts, favoriteCounts, resolvedUserId);
+            case "top_rated"    -> new TopRatedSortStrategy().getComparator(averageRatings, ratingCounts, favoriteCounts, resolvedUserId);
+            case "az"           -> new AlphabeticalSortStrategy(true).getComparator(averageRatings, ratingCounts, favoriteCounts, resolvedUserId);
+            case "za"           -> new AlphabeticalSortStrategy(false).getComparator(averageRatings, ratingCounts, favoriteCounts, resolvedUserId);
+            case "duration_asc" -> new DurationSortStrategy(true).getComparator(averageRatings, ratingCounts, favoriteCounts, resolvedUserId);
+            case "duration_desc"-> new DurationSortStrategy(false).getComparator(averageRatings, ratingCounts, favoriteCounts, resolvedUserId);
+            default             -> new RecommendedSortStrategy(movieService).getComparator(averageRatings, ratingCounts, favoriteCounts, resolvedUserId);
         };
     }
 }
